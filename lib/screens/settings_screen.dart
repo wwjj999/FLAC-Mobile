@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/theme_provider.dart';
 
@@ -127,17 +128,46 @@ class SettingsScreen extends ConsumerWidget {
           ),
           
           const Divider(),
+          
+          // GitHub & Credits Section
+          _buildSectionHeader(context, 'GitHub & Credits', colorScheme),
+          
+          ListTile(
+            leading: Icon(Icons.code, color: colorScheme.primary),
+            title: const Text('SpotiFLAC Mobile'),
+            subtitle: const Text('github.com/zarzet/SpotiFLAC-Mobile'),
+            onTap: () => _launchUrl('https://github.com/zarzet/SpotiFLAC-Mobile'),
+          ),
+          
+          ListTile(
+            leading: Icon(Icons.computer, color: colorScheme.primary),
+            title: const Text('Original SpotiFLAC (Desktop)'),
+            subtitle: const Text('github.com/afkarxyz/SpotiFLAC'),
+            onTap: () => _launchUrl('https://github.com/afkarxyz/SpotiFLAC'),
+          ),
+          
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              'Mobile version maintained by zarzet\nOriginal project by afkarxyz',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          
+          const Divider(),
 
           // About
           ListTile(
             leading: Icon(Icons.info, color: colorScheme.primary),
             title: const Text('About'),
-            subtitle: const Text('SpotiFLAC v1.0.3'),
+            subtitle: const Text('SpotiFLAC v1.0.4'),
             onTap: () => showAboutDialog(
               context: context,
               applicationName: 'SpotiFLAC',
-              applicationVersion: '1.0.3',
-              applicationLegalese: '© 2024 SpotiFLAC',
+              applicationVersion: '1.0.4',
+              applicationLegalese: '© 2024 SpotiFLAC\n\nMobile: zarzet\nOriginal: afkarxyz',
             ),
           ),
         ],
@@ -421,6 +451,13 @@ class SettingsScreen extends ConsumerWidget {
     final result = await FilePicker.platform.getDirectoryPath();
     if (result != null) {
       ref.read(settingsProvider.notifier).setDownloadDirectory(result);
+    }
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 }
