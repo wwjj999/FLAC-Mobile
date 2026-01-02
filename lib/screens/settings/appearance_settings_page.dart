@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/theme_provider.dart';
+import 'package:spotiflac_android/widgets/settings_group.dart';
 
 class AppearanceSettingsPage extends ConsumerWidget {
   const AppearanceSettingsPage({super.key});
@@ -56,46 +57,50 @@ class AppearanceSettingsPage extends ConsumerWidget {
           ),
 
           // Theme section
-          SliverToBoxAdapter(child: _SectionHeader(title: 'Theme')),
+          const SliverToBoxAdapter(child: SettingsSectionHeader(title: 'Theme')),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _ThemeModeSelector(
-                currentMode: themeSettings.themeMode,
-                onChanged: (mode) => ref.read(themeProvider.notifier).setThemeMode(mode),
-              ),
+            child: SettingsGroup(
+              children: [
+                _ThemeModeSelector(
+                  currentMode: themeSettings.themeMode,
+                  onChanged: (mode) => ref.read(themeProvider.notifier).setThemeMode(mode),
+                ),
+              ],
             ),
           ),
 
           // Color section
-          SliverToBoxAdapter(child: _SectionHeader(title: 'Color')),
+          const SliverToBoxAdapter(child: SettingsSectionHeader(title: 'Color')),
           SliverToBoxAdapter(
-            child: SwitchListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              title: const Text('Dynamic Color'),
-              subtitle: const Text('Use colors from your wallpaper'),
-              value: themeSettings.useDynamicColor,
-              onChanged: (value) => ref.read(themeProvider.notifier).setUseDynamicColor(value),
+            child: SettingsGroup(
+              children: [
+                SettingsSwitchItem(
+                  icon: Icons.auto_awesome,
+                  title: 'Dynamic Color',
+                  subtitle: 'Use colors from your wallpaper',
+                  value: themeSettings.useDynamicColor,
+                  onChanged: (value) => ref.read(themeProvider.notifier).setUseDynamicColor(value),
+                  showDivider: !themeSettings.useDynamicColor,
+                ),
+                if (!themeSettings.useDynamicColor)
+                  _ColorPicker(
+                    currentColor: themeSettings.seedColorValue,
+                    onColorSelected: (color) => ref.read(themeProvider.notifier).setSeedColor(color),
+                  ),
+              ],
             ),
           ),
 
-          if (!themeSettings.useDynamicColor)
-            SliverToBoxAdapter(
-              child: _ColorPicker(
-                currentColor: themeSettings.seedColorValue,
-                onColorSelected: (color) => ref.read(themeProvider.notifier).setSeedColor(color),
-              ),
-            ),
-
           // Layout section
-          SliverToBoxAdapter(child: _SectionHeader(title: 'Layout')),
+          const SliverToBoxAdapter(child: SettingsSectionHeader(title: 'Layout')),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _HistoryViewSelector(
-                currentMode: settings.historyViewMode,
-                onChanged: (mode) => ref.read(settingsProvider.notifier).setHistoryViewMode(mode),
-              ),
+            child: SettingsGroup(
+              children: [
+                _HistoryViewSelector(
+                  currentMode: settings.historyViewMode,
+                  onChanged: (mode) => ref.read(settingsProvider.notifier).setHistoryViewMode(mode),
+                ),
+              ],
             ),
           ),
 
@@ -107,17 +112,6 @@ class AppearanceSettingsPage extends ConsumerWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-    child: Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(
-      color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600)),
-  );
-}
-
 class _ThemeModeSelector extends StatelessWidget {
   final ThemeMode currentMode;
   final ValueChanged<ThemeMode> onChanged;
@@ -125,21 +119,15 @@ class _ThemeModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Row(children: [
-          _ThemeModeChip(icon: Icons.brightness_auto, label: 'System', isSelected: currentMode == ThemeMode.system, onTap: () => onChanged(ThemeMode.system)),
-          const SizedBox(width: 8),
-          _ThemeModeChip(icon: Icons.light_mode, label: 'Light', isSelected: currentMode == ThemeMode.light, onTap: () => onChanged(ThemeMode.light)),
-          const SizedBox(width: 8),
-          _ThemeModeChip(icon: Icons.dark_mode, label: 'Dark', isSelected: currentMode == ThemeMode.dark, onTap: () => onChanged(ThemeMode.dark)),
-        ]),
-      ),
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(children: [
+        _ThemeModeChip(icon: Icons.brightness_auto, label: 'System', isSelected: currentMode == ThemeMode.system, onTap: () => onChanged(ThemeMode.system)),
+        const SizedBox(width: 8),
+        _ThemeModeChip(icon: Icons.light_mode, label: 'Light', isSelected: currentMode == ThemeMode.light, onTap: () => onChanged(ThemeMode.light)),
+        const SizedBox(width: 8),
+        _ThemeModeChip(icon: Icons.dark_mode, label: 'Dark', isSelected: currentMode == ThemeMode.dark, onTap: () => onChanged(ThemeMode.dark)),
+      ]),
     );
   }
 }
@@ -154,9 +142,16 @@ class _ThemeModeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Unselected chips need to be darker than the card background
+    final unselectedColor = isDark 
+        ? Color.alphaBlend(Colors.white.withValues(alpha: 0.05), colorScheme.surface)
+        : colorScheme.surfaceContainerHigh;
+    
     return Expanded(
       child: Material(
-        color: isSelected ? colorScheme.primaryContainer : Colors.transparent,
+        color: isSelected ? colorScheme.primaryContainer : unselectedColor,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
@@ -191,9 +186,9 @@ class _ColorPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Accent Color', style: Theme.of(context).textTheme.titleSmall),
+        Text('Accent Color', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
         const SizedBox(height: 12),
         Wrap(spacing: 12, runSpacing: 12, children: _colors.map((color) {
           final isSelected = color.toARGB32() == currentColor;
@@ -224,26 +219,21 @@ class _HistoryViewSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 8, bottom: 8),
-              child: Text('History View', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
-            ),
-            Row(children: [
-              _ViewModeChip(icon: Icons.view_list, label: 'List', isSelected: currentMode == 'list', onTap: () => onChanged('list')),
-              const SizedBox(width: 8),
-              _ViewModeChip(icon: Icons.grid_view, label: 'Grid', isSelected: currentMode == 'grid', onTap: () => onChanged('grid')),
-            ]),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 8, bottom: 8),
+            child: Text('History View', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+          ),
+          Row(children: [
+            _ViewModeChip(icon: Icons.view_list, label: 'List', isSelected: currentMode == 'list', onTap: () => onChanged('list')),
+            const SizedBox(width: 8),
+            _ViewModeChip(icon: Icons.grid_view, label: 'Grid', isSelected: currentMode == 'grid', onTap: () => onChanged('grid')),
+          ]),
+        ],
       ),
     );
   }
@@ -259,9 +249,15 @@ class _ViewModeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final unselectedColor = isDark 
+        ? Color.alphaBlend(Colors.white.withValues(alpha: 0.05), colorScheme.surface)
+        : colorScheme.surfaceContainerHigh;
+    
     return Expanded(
       child: Material(
-        color: isSelected ? colorScheme.primaryContainer : Colors.transparent,
+        color: isSelected ? colorScheme.primaryContainer : unselectedColor,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,

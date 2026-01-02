@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+import 'package:spotiflac_android/utils/logger.dart';
+
+final _log = AppLogger('ShareIntent');
 
 /// Service to handle incoming share intents from other apps (e.g., Spotify)
 class ShareIntentService {
@@ -30,7 +33,7 @@ class ShareIntentService {
     // Listen to media sharing coming from outside the app while the app is in memory
     _mediaSubscription = ReceiveSharingIntent.instance.getMediaStream().listen(
       _handleSharedMedia,
-      onError: (err) => print('[ShareIntent] Error: $err'),
+      onError: (err) => _log.e('Error: $err'),
     );
 
     // Get the media sharing coming from outside the app while the app is closed
@@ -49,7 +52,7 @@ class ShareIntentService {
       
       final url = _extractSpotifyUrl(textToCheck);
       if (url != null) {
-        print('[ShareIntent] Received Spotify URL: $url (initial: $isInitial)');
+        _log.i('Received Spotify URL: $url (initial: $isInitial)');
         if (isInitial) {
           // Store for later - listener might not be ready yet
           _pendingUrl = url;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/widgets/settings_group.dart';
 
 class OptionsSettingsPage extends ConsumerWidget {
   const OptionsSettingsPage({super.key});
@@ -55,78 +56,96 @@ class OptionsSettingsPage extends ConsumerWidget {
           ),
 
           // Download options section
-          SliverToBoxAdapter(child: _SectionHeader(title: 'Download')),
-          SliverList(delegate: SliverChildListDelegate([
-            SwitchListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              secondary: Icon(Icons.sync, color: colorScheme.onSurfaceVariant),
-              title: const Text('Auto Fallback'),
-              subtitle: const Text('Try other services if download fails'),
-              value: settings.autoFallback,
-              onChanged: (v) => ref.read(settingsProvider.notifier).setAutoFallback(v),
+          const SliverToBoxAdapter(child: SettingsSectionHeader(title: 'Download')),
+          SliverToBoxAdapter(
+            child: SettingsGroup(
+              children: [
+                SettingsSwitchItem(
+                  icon: Icons.sync,
+                  title: 'Auto Fallback',
+                  subtitle: 'Try other services if download fails',
+                  value: settings.autoFallback,
+                  onChanged: (v) => ref.read(settingsProvider.notifier).setAutoFallback(v),
+                ),
+                SettingsSwitchItem(
+                  icon: Icons.lyrics,
+                  title: 'Embed Lyrics',
+                  subtitle: 'Embed synced lyrics into FLAC files',
+                  value: settings.embedLyrics,
+                  onChanged: (v) => ref.read(settingsProvider.notifier).setEmbedLyrics(v),
+                ),
+                SettingsSwitchItem(
+                  icon: Icons.image,
+                  title: 'Max Quality Cover',
+                  subtitle: 'Download highest resolution cover art',
+                  value: settings.maxQualityCover,
+                  onChanged: (v) => ref.read(settingsProvider.notifier).setMaxQualityCover(v),
+                  showDivider: false,
+                ),
+              ],
             ),
-            SwitchListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              secondary: Icon(Icons.lyrics, color: colorScheme.onSurfaceVariant),
-              title: const Text('Embed Lyrics'),
-              subtitle: const Text('Embed synced lyrics into FLAC files'),
-              value: settings.embedLyrics,
-              onChanged: (v) => ref.read(settingsProvider.notifier).setEmbedLyrics(v),
-            ),
-            SwitchListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              secondary: Icon(Icons.image, color: colorScheme.onSurfaceVariant),
-              title: const Text('Max Quality Cover'),
-              subtitle: const Text('Download highest resolution cover art'),
-              value: settings.maxQualityCover,
-              onChanged: (v) => ref.read(settingsProvider.notifier).setMaxQualityCover(v),
-            ),
-          ])),
+          ),
 
           // Performance section
-          SliverToBoxAdapter(child: _SectionHeader(title: 'Performance')),
+          const SliverToBoxAdapter(child: SettingsSectionHeader(title: 'Performance')),
           SliverToBoxAdapter(
-            child: _ConcurrentDownloadsSelector(
-              currentValue: settings.concurrentDownloads,
-              onChanged: (v) => ref.read(settingsProvider.notifier).setConcurrentDownloads(v),
+            child: SettingsGroup(
+              children: [
+                _ConcurrentDownloadsItem(
+                  currentValue: settings.concurrentDownloads,
+                  onChanged: (v) => ref.read(settingsProvider.notifier).setConcurrentDownloads(v),
+                ),
+              ],
             ),
           ),
 
           // Lyrics section
-          SliverToBoxAdapter(child: _SectionHeader(title: 'Lyrics')),
-          SliverList(delegate: SliverChildListDelegate([
-            SwitchListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              secondary: Icon(Icons.translate, color: colorScheme.onSurfaceVariant),
-              title: const Text('Convert Japanese to Romaji'),
-              subtitle: const Text('Auto-convert Hiragana/Katakana lyrics'),
-              value: settings.convertLyricsToRomaji,
-              onChanged: (v) => ref.read(settingsProvider.notifier).setConvertLyricsToRomaji(v),
+          const SliverToBoxAdapter(child: SettingsSectionHeader(title: 'Lyrics')),
+          SliverToBoxAdapter(
+            child: SettingsGroup(
+              children: [
+                SettingsSwitchItem(
+                  icon: Icons.translate,
+                  title: 'Convert Japanese to Romaji',
+                  subtitle: 'Auto-convert Hiragana/Katakana lyrics',
+                  value: settings.convertLyricsToRomaji,
+                  onChanged: (v) => ref.read(settingsProvider.notifier).setConvertLyricsToRomaji(v),
+                  showDivider: false,
+                ),
+              ],
             ),
-          ])),
+          ),
 
           // App section
-          SliverToBoxAdapter(child: _SectionHeader(title: 'App')),
+          const SliverToBoxAdapter(child: SettingsSectionHeader(title: 'App')),
           SliverToBoxAdapter(
-            child: SwitchListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              secondary: Icon(Icons.system_update, color: colorScheme.onSurfaceVariant),
-              title: const Text('Check for Updates'),
-              subtitle: const Text('Notify when new version is available'),
-              value: settings.checkForUpdates,
-              onChanged: (v) => ref.read(settingsProvider.notifier).setCheckForUpdates(v),
+            child: SettingsGroup(
+              children: [
+                SettingsSwitchItem(
+                  icon: Icons.system_update,
+                  title: 'Check for Updates',
+                  subtitle: 'Notify when new version is available',
+                  value: settings.checkForUpdates,
+                  onChanged: (v) => ref.read(settingsProvider.notifier).setCheckForUpdates(v),
+                  showDivider: false,
+                ),
+              ],
             ),
           ),
 
           // Data section
-          SliverToBoxAdapter(child: _SectionHeader(title: 'Data')),
+          const SliverToBoxAdapter(child: SettingsSectionHeader(title: 'Data')),
           SliverToBoxAdapter(
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              leading: Icon(Icons.delete_forever, color: colorScheme.error),
-              title: const Text('Clear Download History'),
-              subtitle: const Text('Remove all downloaded tracks from history'),
-              onTap: () => _showClearHistoryDialog(context, ref, colorScheme),
+            child: SettingsGroup(
+              children: [
+                SettingsItem(
+                  icon: Icons.delete_forever,
+                  title: 'Clear Download History',
+                  subtitle: 'Remove all downloaded tracks from history',
+                  onTap: () => _showClearHistoryDialog(context, ref, colorScheme),
+                  showDivider: false,
+                ),
+              ],
             ),
           ),
 
@@ -163,35 +182,25 @@ class OptionsSettingsPage extends ConsumerWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-    child: Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(
-      color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600)),
-  );
-}
-
-class _ConcurrentDownloadsSelector extends StatelessWidget {
+class _ConcurrentDownloadsItem extends StatelessWidget {
   final int currentValue;
   final ValueChanged<int> onChanged;
-  const _ConcurrentDownloadsSelector({required this.currentValue, required this.onChanged});
+  const _ConcurrentDownloadsItem({required this.currentValue, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Icon(Icons.download_for_offline, color: colorScheme.onSurfaceVariant),
+          Icon(Icons.download_for_offline, color: colorScheme.onSurfaceVariant, size: 24),
           const SizedBox(width: 16),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Concurrent Downloads'),
+            Text('Concurrent Downloads', style: Theme.of(context).textTheme.bodyLarge),
+            const SizedBox(height: 2),
             Text(currentValue == 1 ? 'Sequential (1 at a time)' : '$currentValue parallel downloads',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
           ])),
         ]),
         const SizedBox(height: 16),
@@ -223,9 +232,15 @@ class _ConcurrentChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final unselectedColor = isDark 
+        ? Color.alphaBlend(Colors.white.withValues(alpha: 0.05), colorScheme.surface)
+        : colorScheme.surfaceContainerHigh;
+    
     return Expanded(
       child: Material(
-        color: isSelected ? colorScheme.primaryContainer : colorScheme.surfaceContainerHighest,
+        color: isSelected ? colorScheme.primaryContainer : unselectedColor,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,

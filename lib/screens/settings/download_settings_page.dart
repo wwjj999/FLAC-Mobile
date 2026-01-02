@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/widgets/settings_group.dart';
 
 class DownloadSettingsPage extends ConsumerWidget {
   const DownloadSettingsPage({super.key});
@@ -55,59 +56,73 @@ class DownloadSettingsPage extends ConsumerWidget {
           ),
 
           // Service section
-          SliverToBoxAdapter(child: _SectionHeader(title: 'Service')),
+          const SliverToBoxAdapter(child: SettingsSectionHeader(title: 'Service')),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _ServiceSelector(
-                currentService: settings.defaultService,
-                onChanged: (service) => ref.read(settingsProvider.notifier).setDefaultService(service),
-              ),
+            child: SettingsGroup(
+              children: [
+                _ServiceSelector(
+                  currentService: settings.defaultService,
+                  onChanged: (service) => ref.read(settingsProvider.notifier).setDefaultService(service),
+                ),
+              ],
             ),
           ),
 
           // Quality section
-          SliverToBoxAdapter(child: _SectionHeader(title: 'Audio Quality')),
-          SliverList(delegate: SliverChildListDelegate([
-            _QualityOption(title: 'FLAC Lossless', subtitle: '16-bit / 44.1kHz', value: 'LOSSLESS',
-              isSelected: settings.audioQuality == 'LOSSLESS',
-              onTap: () => ref.read(settingsProvider.notifier).setAudioQuality('LOSSLESS')),
-            _QualityOption(title: 'Hi-Res FLAC', subtitle: '24-bit / up to 96kHz', value: 'HI_RES',
-              isSelected: settings.audioQuality == 'HI_RES',
-              onTap: () => ref.read(settingsProvider.notifier).setAudioQuality('HI_RES')),
-            _QualityOption(title: 'Hi-Res FLAC Max', subtitle: '24-bit / up to 192kHz', value: 'HI_RES_LOSSLESS',
-              isSelected: settings.audioQuality == 'HI_RES_LOSSLESS',
-              onTap: () => ref.read(settingsProvider.notifier).setAudioQuality('HI_RES_LOSSLESS')),
-          ])),
+          const SliverToBoxAdapter(child: SettingsSectionHeader(title: 'Audio Quality')),
+          SliverToBoxAdapter(
+            child: SettingsGroup(
+              children: [
+                _QualityOption(
+                  title: 'FLAC Lossless',
+                  subtitle: '16-bit / 44.1kHz',
+                  isSelected: settings.audioQuality == 'LOSSLESS',
+                  onTap: () => ref.read(settingsProvider.notifier).setAudioQuality('LOSSLESS'),
+                ),
+                _QualityOption(
+                  title: 'Hi-Res FLAC',
+                  subtitle: '24-bit / up to 96kHz',
+                  isSelected: settings.audioQuality == 'HI_RES',
+                  onTap: () => ref.read(settingsProvider.notifier).setAudioQuality('HI_RES'),
+                ),
+                _QualityOption(
+                  title: 'Hi-Res FLAC Max',
+                  subtitle: '24-bit / up to 192kHz',
+                  isSelected: settings.audioQuality == 'HI_RES_LOSSLESS',
+                  onTap: () => ref.read(settingsProvider.notifier).setAudioQuality('HI_RES_LOSSLESS'),
+                  showDivider: false,
+                ),
+              ],
+            ),
+          ),
 
           // File settings section
-          SliverToBoxAdapter(child: _SectionHeader(title: 'File Settings')),
-          SliverList(delegate: SliverChildListDelegate([
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              leading: Icon(Icons.text_fields, color: colorScheme.onSurfaceVariant),
-              title: const Text('Filename Format'),
-              subtitle: Text(settings.filenameFormat),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showFormatEditor(context, ref, settings.filenameFormat),
+          const SliverToBoxAdapter(child: SettingsSectionHeader(title: 'File Settings')),
+          SliverToBoxAdapter(
+            child: SettingsGroup(
+              children: [
+                SettingsItem(
+                  icon: Icons.text_fields,
+                  title: 'Filename Format',
+                  subtitle: settings.filenameFormat,
+                  onTap: () => _showFormatEditor(context, ref, settings.filenameFormat),
+                ),
+                SettingsItem(
+                  icon: Icons.folder_outlined,
+                  title: 'Download Directory',
+                  subtitle: settings.downloadDirectory.isEmpty ? 'Music/SpotiFLAC' : settings.downloadDirectory,
+                  onTap: () => _pickDirectory(ref),
+                ),
+                SettingsItem(
+                  icon: Icons.create_new_folder_outlined,
+                  title: 'Folder Organization',
+                  subtitle: _getFolderOrganizationLabel(settings.folderOrganization),
+                  onTap: () => _showFolderOrganizationPicker(context, ref, settings.folderOrganization),
+                  showDivider: false,
+                ),
+              ],
             ),
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              leading: Icon(Icons.folder_outlined, color: colorScheme.onSurfaceVariant),
-              title: const Text('Download Directory'),
-              subtitle: Text(settings.downloadDirectory.isEmpty ? 'Music/SpotiFLAC' : settings.downloadDirectory, maxLines: 1, overflow: TextOverflow.ellipsis),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _pickDirectory(ref),
-            ),
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              leading: Icon(Icons.create_new_folder_outlined, color: colorScheme.onSurfaceVariant),
-              title: const Text('Folder Organization'),
-              subtitle: Text(_getFolderOrganizationLabel(settings.folderOrganization)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showFolderOrganizationPicker(context, ref, settings.folderOrganization),
-            ),
-          ])),
+          ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
@@ -150,13 +165,13 @@ class DownloadSettingsPage extends ConsumerWidget {
   String _getFolderOrganizationLabel(String value) {
     switch (value) {
       case 'artist':
-        return 'By Artist (Artist/Track.flac)';
+        return 'By Artist';
       case 'album':
-        return 'By Album (Album/Track.flac)';
+        return 'By Album';
       case 'artist_album':
-        return 'By Artist & Album (Artist/Album/Track.flac)';
+        return 'By Artist & Album';
       default:
-        return 'None (all in one folder)';
+        return 'None';
     }
   }
 
@@ -215,17 +230,6 @@ class DownloadSettingsPage extends ConsumerWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-    child: Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(
-      color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600)),
-  );
-}
-
 class _ServiceSelector extends StatelessWidget {
   final String currentService;
   final ValueChanged<String> onChanged;
@@ -233,21 +237,15 @@ class _ServiceSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Row(children: [
-          _ServiceChip(icon: Icons.music_note, label: 'Tidal', isSelected: currentService == 'tidal', onTap: () => onChanged('tidal')),
-          const SizedBox(width: 8),
-          _ServiceChip(icon: Icons.album, label: 'Qobuz', isSelected: currentService == 'qobuz', onTap: () => onChanged('qobuz')),
-          const SizedBox(width: 8),
-          _ServiceChip(icon: Icons.shopping_bag, label: 'Amazon', isSelected: currentService == 'amazon', onTap: () => onChanged('amazon')),
-        ]),
-      ),
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(children: [
+        _ServiceChip(icon: Icons.music_note, label: 'Tidal', isSelected: currentService == 'tidal', onTap: () => onChanged('tidal')),
+        const SizedBox(width: 8),
+        _ServiceChip(icon: Icons.album, label: 'Qobuz', isSelected: currentService == 'qobuz', onTap: () => onChanged('qobuz')),
+        const SizedBox(width: 8),
+        _ServiceChip(icon: Icons.shopping_bag, label: 'Amazon', isSelected: currentService == 'amazon', onTap: () => onChanged('amazon')),
+      ]),
     );
   }
 }
@@ -262,9 +260,15 @@ class _ServiceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final unselectedColor = isDark 
+        ? Color.alphaBlend(Colors.white.withValues(alpha: 0.05), colorScheme.surface)
+        : colorScheme.surfaceContainerHigh;
+    
     return Expanded(
       child: Material(
-        color: isSelected ? colorScheme.primaryContainer : Colors.transparent,
+        color: isSelected ? colorScheme.primaryContainer : unselectedColor,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
@@ -288,20 +292,49 @@ class _ServiceChip extends StatelessWidget {
 class _QualityOption extends StatelessWidget {
   final String title;
   final String subtitle;
-  final String value;
   final bool isSelected;
   final VoidCallback onTap;
-  const _QualityOption({required this.title, required this.subtitle, required this.value, required this.isSelected, required this.onTap});
+  final bool showDivider;
+  const _QualityOption({required this.title, required this.subtitle, required this.isSelected, required this.onTap, this.showDivider = true});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-      title: Text(title),
-      subtitle: Text(subtitle),
-      trailing: isSelected ? Icon(Icons.check_circle, color: colorScheme.primary) : Icon(Icons.circle_outlined, color: colorScheme.outline),
-      onTap: onTap,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: Theme.of(context).textTheme.bodyLarge),
+                      const SizedBox(height: 2),
+                      Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+                isSelected 
+                    ? Icon(Icons.check_circle, color: colorScheme.primary)
+                    : Icon(Icons.circle_outlined, color: colorScheme.outline),
+              ],
+            ),
+          ),
+        ),
+        if (showDivider)
+          Divider(
+            height: 1,
+            thickness: 1,
+            indent: 20,
+            endIndent: 20,
+            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+          ),
+      ],
     );
   }
 }

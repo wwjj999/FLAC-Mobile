@@ -13,6 +13,10 @@ import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/services/ffmpeg_service.dart';
 import 'package:spotiflac_android/services/notification_service.dart';
+import 'package:spotiflac_android/utils/logger.dart';
+
+final _log = AppLogger('DownloadQueue');
+final _historyLog = AppLogger('DownloadHistory');
 
 // Download History Item model
 class DownloadHistoryItem {
@@ -132,12 +136,12 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
         final List<dynamic> jsonList = jsonDecode(jsonStr);
         final items = jsonList.map((e) => DownloadHistoryItem.fromJson(e as Map<String, dynamic>)).toList();
         state = state.copyWith(items: items);
-        print('[DownloadHistory] Loaded ${items.length} items from storage');
+        _historyLog.i('Loaded ${items.length} items from storage');
       } else {
-        print('[DownloadHistory] No history found in storage');
+        _historyLog.d('No history found in storage');
       }
     } catch (e) {
-      print('[DownloadHistory] Failed to load history: $e');
+      _historyLog.e('Failed to load history: $e');
     }
   }
 
@@ -146,9 +150,9 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
       final prefs = await SharedPreferences.getInstance();
       final jsonList = state.items.map((e) => e.toJson()).toList();
       await prefs.setString(_storageKey, jsonEncode(jsonList));
-      print('[DownloadHistory] Saved ${state.items.length} items to storage');
+      _historyLog.d('Saved ${state.items.length} items to storage');
     } catch (e) {
-      print('[DownloadHistory] Failed to save history: $e');
+      _historyLog.e('Failed to save history: $e');
     }
   }
 
@@ -277,7 +281,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           // Log progress
           final mbReceived = bytesReceived / (1024 * 1024);
           final mbTotal = bytesTotal / (1024 * 1024);
-          print('[DownloadQueue] Progress: ${(percentage * 100).toStringAsFixed(1)}% (${mbReceived.toStringAsFixed(2)}/${mbTotal.toStringAsFixed(2)} MB)');
+          _log.d('Progress: ${(percentage * 100).toStringAsFixed(1)}% (${mbReceived.toStringAsFixed(2)}/${mbTotal.toStringAsFixed(2)} MB)');
         }
       } catch (e) {
         // Ignore polling errors
@@ -307,7 +311,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             // Log progress for each item
             final mbReceived = bytesReceived / (1024 * 1024);
             final mbTotal = bytesTotal / (1024 * 1024);
-            print('[DownloadQueue] Progress [$itemId]: ${(percentage * 100).toStringAsFixed(1)}% (${mbReceived.toStringAsFixed(2)}/${mbTotal.toStringAsFixed(2)} MB)');
+            _log.d('Progress [$itemId]: ${(percentage * 100).toStringAsFixed(1)}% (${mbReceived.toStringAsFixed(2)}/${mbTotal.toStringAsFixed(2)} MB)');
           }
         }
         
@@ -424,7 +428,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       final dir = Directory(fullPath);
       if (!await dir.exists()) {
         await dir.create(recursive: true);
-        print('[DownloadQueue] Created folder: $fullPath');
+        _log.d('Created folder: $fullPath');
       }
       return fullPath;
     }
@@ -531,7 +535,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     if (state.isProcessing && !state.isPaused) {
       state = state.copyWith(isPaused: true);
       _notificationService.cancelDownloadNotification();
-      print('[DownloadQueue] Queue paused');
+      _log.i('Queue paused');
     }
   }
 
@@ -539,7 +543,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   void resumeQueue() {
     if (state.isPaused) {
       state = state.copyWith(isPaused: false);
-      print('[DownloadQueue] Queue resumed');
+      _log.i('Queue resumed');
       // If there are still queued items, continue processing
       if (state.queuedCount > 0 && !state.isProcessing) {
         Future.microtask(() => _processQueue());
@@ -594,14 +598,14 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           final sink = file.openWrite();
           await response.pipe(sink);
           await sink.close();
-          print('[DownloadQueue] Cover downloaded to: $coverPath');
+          _log.d('Cover downloaded to: $coverPath');
         } else {
-          print('[DownloadQueue] Failed to download cover: HTTP ${response.statusCode}');
+          _log.w('Failed to download cover: HTTP ${response.statusCode}');
           coverPath = null;
         }
         httpClient.close();
       } catch (e) {
-        print('[DownloadQueue] Failed to download cover: $e');
+        _log.e('Failed to download cover: $e');
         coverPath = null;
       }
     }
@@ -621,10 +625,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           // Replace original with temp
           await File(flacPath).delete();
           await File(tempOutput).rename(flacPath);
-          print('[DownloadQueue] Cover embedded via FFmpeg');
+          _log.d('Cover embedded via FFmpeg');
         } else {
           // Try alternative method using metaflac-style embedding
-          print('[DownloadQueue] FFmpeg cover embed failed, trying alternative...');
+          _log.w('FFmpeg cover embed failed, trying alternative...');
           // Clean up temp file if exists
           final tempFile = File(tempOutput);
           if (await tempFile.exists()) {
@@ -638,7 +642,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         } catch (_) {}
       }
     } catch (e) {
-      print('[DownloadQueue] Failed to embed metadata: $e');
+      _log.e('Failed to embed metadata: $e');
     }
   }
 
@@ -646,20 +650,20 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     if (state.isProcessing) return; // Prevent multiple concurrent processing
     
     state = state.copyWith(isProcessing: true);
-    print('[DownloadQueue] Starting queue processing...');
+    _log.i('Starting queue processing...');
 
     // Track total items at start for notification
     _totalQueuedAtStart = state.items.where((i) => i.status == DownloadStatus.queued).length;
 
     // Ensure output directory is initialized before processing
     if (state.outputDir.isEmpty) {
-      print('[DownloadQueue] Output dir empty, initializing...');
+      _log.d('Output dir empty, initializing...');
       await _initOutputDir();
     }
     
     // If still empty, use fallback
     if (state.outputDir.isEmpty) {
-      print('[DownloadQueue] Using fallback directory...');
+      _log.d('Using fallback directory...');
       final dir = await getApplicationDocumentsDirectory();
       final musicDir = Directory('${dir.path}/SpotiFLAC');
       if (!await musicDir.exists()) {
@@ -668,8 +672,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       state = state.copyWith(outputDir: musicDir.path);
     }
     
-    print('[DownloadQueue] Output directory: ${state.outputDir}');
-    print('[DownloadQueue] Concurrent downloads: ${state.concurrentDownloads}');
+    _log.d('Output directory: ${state.outputDir}');
+    _log.d('Concurrent downloads: ${state.concurrentDownloads}');
 
     // Use parallel processing if concurrentDownloads > 1
     if (state.concurrentDownloads > 1) {
@@ -682,11 +686,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     
     // Final cleanup after queue finishes
     if (_downloadCount > 0) {
-      print('[DownloadQueue] Final connection cleanup...');
+      _log.d('Final connection cleanup...');
       try {
         await PlatformBridge.cleanupConnections();
       } catch (e) {
-        print('[DownloadQueue] Final cleanup failed: $e');
+        _log.e('Final cleanup failed: $e');
       }
       _downloadCount = 0;
     }
@@ -701,7 +705,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       );
     }
     
-    print('[DownloadQueue] Queue processing finished');
+    _log.i('Queue processing finished');
     state = state.copyWith(isProcessing: false, currentDownload: null);
   }
 
@@ -710,7 +714,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     while (true) {
       // Check if paused
       if (state.isPaused) {
-        print('[DownloadQueue] Queue is paused, waiting...');
+        _log.d('Queue is paused, waiting...');
         await Future.delayed(const Duration(milliseconds: 500));
         continue;
       }
@@ -726,7 +730,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       );
 
       if (nextItem.id.isEmpty) {
-        print('[DownloadQueue] No more items to process');
+        _log.d('No more items to process');
         break;
       }
 
@@ -745,7 +749,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     while (true) {
       // Check if paused - don't start new downloads but let active ones finish
       if (state.isPaused) {
-        print('[DownloadQueue] Queue is paused, waiting for active downloads...');
+        _log.d('Queue is paused, waiting for active downloads...');
         if (activeDownloads.isNotEmpty) {
           await Future.any(activeDownloads.values);
         } else {
@@ -758,7 +762,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       final queuedItems = state.items.where((item) => item.status == DownloadStatus.queued).toList();
       
       if (queuedItems.isEmpty && activeDownloads.isEmpty) {
-        print('[DownloadQueue] No more items to process');
+        _log.d('No more items to process');
         break;
       }
       
@@ -777,7 +781,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         });
         
         activeDownloads[item.id] = future;
-        print('[DownloadQueue] Started parallel download: ${item.track.name} (${activeDownloads.length}/$maxConcurrent active)');
+        _log.d('Started parallel download: ${item.track.name} (${activeDownloads.length}/$maxConcurrent active)');
       }
       
       // Wait for at least one download to complete before checking for more
@@ -794,8 +798,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
   /// Download a single item (used by both sequential and parallel processing)
   Future<void> _downloadSingleItem(DownloadItem item) async {
-    print('[DownloadQueue] Processing: ${item.track.name} by ${item.track.artistName}');
-    print('[DownloadQueue] Cover URL: ${item.track.coverUrl}');
+    _log.d('Processing: ${item.track.name} by ${item.track.artistName}');
+    _log.d('Cover URL: ${item.track.coverUrl}');
     
     // Only set currentDownload for sequential mode (for progress polling)
     if (state.concurrentDownloads == 1) {
@@ -813,9 +817,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       Map<String, dynamic> result;
 
       if (state.autoFallback) {
-        print('[DownloadQueue] Using auto-fallback mode');
-        print('[DownloadQueue] Quality: ${state.audioQuality}');
-        print('[DownloadQueue] Output dir: $outputDir');
+        _log.d('Using auto-fallback mode');
+        _log.d('Quality: ${state.audioQuality}');
+        _log.d('Output dir: $outputDir');
         result = await PlatformBridge.downloadWithFallback(
           isrc: item.track.isrc ?? '',
           spotifyId: item.track.id,
@@ -860,31 +864,31 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         _stopProgressPolling();
       }
       
-      print('[DownloadQueue] Result: $result');
+      _log.d('Result: $result');
       
       if (result['success'] == true) {
         var filePath = result['file_path'] as String?;
-        print('[DownloadQueue] Download success, file: $filePath');
+        _log.i('Download success, file: $filePath');
         
         // Check if file is M4A (DASH stream from Tidal) and needs remuxing to FLAC
         if (filePath != null && filePath.endsWith('.m4a')) {
-          print('[DownloadQueue] Converting M4A to FLAC...');
+          _log.d('Converting M4A to FLAC...');
           updateItemStatus(item.id, DownloadStatus.downloading, progress: 0.9);
           final flacPath = await FFmpegService.convertM4aToFlac(filePath);
           if (flacPath != null) {
             filePath = flacPath;
-            print('[DownloadQueue] Converted to: $flacPath');
+            _log.d('Converted to: $flacPath');
             
             // After conversion, embed metadata and cover to the new FLAC file
-            print('[DownloadQueue] Embedding metadata and cover to converted FLAC...');
+            _log.d('Embedding metadata and cover to converted FLAC...');
             try {
               await _embedMetadataAndCover(
                 flacPath,
                 item.track,
               );
-              print('[DownloadQueue] Metadata and cover embedded successfully');
+              _log.d('Metadata and cover embedded successfully');
             } catch (e) {
-              print('[DownloadQueue] Warning: Failed to embed metadata/cover: $e');
+              _log.w('Warning: Failed to embed metadata/cover: $e');
             }
           }
         }
@@ -932,7 +936,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         }
       } else {
         final errorMsg = result['error'] as String? ?? 'Download failed';
-        print('[DownloadQueue] Download failed: $errorMsg');
+        _log.e('Download failed: $errorMsg');
         updateItemStatus(
           item.id,
           DownloadStatus.failed,
@@ -943,19 +947,18 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       // Increment download counter and cleanup connections periodically
       _downloadCount++;
       if (_downloadCount % _cleanupInterval == 0) {
-        print('[DownloadQueue] Cleaning up idle connections (after $_downloadCount downloads)...');
+        _log.d('Cleaning up idle connections (after $_downloadCount downloads)...');
         try {
           await PlatformBridge.cleanupConnections();
         } catch (e) {
-          print('[DownloadQueue] Connection cleanup failed: $e');
+          _log.e('Connection cleanup failed: $e');
         }
       }
     } catch (e, stackTrace) {
       if (state.concurrentDownloads == 1) {
         _stopProgressPolling();
       }
-      print('[DownloadQueue] Exception: $e');
-      print('[DownloadQueue] StackTrace: $stackTrace');
+      _log.e('Exception: $e', e, stackTrace);
       updateItemStatus(
         item.id,
         DownloadStatus.failed,

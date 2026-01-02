@@ -2,6 +2,9 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:spotiflac_android/utils/logger.dart';
+
+final _log = AppLogger('ApkDownloader');
 
 typedef ProgressCallback = void Function(int received, int total);
 
@@ -17,7 +20,7 @@ class ApkDownloader {
       final response = await client.send(request);
 
       if (response.statusCode != 200) {
-        print('[ApkDownloader] Failed to download: ${response.statusCode}');
+        _log.e('Failed to download: ${response.statusCode}');
         return null;
       }
 
@@ -26,7 +29,7 @@ class ApkDownloader {
       // Get download directory
       final dir = await getExternalStorageDirectory();
       if (dir == null) {
-        print('[ApkDownloader] Could not get storage directory');
+        _log.e('Could not get storage directory');
         return null;
       }
 
@@ -50,10 +53,10 @@ class ApkDownloader {
       await sink.close();
       client.close();
 
-      print('[ApkDownloader] Downloaded to: $filePath');
+      _log.i('Downloaded to: $filePath');
       return filePath;
     } catch (e) {
-      print('[ApkDownloader] Error: $e');
+      _log.e('Error: $e');
       return null;
     }
   }
@@ -61,9 +64,9 @@ class ApkDownloader {
   static Future<void> installApk(String filePath) async {
     try {
       final result = await OpenFilex.open(filePath);
-      print('[ApkDownloader] Open result: ${result.type} - ${result.message}');
+      _log.i('Open result: ${result.type} - ${result.message}');
     } catch (e) {
-      print('[ApkDownloader] Install error: $e');
+      _log.e('Install error: $e');
     }
   }
 }

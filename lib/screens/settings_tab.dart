@@ -203,7 +203,7 @@ class _SettingsTabState extends ConsumerState<SettingsTab> with AutomaticKeepAli
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Image.asset('assets/images/logo.png', width: 40, height: 40, errorBuilder: (_, __, ___) => Icon(Icons.music_note, size: 40, color: colorScheme.primary)),
+            Image.asset('assets/images/logo.png', width: 40, height: 40, errorBuilder: (_, _, _) => Icon(Icons.music_note, size: 40, color: colorScheme.primary)),
             const SizedBox(width: 12),
             Text(AppInfo.appName),
           ],

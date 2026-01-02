@@ -69,7 +69,7 @@ class AboutPage extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: Image.asset('assets/images/logo.png', fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Icon(Icons.music_note, size: 32, color: colorScheme.onPrimaryContainer)),
+                          errorBuilder: (_, _, _) => Icon(Icons.music_note, size: 32, color: colorScheme.onPrimaryContainer)),
                       ),
                     ),
                     const SizedBox(width: 16),

@@ -191,7 +191,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                       ? CachedNetworkImage(
                           imageUrl: item.coverUrl!,
                           fit: BoxFit.cover,
-                          placeholder: (_, __) => Container(
+                          placeholder: (_, _) => Container(
                             color: colorScheme.surfaceContainerHighest,
                             child: Icon(
                               Icons.music_note,

@@ -11,6 +11,9 @@ import 'package:spotiflac_android/screens/settings/settings_tab.dart';
 import 'package:spotiflac_android/services/share_intent_service.dart';
 import 'package:spotiflac_android/services/update_checker.dart';
 import 'package:spotiflac_android/widgets/update_dialog.dart';
+import 'package:spotiflac_android/utils/logger.dart';
+
+final _log = AppLogger('MainShell');
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
@@ -40,13 +43,13 @@ class _MainShellState extends ConsumerState<MainShell> {
     // Check for pending URL that was received before listener was ready
     final pendingUrl = ShareIntentService().consumePendingUrl();
     if (pendingUrl != null) {
-      print('[MainShell] Processing pending shared URL: $pendingUrl');
+      _log.d('Processing pending shared URL: $pendingUrl');
       _handleSharedUrl(pendingUrl);
     }
 
     // Listen for future shared URLs
     _shareSubscription = ShareIntentService().sharedUrlStream.listen((url) {
-      print('[MainShell] Received shared URL from stream: $url');
+      _log.d('Received shared URL from stream: $url');
       _handleSharedUrl(url);
     });
   }

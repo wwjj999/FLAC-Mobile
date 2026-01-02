@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:ffmpeg_kit_flutter_new_audio/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new_audio/return_code.dart';
+import 'package:spotiflac_android/utils/logger.dart';
+
+final _log = AppLogger('FFmpeg');
 
 /// FFmpeg service for audio conversion and remuxing
 class FFmpegService {
@@ -27,7 +30,7 @@ class FFmpegService {
     // Log error for debugging
     final logs = await session.getLogs();
     for (final log in logs) {
-      print('[FFmpeg] ${log.getMessage()}');
+      _log.d(log.getMessage());
     }
 
     return null;

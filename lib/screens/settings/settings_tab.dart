@@ -5,6 +5,7 @@ import 'package:spotiflac_android/screens/settings/appearance_settings_page.dart
 import 'package:spotiflac_android/screens/settings/download_settings_page.dart';
 import 'package:spotiflac_android/screens/settings/options_settings_page.dart';
 import 'package:spotiflac_android/screens/settings/about_page.dart';
+import 'package:spotiflac_android/widgets/settings_group.dart';
 
 class SettingsTab extends ConsumerWidget {
   const SettingsTab({super.key});
@@ -15,9 +16,9 @@ class SettingsTab extends ConsumerWidget {
 
     return CustomScrollView(
       slivers: [
-        // Collapsing App Bar - Simplified for performance
+        // Collapsing App Bar
         SliverAppBar(
-          expandedHeight: 100,
+          expandedHeight: 130,
           collapsedHeight: kToolbarHeight,
           floating: false,
           pinned: true,
@@ -25,12 +26,12 @@ class SettingsTab extends ConsumerWidget {
           surfaceTintColor: Colors.transparent,
           automaticallyImplyLeading: false,
           flexibleSpace: FlexibleSpaceBar(
-            expandedTitleScale: 1.4,
+            expandedTitleScale: 1.3,
             titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
             title: Text(
               'Settings',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
               ),
@@ -38,35 +39,50 @@ class SettingsTab extends ConsumerWidget {
           ),
         ),
 
-        // Menu items
-        SliverList(delegate: SliverChildListDelegate([
-          _SettingsMenuItem(
-            icon: Icons.palette_outlined,
-            title: 'Appearance',
-            subtitle: 'Theme, colors, display',
-            onTap: () => _navigateTo(context, const AppearanceSettingsPage()),
+        // First group: Appearance & Download
+        SliverToBoxAdapter(
+          child: SettingsGroup(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            children: [
+              SettingsItem(
+                icon: Icons.palette_outlined,
+                title: 'Appearance',
+                subtitle: 'Theme, colors, display',
+                onTap: () => _navigateTo(context, const AppearanceSettingsPage()),
+              ),
+              SettingsItem(
+                icon: Icons.download_outlined,
+                title: 'Download',
+                subtitle: 'Service, quality, filename format',
+                onTap: () => _navigateTo(context, const DownloadSettingsPage()),
+              ),
+              SettingsItem(
+                icon: Icons.tune_outlined,
+                title: 'Options',
+                subtitle: 'Fallback, lyrics, cover art, updates',
+                onTap: () => _navigateTo(context, const OptionsSettingsPage()),
+                showDivider: false,
+              ),
+            ],
           ),
-          _SettingsMenuItem(
-            icon: Icons.download_outlined,
-            title: 'Download',
-            subtitle: 'Service, quality, filename format',
-            onTap: () => _navigateTo(context, const DownloadSettingsPage()),
+        ),
+
+        // Second group: About
+        SliverToBoxAdapter(
+          child: SettingsGroup(
+            children: [
+              SettingsItem(
+                icon: Icons.info_outline,
+                title: 'About',
+                subtitle: 'Version ${AppInfo.version}, credits, GitHub',
+                onTap: () => _navigateTo(context, const AboutPage()),
+                showDivider: false,
+              ),
+            ],
           ),
-          _SettingsMenuItem(
-            icon: Icons.tune_outlined,
-            title: 'Options',
-            subtitle: 'Fallback, lyrics, cover art, updates',
-            onTap: () => _navigateTo(context, const OptionsSettingsPage()),
-          ),
-          _SettingsMenuItem(
-            icon: Icons.info_outline,
-            title: 'About',
-            subtitle: 'Version ${AppInfo.version}, credits, GitHub',
-            onTap: () => _navigateTo(context, const AboutPage()),
-          ),
-        ])),
+        ),
         
-        // Fill remaining space to enable scroll
+        // Fill remaining space
         const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
       ],
     );
@@ -74,39 +90,5 @@ class SettingsTab extends ConsumerWidget {
 
   void _navigateTo(BuildContext context, Widget page) {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
-  }
-}
-
-class _SettingsMenuItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _SettingsMenuItem({required this.icon, required this.title, required this.subtitle, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: Row(children: [
-          Container(
-            width: 44, height: 44,
-            decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: colorScheme.onSurfaceVariant, size: 22),
-          ),
-          const SizedBox(width: 16),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500)),
-            const SizedBox(height: 2),
-            Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
-          ])),
-          Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 24),
-        ]),
-      ),
-    );
   }
 }

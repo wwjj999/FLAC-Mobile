@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.5.6] - 2026-01-02
+
+### Fixed
+- **Update Checker**: Fixed version comparison for versions with suffix (e.g., `1.5.0-hotfix6`)
+  - Users on hotfix versions now properly receive update notifications
+  - Handles `-hotfix`, `-beta`, `-rc` suffixes correctly
+
+### Added
+- **Search Tab Header**: Added collapsing app bar to centered search view for consistent UI across all tabs
+
+### Changed
+- **Settings UI Redesign**: New Android-style grouped settings with connected cards
+  - Items in same group are connected with rounded card container
+  - Section headers outside cards for clear visual hierarchy
+  - Better contrast with white overlay for dark mode dynamic colors
+- **Larger Tab Titles**: Increased app bar title size (28px) and height (130px) for better visibility
+- **Consistent Header Position**: Fixed Search tab header alignment to match History and Settings tabs
+
+### Improved
+- **Code Quality**: Replaced all `print()` statements with structured logging using `logger` package
+
 ## [1.5.5] - 2026-01-02
 
 ### Added

@@ -78,7 +78,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       slivers: [
         // Collapsing App Bar - Simplified for performance
         SliverAppBar(
-          expandedHeight: 100,
+          expandedHeight: 130,
           collapsedHeight: kToolbarHeight,
           floating: false,
           pinned: true,
@@ -86,12 +86,12 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           surfaceTintColor: Colors.transparent,
           automaticallyImplyLeading: false,
           flexibleSpace: FlexibleSpaceBar(
-            expandedTitleScale: 1.4,
+            expandedTitleScale: 1.3,
             titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
             title: Text(
               'History',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
               ),

@@ -2,12 +2,15 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:spotiflac_android/constants/app_info.dart';
+import 'package:spotiflac_android/utils/logger.dart';
+
+final _log = AppLogger('UpdateChecker');
 
 class UpdateInfo {
   final String version;
   final String changelog;
   final String downloadUrl;
-  final String? apkDownloadUrl; // Direct APK download URL
+  final String? apkDownloadUrl;
   final DateTime publishedAt;
 
   const UpdateInfo({
@@ -22,20 +25,16 @@ class UpdateInfo {
 class UpdateChecker {
   static const String _apiUrl = 'https://api.github.com/repos/${AppInfo.githubRepo}/releases/latest';
 
-  /// Get device CPU architecture
   static Future<String> _getDeviceArch() async {
     if (!Platform.isAndroid) return 'unknown';
     
     try {
-      // Read CPU info from /proc/cpuinfo
       final cpuInfo = await File('/proc/cpuinfo').readAsString();
       
-      // Check for 64-bit indicators
       if (cpuInfo.contains('AArch64') || cpuInfo.contains('aarch64')) {
         return 'arm64';
       }
       
-      // Check architecture from uname
       final result = await Process.run('uname', ['-m']);
       final arch = result.stdout.toString().trim().toLowerCase();
       
@@ -49,14 +48,13 @@ class UpdateChecker {
         return 'x86';
       }
       
-      return 'arm64'; // Default to arm64 for modern devices
+      return 'arm64';
     } catch (e) {
-      print('[UpdateChecker] Error detecting arch: $e');
-      return 'arm64'; // Default fallback
+      _log.e('Error detecting arch: $e');
+      return 'arm64';
     }
   }
 
-  /// Check for updates from GitHub releases
   static Future<UpdateInfo?> checkForUpdate() async {
     try {
       final response = await http.get(
@@ -65,7 +63,7 @@ class UpdateChecker {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
-        print('[UpdateChecker] GitHub API returned ${response.statusCode}');
+        _log.w('GitHub API returned ${response.statusCode}');
         return null;
       }
 
@@ -74,18 +72,16 @@ class UpdateChecker {
       final latestVersion = tagName.replaceFirst('v', '');
       
       if (!_isNewerVersion(latestVersion, AppInfo.version)) {
-        print('[UpdateChecker] No update available (current: ${AppInfo.version}, latest: $latestVersion)');
+        _log.i('No update available (current: ${AppInfo.version}, latest: $latestVersion)');
         return null;
       }
 
-      // Get changelog from release body
       final body = data['body'] as String? ?? 'No changelog available';
       final htmlUrl = data['html_url'] as String? ?? '${AppInfo.githubUrl}/releases';
       final publishedAt = DateTime.tryParse(data['published_at'] as String? ?? '') ?? DateTime.now();
 
-      // Find APK download URL from assets based on device architecture
       final deviceArch = await _getDeviceArch();
-      print('[UpdateChecker] Device architecture: $deviceArch');
+      _log.d('Device architecture: $deviceArch');
       
       String? arm64Url;
       String? arm32Url;
@@ -106,7 +102,6 @@ class UpdateChecker {
         }
       }
       
-      // Select APK based on device architecture
       String? apkUrl;
       if (deviceArch == 'arm64') {
         apkUrl = arm64Url ?? universalUrl ?? arm32Url;
@@ -116,7 +111,7 @@ class UpdateChecker {
         apkUrl = universalUrl ?? arm64Url ?? arm32Url;
       }
 
-      print('[UpdateChecker] Update available: $latestVersion, APK URL: $apkUrl');
+      _log.i('Update available: $latestVersion, APK URL: $apkUrl');
       
       return UpdateInfo(
         version: latestVersion,
@@ -126,18 +121,19 @@ class UpdateChecker {
         publishedAt: publishedAt,
       );
     } catch (e) {
-      print('[UpdateChecker] Error checking for updates: $e');
+      _log.e('Error checking for updates: $e');
       return null;
     }
   }
 
-  /// Compare version strings (e.g., "1.1.1" vs "1.1.0")
   static bool _isNewerVersion(String latest, String current) {
     try {
-      final latestParts = latest.split('.').map(int.parse).toList();
-      final currentParts = current.split('.').map(int.parse).toList();
+      final latestBase = latest.split('-').first;
+      final currentBase = current.split('-').first;
+      
+      final latestParts = latestBase.split('.').map(int.parse).toList();
+      final currentParts = currentBase.split('.').map(int.parse).toList();
 
-      // Pad with zeros if needed
       while (latestParts.length < 3) {
         latestParts.add(0);
       }
@@ -149,8 +145,15 @@ class UpdateChecker {
         if (latestParts[i] > currentParts[i]) return true;
         if (latestParts[i] < currentParts[i]) return false;
       }
-      return false; // Same version
+      
+      final latestHasSuffix = latest.contains('-');
+      final currentHasSuffix = current.contains('-');
+      
+      if (!latestHasSuffix && currentHasSuffix) return true;
+      
+      return false;
     } catch (e) {
+      _log.e('Error comparing versions: $e');
       return false;
     }
   }

@@ -74,13 +74,11 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     final hasResults = _hasResults;
 
     return Scaffold(
-      body: SafeArea(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: hasResults 
-              ? _buildResultsView(trackState, colorScheme)
-              : _buildCenteredSearch(colorScheme),
-        ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: hasResults 
+            ? _buildResultsView(trackState, colorScheme)
+            : _buildCenteredSearch(colorScheme),
       ),
     );
   }
@@ -89,57 +87,86 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
   Widget _buildCenteredSearch(ColorScheme colorScheme) {
     final historyItems = ref.watch(downloadHistoryProvider).items;
     
-    return Center(
+    return CustomScrollView(
       key: const ValueKey('centered'),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // App icon/logo
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.music_note, size: 48, color: colorScheme.primary),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Search Music',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+      slivers: [
+        // Collapsing App Bar - same style as other tabs
+        SliverAppBar(
+          expandedHeight: 130,
+          collapsedHeight: kToolbarHeight,
+          floating: false,
+          pinned: true,
+          backgroundColor: colorScheme.surface,
+          surfaceTintColor: Colors.transparent,
+          automaticallyImplyLeading: false,
+          flexibleSpace: FlexibleSpaceBar(
+            expandedTitleScale: 1.3,
+            titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
+            title: Text(
+              'Search',
+              style: TextStyle(
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Paste a Spotify link or search by name',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 32),
-            // Search bar
-            _buildSearchBar(colorScheme),
-            const SizedBox(height: 12),
-            // Helper text
-            if (!ref.watch(settingsProvider).hasSearchedBefore)
-              Text(
-                'Supports: Track, Album, Playlist, Artist URLs',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            // Recent downloads - compact horizontal scroll
-            if (historyItems.isNotEmpty) ...[
-              const SizedBox(height: 32),
-              _buildRecentDownloads(historyItems, colorScheme),
-            ],
-          ],
+          ),
         ),
-      ),
+        
+        // Content
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 24),
+                // App icon/logo
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.music_note, size: 48, color: colorScheme.primary),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Search Music',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Paste a Spotify link or search by name',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                // Search bar
+                _buildSearchBar(colorScheme),
+                const SizedBox(height: 12),
+                // Helper text
+                if (!ref.watch(settingsProvider).hasSearchedBefore)
+                  Text(
+                    'Supports: Track, Album, Playlist, Artist URLs',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                // Recent downloads - compact horizontal scroll
+                if (historyItems.isNotEmpty) ...[
+                  const SizedBox(height: 32),
+                  _buildRecentDownloads(historyItems, colorScheme),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -231,7 +258,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
         slivers: [
           // Collapsing App Bar
           SliverAppBar(
-            expandedHeight: 100,
+            expandedHeight: 130,
             collapsedHeight: kToolbarHeight,
             floating: false,
             pinned: true,
@@ -239,12 +266,12 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
             surfaceTintColor: Colors.transparent,
             automaticallyImplyLeading: false,
             flexibleSpace: FlexibleSpaceBar(
-              expandedTitleScale: 1.4,
+              expandedTitleScale: 1.3,
               titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
               title: Text(
                 'Search',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                 ),
