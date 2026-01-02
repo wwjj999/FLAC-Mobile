@@ -150,6 +150,12 @@ class _MainShellState extends ConsumerState<MainShell> {
           return;
         }
         
+        // If on Search tab and has text in search bar or has content, clear it
+        if (_currentIndex == 0 && (trackState.hasSearchText || trackState.hasContent || trackState.isLoading)) {
+          ref.read(trackProvider.notifier).clear();
+          return;
+        }
+        
         // If not on Search tab, go to Search tab first
         if (_currentIndex != 0) {
           _onNavTap(0);

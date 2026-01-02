@@ -38,29 +38,23 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     super.dispose();
   }
 
-  /// Handle back button - returns true if handled, false to let system handle
-  bool _handleBack() {
-    final trackState = ref.read(trackProvider);
-    
-    // If we have previous state, go back to it
-    if (trackState.canGoBack) {
-      ref.read(trackProvider.notifier).goBack();
-      return true;
+  /// Called when trackState changes - used to sync search bar with state
+  void _onTrackStateChanged(TrackState? previous, TrackState next) {
+    // If state was cleared (no content, no search text, not loading), clear the search bar
+    if (previous != null && 
+        !next.hasContent && 
+        !next.hasSearchText && 
+        !next.isLoading &&
+        _urlController.text.isNotEmpty) {
+      _urlController.clear();
+      setState(() => _isTyping = false);
     }
-    
-    // If we're in results view but no previous state, clear and go to idle
-    if (_isTyping || trackState.hasContent) {
-      _clearAndRefresh();
-      return true;
-    }
-    
-    // Let system handle (exit app)
-    return false;
-  }
-
-  void _onSearchChanged() {
+  }  void _onSearchChanged() {
     final text = _urlController.text.trim();
     final wasFocused = _searchFocusNode.hasFocus;
+    
+    // Update search text state for MainShell back button handling
+    ref.read(trackProvider.notifier).setSearchText(text.isNotEmpty);
     
     // Update typing state immediately for UI transition
     if (text.isNotEmpty && !_isTyping) {
@@ -211,126 +205,121 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    
+    // Listen for state changes to sync search bar
+    ref.listen<TrackState>(trackProvider, _onTrackStateChanged);
+    
     final trackState = ref.watch(trackProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final hasResults = _hasResults;
     final screenHeight = MediaQuery.of(context).size.height;
     final historyItems = ref.watch(downloadHistoryProvider).items;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        if (!_handleBack()) {
-          Navigator.of(context).maybePop();
-        }
-      },
-      child: Scaffold(
-        body: CustomScrollView(
-          slivers: [
-            // App Bar - always present
-            SliverAppBar(
-              expandedHeight: 130,
-              collapsedHeight: kToolbarHeight,
-              floating: false,
-              pinned: true,
-              backgroundColor: colorScheme.surface,
-              surfaceTintColor: Colors.transparent,
-              automaticallyImplyLeading: false,
-              flexibleSpace: FlexibleSpaceBar(
-                expandedTitleScale: 1.3,
-                titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
-                title: Text(
-                  'Search',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: [
+          // App Bar - always present
+          SliverAppBar(
+            expandedHeight: 130,
+            collapsedHeight: kToolbarHeight,
+            floating: false,
+            pinned: true,
+            backgroundColor: colorScheme.surface,
+            surfaceTintColor: Colors.transparent,
+            automaticallyImplyLeading: false,
+            flexibleSpace: FlexibleSpaceBar(
+              expandedTitleScale: 1.3,
+              titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
+              title: Text(
+                'Search',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ),
-            
-            // Idle content (logo, title) - always in tree, animated size
-            SliverToBoxAdapter(
-              child: AnimatedSize(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOut,
-                child: hasResults
-                    ? const SizedBox.shrink()
-                    : Column(
-                        children: [
-                          SizedBox(height: screenHeight * 0.06),
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(Icons.music_note, size: 48, color: colorScheme.primary),
+          ),
+          
+          // Idle content (logo, title) - always in tree, animated size
+          SliverToBoxAdapter(
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              child: hasResults
+                  ? const SizedBox.shrink()
+                  : Column(
+                      children: [
+                        SizedBox(height: screenHeight * 0.06),
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                            shape: BoxShape.circle,
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Search Music',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                          child: Icon(Icons.music_note, size: 48, color: colorScheme.primary),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Search Music',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Paste a Spotify link or search by name',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Paste a Spotify link or search by name',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
-                        ],
-                      ),
-              ),
+                        ),
+                      ],
+                    ),
             ),
-            
-            // Search bar - always present at same position in tree
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(16, hasResults ? 8 : 32, 16, hasResults ? 8 : 16),
-                child: _buildSearchBar(colorScheme),
-              ),
+          ),
+          
+          // Search bar - always present at same position in tree
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, hasResults ? 8 : 32, 16, hasResults ? 8 : 16),
+              child: _buildSearchBar(colorScheme),
             ),
-            
-            // Idle content below search bar - always in tree
-            SliverToBoxAdapter(
-              child: AnimatedSize(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOut,
-                child: hasResults
-                    ? const SizedBox.shrink()
-                    : Column(
-                        children: [
-                          if (!ref.watch(settingsProvider).hasSearchedBefore)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                'Supports: Track, Album, Playlist, Artist URLs',
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
+          ),
+          
+          // Idle content below search bar - always in tree
+          SliverToBoxAdapter(
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              child: hasResults
+                  ? const SizedBox.shrink()
+                  : Column(
+                      children: [
+                        if (!ref.watch(settingsProvider).hasSearchedBefore)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              'Supports: Track, Album, Playlist, Artist URLs',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
                               ),
                             ),
-                          if (historyItems.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-                              child: _buildRecentDownloads(historyItems, colorScheme),
-                            ),
-                        ],
-                      ),
-              ),
+                          ),
+                        if (historyItems.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                            child: _buildRecentDownloads(historyItems, colorScheme),
+                          ),
+                      ],
+                    ),
             ),
-            
-            // Results content - always in tree
-            ..._buildResultsContent(trackState, colorScheme, hasResults),
-          ],
-        ),
+          ),
+          
+          // Results content - always in tree
+          ..._buildResultsContent(trackState, colorScheme, hasResults),
+        ],
       ),
     );
   }

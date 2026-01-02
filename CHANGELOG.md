@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.5.7] - 2026-01-02
+## [1.6.0] - 2026-01-02
 
 ### Added
 - **Manual Quality Selection**: New option to choose audio quality before each download
@@ -32,6 +32,10 @@
 
 ### Improved
 - **Code Quality**: Replaced all `print()` statements with structured logging using `logger` package
+- **Dependencies Updated**:
+  - `share_plus`: 10.1.4 → 12.0.1
+  - `flutter_local_notifications`: 18.0.1 → 19.0.0
+  - `build_runner`: 2.4.15 → 2.10.4
 
 ## [1.5.5] - 2026-01-02
 

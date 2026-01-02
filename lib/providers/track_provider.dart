@@ -12,6 +12,7 @@ class TrackState {
   final String? coverUrl;
   final List<ArtistAlbum>? artistAlbums; // For artist page
   final TrackState? previousState; // For back navigation
+  final bool hasSearchText; // For back button handling
 
   const TrackState({
     this.tracks = const [],
@@ -23,6 +24,7 @@ class TrackState {
     this.coverUrl,
     this.artistAlbums,
     this.previousState,
+    this.hasSearchText = false,
   });
 
   bool get canGoBack => previousState != null;
@@ -40,6 +42,7 @@ class TrackState {
     List<ArtistAlbum>? artistAlbums,
     TrackState? previousState,
     bool clearPreviousState = false,
+    bool? hasSearchText,
   }) {
     return TrackState(
       tracks: tracks ?? this.tracks,
@@ -51,6 +54,7 @@ class TrackState {
       coverUrl: coverUrl ?? this.coverUrl,
       artistAlbums: artistAlbums ?? this.artistAlbums,
       previousState: clearPreviousState ? null : (previousState ?? this.previousState),
+      hasSearchText: hasSearchText ?? this.hasSearchText,
     );
   }
 }
@@ -220,6 +224,11 @@ class TrackNotifier extends Notifier<TrackState> {
 
   void clear() {
     state = const TrackState();
+  }
+
+  /// Set search text state for back button handling
+  void setSearchText(bool hasText) {
+    state = state.copyWith(hasSearchText: hasText);
   }
 
   /// Go back to previous state (if available)
