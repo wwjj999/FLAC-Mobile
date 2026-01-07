@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.1.5] - 2026-01-07
+## [2.1.5] - 2026-01-08
 
 ### Added
 - **Deezer as Alternative Metadata Source**: Choose between Deezer or Spotify for search
@@ -11,9 +11,13 @@
   - Uses SongLink/Odesli API to convert Spotify track/album ID to Deezer ID
   - Fetches metadata from Deezer instead
   - Works for tracks and albums (playlists are user-specific, artists require Spotify API)
-- **Debug Logging for Search Source**: Console logs now show which metadata source is being used
-  - `[Search] Using metadata source: deezer/spotify for query: "..."`
-  - `[FetchURL] Fetching track with Deezer fallback enabled...`
+
+### Changed
+- **Default Download Service**: Changed from Tidal to Qobuz
+  - Fallback order is now: Qobuz → Tidal → Amazon
+- **Deezer API Updated to v2.0**: More reliable and complete metadata
+  - Direct ISRC lookup via `/track/isrc:{ISRC}` endpoint
+  - Search results now fetch full track info to include ISRC
 
 ### Fixed
 - **Progress Bar Not Updating**: Fixed bug where download progress jumped from 1% directly to 100%
@@ -23,12 +27,15 @@
   - File size is validated against server's Content-Length header
   - Incomplete files are automatically deleted and error is reported
   - Applies to all services: Tidal, Qobuz, and Amazon
+- **ISRC Not Available from Deezer Search**: Search results now fetch full track details to get ISRC
+  - Improves track matching accuracy when downloading
 
 ### Technical
 - New settings field: `metadataSource` in `lib/models/settings.dart`
 - New UI: Search Source selector in Options Settings page
 - Improved `ItemProgressWriter` with threshold-based progress updates
 - Download functions now properly handle network interruptions
+- Deezer API base URL changed to `https://api.deezer.com/2.0`
 
 ## [2.1.0] - 2026-01-06
 
