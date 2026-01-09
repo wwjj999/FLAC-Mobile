@@ -1,5 +1,5 @@
 [![GitHub All Releases](https://img.shields.io/github/downloads/zarzet/SpotiFLAC-Mobile/total?style=for-the-badge)](https://github.com/zarzet/SpotiFLAC-Mobile/releases)
-[![VirusTotal](https://img.shields.io/badge/VirusTotal-Safe-brightgreen?style=for-the-badge&logo=virustotal)](https://www.virustotal.com/gui/file/ca16289599f71b8e50d3726a8c64a202ea922a1893bcf21b9eca1a050736f1f5/)
+[![VirusTotal](https://img.shields.io/badge/VirusTotal-Safe-brightgreen?style=for-the-badge&logo=virustotal)](https://www.virustotal.com/gui/file/cb87d23fc9fd4a6f0a7b2b934773029c7e7ab25101dfce503e68e9c9e8921fca/)
 
 <div align="center">
 
