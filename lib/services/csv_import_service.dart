@@ -35,7 +35,7 @@ class CsvImportService {
     return [];
   }
 
-  /// Enrich tracks with metadata from Deezer using ISRC
+  /// Enrich tracks with metadata from Deezer using ISRC or search
   /// This fetches cover URL, duration, and other metadata that CSV doesn't have
   static Future<List<Track>> _enrichTracksMetadata(
     List<Track> tracks, {
@@ -48,21 +48,63 @@ class CsvImportService {
       final track = tracks[i];
       onProgress?.call(i + 1, tracks.length);
       
-      // Only enrich if we have ISRC and missing cover/duration
-      if (track.isrc != null && 
-          track.isrc!.isNotEmpty && 
-          (track.coverUrl == null || track.duration == 0)) {
-        try {
-          // searchDeezerByISRC returns TrackMetadata directly (not wrapped in "track" key)
-          final trackData = await PlatformBridge.searchDeezerByISRC(track.isrc!);
-          
-          // Extract enriched data from TrackMetadata
+      // Only enrich if missing cover/duration
+      if (track.coverUrl == null || track.duration == 0) {
+        Map<String, dynamic>? trackData;
+        
+        // Try ISRC first if available
+        if (track.isrc != null && track.isrc!.isNotEmpty) {
+          try {
+            trackData = await PlatformBridge.searchDeezerByISRC(track.isrc!);
+            _log.d('ISRC enrichment success for ${track.name}');
+          } catch (e) {
+            _log.w('ISRC search failed for ${track.name}, trying text search...');
+          }
+        }
+        
+        // Fallback to text search if ISRC failed or not available
+        if (trackData == null) {
+          try {
+            final query = '${track.artistName} ${track.name}';
+            final searchResult = await PlatformBridge.searchDeezerAll(query, trackLimit: 5);
+            
+            if (searchResult.containsKey('tracks')) {
+              final tracksList = searchResult['tracks'] as List<dynamic>?;
+              if (tracksList != null && tracksList.isNotEmpty) {
+                // Find best match by comparing names
+                for (final result in tracksList) {
+                  final resultMap = result as Map<String, dynamic>;
+                  final resultName = (resultMap['name'] as String?)?.toLowerCase() ?? '';
+                  final trackNameLower = track.name.toLowerCase();
+                  
+                  // Check if track name matches (contains or equals)
+                  if (resultName.contains(trackNameLower) || trackNameLower.contains(resultName)) {
+                    trackData = resultMap;
+                    _log.d('Text search match for ${track.name}: $resultName');
+                    break;
+                  }
+                }
+                
+                // If no exact match, use first result
+                if (trackData == null && tracksList.isNotEmpty) {
+                  trackData = tracksList.first as Map<String, dynamic>;
+                  _log.d('Using first search result for ${track.name}');
+                }
+              }
+            }
+          } catch (e) {
+            _log.w('Text search also failed for ${track.name}: $e');
+          }
+        }
+        
+        // Apply enriched data if found
+        if (trackData != null) {
           final coverUrl = trackData['images'] as String?;
           final durationMs = trackData['duration_ms'] as int? ?? 0;
-          final deezerIdRaw = trackData['spotify_id'] as String?; // Format: "deezer:123456"
+          final deezerIdRaw = trackData['spotify_id'] as String?;
           
           enrichedTracks.add(Track(
-            id: deezerIdRaw ?? track.id, // Use Deezer ID if available
+            id: deezerIdRaw ?? track.id,
             name: trackData['name'] as String? ?? track.name,
             artistName: trackData['artists'] as String? ?? track.artistName,
             albumName: trackData['album_name'] as String? ?? track.albumName,
@@ -77,13 +119,11 @@ class CsvImportService {
           
           _log.d('Enriched: ${track.name} - cover: ${coverUrl != null}, duration: ${durationMs ~/ 1000}s');
           
-          // Small delay to avoid rate limiting (50ms between requests)
+          // Small delay to avoid rate limiting
           if (i < tracks.length - 1) {
-            await Future.delayed(const Duration(milliseconds: 50));
+            await Future.delayed(const Duration(milliseconds: 100));
           }
           continue;
-        } catch (e) {
-          _log.w('Failed to enrich ${track.name}: $e');
         }
       }
       

@@ -1269,6 +1269,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         }
       }
 
+      // Log cover URL for debugging CSV import issues
+      _log.d('Track coverUrl after enrichment: ${trackToDownload.coverUrl}');
+
       final outputDir = await _buildOutputDir(
         trackToDownload,
         settings.folderOrganization,
@@ -1521,6 +1524,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           final backendBitDepth = result['actual_bit_depth'] as int?;
           final backendSampleRate = result['actual_sample_rate'] as int?;
           final backendISRC = result['isrc'] as String?;
+
+          // Log cover URL for debugging
+          _log.d('Saving to history - coverUrl: ${trackToDownload.coverUrl}');
 
           ref
               .read(downloadHistoryProvider.notifier)

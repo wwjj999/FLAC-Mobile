@@ -4,24 +4,42 @@
 
 ### Added
 
-- **Deezer Metadata Support**: Enhanced metadata viewer for Deezer tracks
-  - "Open in Deezer" button for Deezer-sourced tracks (opens app or web)
-  - Displays "Deezer ID" instead of "Spotify ID" when applicable
+- **CSV Import Metadata Enrichment**: Tracks imported from CSV now automatically fetch metadata from Deezer
+  - Cover art, duration, track/disc number fetched via ISRC lookup
+  - Fallback to text search (artist + track name) when ISRC not found in Deezer
+  - Progress dialog shows enrichment status during import
+  - Ensures downloaded files have proper cover art and metadata
 
-### Changed
+### Fixed
 
-- **UI Modernization**: Major UI consistency updates across the app
-  - **Unified App Bars**: Home, History, and Settings now share identical behavior
-    - Lowered expanded header for easier one-handed reachability
-    - Dynamic title text scaling (20px to 34px)
-  - **Appearance Settings**: Completely redesigned appearance page
-    - New "Theme Preview" card showing visualizing current theme
-    - Modern color palette picker replacing old color dots
-    - Clean, grouped layout
-  - **App Logo**: Refined logo style on Home and About screens
-    - Inverted colors: Filled primary color circle with on-color icon
-    - Removed padding for a cleaner, bolder look
-  - **Material 3 Switches**: Added checkmark icon to active switches
+- **CSV Import Missing Cover Art**: Fixed tracks from CSV having no cover art in download history
+  - Cover URL now properly fetched from Deezer during enrichment
+  - Falls back to text search when ISRC lookup fails
+- **CSV Import Missing Duration**: Fixed duration showing 0:00 for CSV-imported tracks
+  - Duration now fetched from Deezer metadata during enrichment
+- **Disc Number Not Displayed**: Fixed disc number not showing in track metadata screen
+  - Changed condition from `discNumber > 1` to `discNumber > 0`
+  - Now displays disc 1 instead of hiding it
+- **Download History Using Wrong Track Data**: Fixed history using original CSV data instead of enriched data
+  - Now uses `trackToDownload` (enriched) instead of `item.track` (original)
+
+### Technical
+
+- Updated `lib/services/csv_import_service.dart`:
+  - Added `_enrichTracksMetadata()` with ISRC lookup + text search fallback
+  - Added progress callback for UI feedback
+- Updated `lib/screens/home_tab.dart`:
+  - Added progress dialog during CSV enrichment
+- Updated `lib/providers/download_queue_provider.dart`:
+  - Uses enriched track data for download history
+- Updated `lib/screens/track_metadata_screen.dart`:
+  - Show disc number when > 0 (was > 1)
+- Updated `go_backend/metadata.go`:
+  - Added `TotalSamples` to `AudioQuality` struct for duration calculation
+- Updated `go_backend/exports.go`:
+  - `ReadFileMetadata` now returns duration calculated from FLAC stream info
+
+---
 
 ## [2.2.6] - 2026-01-11
 
