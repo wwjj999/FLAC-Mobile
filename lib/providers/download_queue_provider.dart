@@ -1677,6 +1677,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           case 'network':
             errorType = DownloadErrorType.network;
             break;
+          case 'permission':
+            errorType = DownloadErrorType.permission;
+            break;
           default:
             errorType = DownloadErrorType.unknown;
         }

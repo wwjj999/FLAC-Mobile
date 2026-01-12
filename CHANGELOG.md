@@ -8,6 +8,14 @@
   - Detects existing entries by Spotify ID, Deezer ID, or ISRC
   - Replaces existing entry and moves to top of list
   - Auto-deduplicates existing history on app load
+- **Permission Error Message**: Fixed download showing "Song not found" when actually a permission error
+  - Now shows proper message: "Cannot write to folder, check storage permission"
+  - Added `permission` error type detection in backend
+- **Android 13+ Storage Permission**: Fixed storage permission not working on Android 13+
+  - Android 13+ now requests both `MANAGE_EXTERNAL_STORAGE` and `READ_MEDIA_AUDIO`
+  - `MANAGE_EXTERNAL_STORAGE` opens Settings (system-level, persists across app data clear)
+  - `READ_MEDIA_AUDIO` shows dialog (app-level, resets on app data clear)
+  - Proper permission check before showing "granted" status
 
 ---
 
