@@ -226,6 +226,7 @@ func (r *ExtensionRuntime) RegisterAPIs(vm *goja.Runtime) {
 	utilsObj.Set("sha256", r.sha256Hash)
 	utilsObj.Set("hmacSHA256", r.hmacSHA256)
 	utilsObj.Set("hmacSHA256Base64", r.hmacSHA256Base64)
+	utilsObj.Set("hmacSHA1", r.hmacSHA1)
 	utilsObj.Set("parseJSON", r.parseJSON)
 	utilsObj.Set("stringifyJSON", r.stringifyJSON)
 	// Crypto utilities for developers

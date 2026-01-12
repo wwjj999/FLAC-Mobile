@@ -165,6 +165,20 @@ class TrackNotifier extends Notifier<TrackState> {
               searchExtensionId: extensionId,
             );
             return;
+          } else if (type == 'artist' && result['artist'] != null) {
+            final artistData = result['artist'] as Map<String, dynamic>;
+            final albumsList = artistData['albums'] as List<dynamic>? ?? [];
+            final albums = albumsList.map((a) => _parseArtistAlbum(a as Map<String, dynamic>)).toList();
+            state = TrackState(
+              tracks: [],
+              isLoading: false,
+              artistId: artistData['id'] as String?,
+              artistName: artistData['name'] as String?,
+              coverUrl: artistData['image_url'] as String? ?? artistData['images'] as String?,
+              artistAlbums: albums,
+              searchExtensionId: extensionId,
+            );
+            return;
           }
         }
       }

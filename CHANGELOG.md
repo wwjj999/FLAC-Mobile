@@ -19,12 +19,33 @@
   - SpotiFLAC automatically routes matching URLs to the appropriate extension
   - Supports share intents and paste from clipboard
 
+- **Artist URL Handler Support**: Extensions can now return artist data from URL handlers
+  - Added `type: "artist"` handling in track_provider.dart
+  - Navigate to artist screen with albums list from extension
+
+- **HMAC-SHA1 Utility**: New `utils.hmacSHA1(key, message)` function for extensions
+  - Enables TOTP generation and other cryptographic operations
+  - Returns byte array for flexible use
+
+### Fixed
+
+- **Extension Store Refresh**: Store tab now properly refreshes after uninstalling an extension
+  - "Installed" badge correctly updates to "Install" button
+
 ### Documentation
 
 - Updated `docs/EXTENSION_DEVELOPMENT.md`:
   - Added Custom URL Handler section with examples
   - Added `handleURL` function documentation
   - Added URL pattern examples for YouTube, SoundCloud, Bandcamp
+  - Added `utils.hmacSHA1` documentation with TOTP example
+
+### Extensions
+
+- **Spotify Web Extension** (example): New extension for Spotify metadata via web API
+  - Supports personalized playlists (Daily Mix, Discover Weekly, Release Radar, etc.)
+  - Search, album, playlist, track, and artist fetching
+  - Located in `docs/extensions_example/spotify-internal/`
 
 ---
 

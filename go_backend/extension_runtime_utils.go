@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
@@ -83,6 +84,64 @@ func (r *ExtensionRuntime) hmacSHA256Base64(call goja.FunctionCall) goja.Value {
 	mac := hmac.New(sha256.New, []byte(key))
 	mac.Write([]byte(message))
 	return r.vm.ToValue(base64.StdEncoding.EncodeToString(mac.Sum(nil)))
+}
+
+// hmacSHA1 computes HMAC-SHA1 of a message with a key (for TOTP)
+// Arguments: message (string or array of bytes), key (string or array of bytes)
+// Returns: array of bytes (for TOTP dynamic truncation)
+func (r *ExtensionRuntime) hmacSHA1(call goja.FunctionCall) goja.Value {
+	if len(call.Arguments) < 2 {
+		return r.vm.ToValue([]byte{})
+	}
+
+	// Get key - can be string or array of bytes
+	var keyBytes []byte
+	keyArg := call.Arguments[0].Export()
+	switch k := keyArg.(type) {
+	case string:
+		keyBytes = []byte(k)
+	case []interface{}:
+		keyBytes = make([]byte, len(k))
+		for i, v := range k {
+			if num, ok := v.(int64); ok {
+				keyBytes[i] = byte(num)
+			} else if num, ok := v.(float64); ok {
+				keyBytes[i] = byte(int(num))
+			}
+		}
+	default:
+		return r.vm.ToValue([]byte{})
+	}
+
+	// Get message - can be string or array of bytes
+	var msgBytes []byte
+	msgArg := call.Arguments[1].Export()
+	switch m := msgArg.(type) {
+	case string:
+		msgBytes = []byte(m)
+	case []interface{}:
+		msgBytes = make([]byte, len(m))
+		for i, v := range m {
+			if num, ok := v.(int64); ok {
+				msgBytes[i] = byte(num)
+			} else if num, ok := v.(float64); ok {
+				msgBytes[i] = byte(int(num))
+			}
+		}
+	default:
+		return r.vm.ToValue([]byte{})
+	}
+
+	mac := hmac.New(sha1.New, keyBytes)
+	mac.Write(msgBytes)
+	result := mac.Sum(nil)
+
+	// Convert to array of numbers for JavaScript
+	jsArray := make([]interface{}, len(result))
+	for i, b := range result {
+		jsArray[i] = int(b)
+	}
+	return r.vm.ToValue(jsArray)
 }
 
 // parseJSON parses a JSON string
