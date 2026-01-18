@@ -99,6 +99,17 @@ class DownloadSettingsPage extends ConsumerWidget {
                         .read(settingsProvider.notifier)
                         .setAskQualityBeforeDownload(value),
                   ),
+                  SettingsSwitchItem(
+                    icon: Icons.audiotrack,
+                    title: context.l10n.enableMp3Option,
+                    subtitle: settings.enableMp3Option
+                        ? context.l10n.enableMp3OptionSubtitleOn
+                        : context.l10n.enableMp3OptionSubtitleOff,
+                    value: settings.enableMp3Option,
+                    onChanged: (value) => ref
+                        .read(settingsProvider.notifier)
+                        .setEnableMp3Option(value),
+                  ),
                   if (!settings.askQualityBeforeDownload && isBuiltInService) ...[
                     _QualityOption(
                       title: context.l10n.qualityFlacLossless,
@@ -123,8 +134,18 @@ class DownloadSettingsPage extends ConsumerWidget {
                       onTap: () => ref
                           .read(settingsProvider.notifier)
                           .setAudioQuality('HI_RES_LOSSLESS'),
-                      showDivider: false,
+                      showDivider: settings.enableMp3Option,
                     ),
+                    if (settings.enableMp3Option)
+                      _QualityOption(
+                        title: context.l10n.qualityMp3,
+                        subtitle: context.l10n.qualityMp3Subtitle,
+                        isSelected: settings.audioQuality == 'MP3',
+                        onTap: () => ref
+                            .read(settingsProvider.notifier)
+                            .setAudioQuality('MP3'),
+                        showDivider: false,
+                      ),
                   ],
                   if (!isBuiltInService) ...[
                     Padding(

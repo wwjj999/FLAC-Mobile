@@ -1795,6 +1795,22 @@ class AppLocalizationsId extends AppLocalizations {
   String get qualityHiResFlacMaxSubtitle => '24-bit / hingga 192kHz';
 
   @override
+  String get qualityMp3 => 'MP3';
+
+  @override
+  String get qualityMp3Subtitle => '320kbps (konversi dari FLAC)';
+
+  @override
+  String get enableMp3Option => 'Aktifkan Opsi MP3';
+
+  @override
+  String get enableMp3OptionSubtitleOn => 'Opsi kualitas MP3 tersedia';
+
+  @override
+  String get enableMp3OptionSubtitleOff =>
+      'Unduh FLAC lalu konversi ke MP3 320kbps';
+
+  @override
   String get qualityNote =>
       'Kualitas sebenarnya tergantung ketersediaan lagu dari layanan';
 
@@ -1985,6 +2001,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get downloadedAlbumSelectToDelete => 'Pilih lagu untuk dihapus';
+
+  @override
+  String downloadedAlbumDiscHeader(int discNumber) {
+    return 'Disc $discNumber';
+  }
 
   @override
   String get utilityFunctions => 'Fungsi Utilitas';

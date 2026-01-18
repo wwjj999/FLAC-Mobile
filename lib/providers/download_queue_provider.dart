@@ -588,6 +588,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           }
         }
       } catch (e) {
+        // Silently ignore polling errors to avoid spamming logs
+        // Polling is not critical and will retry on next interval
       }
     });
   }
@@ -1126,10 +1128,136 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           if (await coverFile.exists()) {
             await coverFile.delete();
           }
-        } catch (_) {}
+        } catch (e) {
+          _log.w('Failed to cleanup cover file: $e');
+        }
       }
     } catch (e) {
       _log.e('Failed to embed metadata: $e');
+    }
+  }
+
+  /// Embed metadata, lyrics, and cover to a MP3 file
+  Future<void> _embedMetadataToMp3(String mp3Path, Track track) async {
+    final settings = ref.read(settingsProvider);
+    
+    String? coverPath;
+    var coverUrl = track.coverUrl;
+    if (coverUrl != null && coverUrl.isNotEmpty) {
+      try {
+        if (settings.maxQualityCover) {
+          coverUrl = _upgradeToMaxQualityCover(coverUrl);
+          _log.d('Cover URL upgraded to max quality for MP3: $coverUrl');
+        }
+        
+        final tempDir = await getTemporaryDirectory();
+        final uniqueId =
+            '${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(10000)}';
+        coverPath = '${tempDir.path}/cover_mp3_$uniqueId.jpg';
+
+        final httpClient = HttpClient();
+        final request = await httpClient.getUrl(Uri.parse(coverUrl));
+        final response = await request.close();
+        if (response.statusCode == 200) {
+          final file = File(coverPath);
+          final sink = file.openWrite();
+          await response.pipe(sink);
+          await sink.close();
+          _log.d('Cover downloaded for MP3: $coverPath');
+        } else {
+          _log.w('Failed to download cover for MP3: HTTP ${response.statusCode}');
+          coverPath = null;
+        }
+        httpClient.close();
+      } catch (e) {
+        _log.e('Failed to download cover for MP3: $e');
+        coverPath = null;
+      }
+    }
+
+    try {
+      final metadata = <String, String>{
+        'TITLE': track.name,
+        'ARTIST': track.artistName,
+        'ALBUM': track.albumName,
+      };
+
+      final albumArtist = _normalizeOptionalString(track.albumArtist) ??
+          track.artistName;
+      metadata['ALBUMARTIST'] = albumArtist;
+
+      if (track.trackNumber != null) {
+        metadata['TRACKNUMBER'] = track.trackNumber.toString();
+        metadata['TRACK'] = track.trackNumber.toString();
+      }
+
+      if (track.discNumber != null) {
+        metadata['DISCNUMBER'] = track.discNumber.toString();
+        metadata['DISC'] = track.discNumber.toString();
+      }
+
+      if (track.releaseDate != null) {
+        metadata['DATE'] = track.releaseDate!;
+        metadata['YEAR'] = track.releaseDate!.split('-').first;
+      }
+
+      if (track.isrc != null) {
+        metadata['ISRC'] = track.isrc!;
+      }
+
+      _log.d('MP3 Metadata map content: $metadata');
+
+      // Fetch lyrics if embedLyrics is enabled
+      if (settings.embedLyrics) {
+        try {
+          final durationMs = track.duration * 1000;
+          
+          final lrcContent = await PlatformBridge.getLyricsLRC(
+            track.id,
+            track.name,
+            track.artistName,
+            filePath: '',
+            durationMs: durationMs,
+          );
+
+          if (lrcContent.isNotEmpty) {
+            metadata['LYRICS'] = lrcContent;
+            metadata['UNSYNCEDLYRICS'] = lrcContent;
+            _log.d('Lyrics fetched for MP3 embedding (${lrcContent.length} chars)');
+          }
+        } catch (e) {
+          _log.w('Failed to fetch lyrics for MP3 embedding: $e');
+        }
+      }
+
+      _log.d('Embedding tags to MP3: $metadata');
+
+      final result = await FFmpegService.embedMetadataToMp3(
+        mp3Path: mp3Path,
+        coverPath: coverPath != null && await File(coverPath).exists()
+            ? coverPath
+            : null,
+        metadata: metadata,
+      );
+
+      if (result != null) {
+        _log.d('Metadata, lyrics, and cover embedded to MP3 via FFmpeg');
+      } else {
+        _log.w('FFmpeg MP3 metadata/cover embed failed');
+      }
+
+      if (coverPath != null) {
+        try {
+          final coverFile = File(coverPath);
+          if (await coverFile.exists()) {
+            await coverFile.delete();
+          }
+        } catch (e) {
+          _log.w('Failed to cleanup MP3 cover file: $e');
+        }
+      }
+    } catch (e) {
+      _log.e('Failed to embed metadata to MP3: $e');
     }
   }
 
@@ -1675,6 +1803,43 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             }
           }
           return;
+        }
+
+        // Convert FLAC to MP3 if MP3 quality was selected
+        if (quality == 'MP3' && filePath != null && filePath.endsWith('.flac')) {
+          _log.i('MP3 quality selected, converting FLAC to MP3...');
+          updateItemStatus(
+            item.id,
+            DownloadStatus.downloading,
+            progress: 0.97,
+          );
+          
+          try {
+            final mp3Path = await FFmpegService.convertFlacToMp3(
+              filePath,
+              bitrate: '320k',
+              deleteOriginal: true,
+            );
+            
+            if (mp3Path != null) {
+              filePath = mp3Path;
+              actualQuality = 'MP3 320kbps';
+              _log.i('Successfully converted to MP3: $mp3Path');
+              
+              // Embed metadata, lyrics, and cover to the MP3 file
+              _log.i('Embedding metadata to MP3...');
+              updateItemStatus(
+                item.id,
+                DownloadStatus.downloading,
+                progress: 0.99,
+              );
+              await _embedMetadataToMp3(mp3Path, trackToDownload);
+            } else {
+              _log.w('MP3 conversion failed, keeping FLAC file');
+            }
+          } catch (e) {
+            _log.e('MP3 conversion error: $e, keeping FLAC file');
+          }
         }
 
         updateItemStatus(

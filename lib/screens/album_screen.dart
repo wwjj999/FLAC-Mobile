@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:palette_generator/palette_generator.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/models/download_item.dart';
@@ -60,10 +61,15 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   List<Track>? _tracks;
   bool _isLoading = false;
   String? _error;
+  Color? _dominantColor;
+  bool _showTitleInAppBar = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    
+    _scrollController.addListener(_onScroll);
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final providerId = widget.albumId.startsWith('deezer:') ? 'deezer' : 'spotify';
@@ -79,6 +85,42 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     _tracks = widget.tracks ?? _AlbumCache.get(widget.albumId);
     if (_tracks == null) {
       _fetchTracks();
+    }
+    
+    _extractDominantColor();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    // Show title in AppBar when scrolled past the header (320 - kToolbarHeight + info card top)
+    final shouldShow = _scrollController.offset > 280;
+    if (shouldShow != _showTitleInAppBar) {
+      setState(() => _showTitleInAppBar = shouldShow);
+    }
+  }
+
+  Future<void> _extractDominantColor() async {
+    if (widget.coverUrl == null) return;
+    try {
+      final paletteGenerator = await PaletteGenerator.fromImageProvider(
+        CachedNetworkImageProvider(widget.coverUrl!),
+        maximumColorCount: 16,
+      );
+      if (mounted) {
+        setState(() {
+          _dominantColor = paletteGenerator.dominantColor?.color ??
+              paletteGenerator.vibrantColor?.color ??
+              paletteGenerator.mutedColor?.color;
+        });
+      }
+    } catch (_) {
+      // Ignore palette extraction errors
     }
   }
 
@@ -143,6 +185,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
 
     return Scaffold(
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
           _buildAppBar(context, colorScheme),
           _buildInfoCard(context, colorScheme),
@@ -167,74 +210,105 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   }
 
   Widget _buildAppBar(BuildContext context, ColorScheme colorScheme) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final coverSize = screenWidth * 0.5; // 50% of screen width
+    final bgColor = _dominantColor ?? colorScheme.surface;
+    
     return SliverAppBar(
-      expandedHeight: 280,
+      expandedHeight: 320,
       pinned: true,
       stretch: true,
-      backgroundColor: colorScheme.surface,
+      backgroundColor: colorScheme.surface, // Use theme color for collapsed state
       surfaceTintColor: Colors.transparent,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (widget.coverUrl != null)
-              CachedNetworkImage(
-                imageUrl: widget.coverUrl!,
-                fit: BoxFit.cover,
-                color: Colors.black.withValues(alpha: 0.5),
-                colorBlendMode: BlendMode.darken,
-                memCacheWidth: 600,
-              ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    colorScheme.surface.withValues(alpha: 0.8),
-                    colorScheme.surface,
-                  ],
-                  stops: const [0.0, 0.7, 1.0],
-                ),
-              ),
-            ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 60),
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: widget.coverUrl != null
-                        ? CachedNetworkImage(imageUrl: widget.coverUrl!, fit: BoxFit.cover, memCacheWidth: 280)
-                        : Container(
-                            color: colorScheme.surfaceContainerHighest,
-                            child: Icon(Icons.album, size: 48, color: colorScheme.onSurfaceVariant),
-                          ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+      title: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: _showTitleInAppBar ? 1.0 : 0.0,
+        child: Text(
+          widget.albumName,
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-        stretchModes: const [StretchMode.zoomBackground, StretchMode.blurBackground],
+      ),
+      flexibleSpace: LayoutBuilder(
+        builder: (context, constraints) {
+          final collapseRatio = (constraints.maxHeight - kToolbarHeight) / (320 - kToolbarHeight);
+          final showContent = collapseRatio > 0.3;
+          
+          return FlexibleSpaceBar(
+            collapseMode: CollapseMode.pin,
+            background: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Background with dominant color
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 500),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        bgColor,
+                        bgColor.withValues(alpha: 0.8),
+                        colorScheme.surface,
+                      ],
+                      stops: const [0.0, 0.6, 1.0],
+                    ),
+                  ),
+                ),
+                // Cover image centered - fade out when collapsing
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 150),
+                  opacity: showContent ? 1.0 : 0.0,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 60),
+                      child: Container(
+                        width: coverSize,
+                        height: coverSize,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              blurRadius: 30,
+                              offset: const Offset(0, 15),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: widget.coverUrl != null
+                              ? CachedNetworkImage(
+                                  imageUrl: widget.coverUrl!, 
+                                  fit: BoxFit.cover, 
+                                  memCacheWidth: (coverSize * 2).toInt(),
+                                )
+                              : Container(
+                                  color: colorScheme.surfaceContainerHighest,
+                                  child: Icon(Icons.album, size: 64, color: colorScheme.onSurfaceVariant),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            stretchModes: const [StretchMode.zoomBackground, StretchMode.blurBackground],
+          );
+        },
       ),
       leading: IconButton(
         icon: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: colorScheme.surface.withValues(alpha: 0.8), shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: colorScheme.surface.withValues(alpha: 0.8), 
+            shape: BoxShape.circle,
+          ),
           child: Icon(Icons.arrow_back, color: colorScheme.onSurface),
         ),
         onPressed: () => Navigator.pop(context),
@@ -244,6 +318,8 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
 
   Widget _buildInfoCard(BuildContext context, ColorScheme colorScheme) {
     final tracks = _tracks ?? [];
+    final artistName = tracks.isNotEmpty ? tracks.first.artistName : null;
+    
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -260,7 +336,14 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                   widget.albumName,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: colorScheme.onSurface),
                 ),
-                const SizedBox(height: 8),
+                if (artistName != null && artistName.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    artistName,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                ],
+                const SizedBox(height: 12),
                 if (tracks.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

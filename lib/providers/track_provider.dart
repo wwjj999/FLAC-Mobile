@@ -477,6 +477,8 @@ class TrackNotifier extends Notifier<TrackState> {
       tracks[index] = updatedTrack;
       state = state.copyWith(tracks: tracks);
     } catch (e) {
+      // Silently ignore availability check errors
+      // This is a background operation that shouldn't disrupt the user
     }
   }
 

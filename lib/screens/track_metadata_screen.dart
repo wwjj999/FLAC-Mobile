@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:palette_generator/palette_generator.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:spotiflac_android/utils/mime_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -28,6 +29,9 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   String? _lyrics;
   bool _lyricsLoading = false;
   String? _lyricsError;
+  Color? _dominantColor;
+  bool _showTitleInAppBar = false;
+  final ScrollController _scrollController = ScrollController();
 
   String? _normalizeOptionalString(String? value) {
     if (value == null) return null;
@@ -40,7 +44,42 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _checkFile();
+    _extractDominantColor();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final shouldShow = _scrollController.offset > 280;
+    if (shouldShow != _showTitleInAppBar) {
+      setState(() => _showTitleInAppBar = shouldShow);
+    }
+  }
+
+  Future<void> _extractDominantColor() async {
+    if (widget.item.coverUrl == null) return;
+    try {
+      final paletteGenerator = await PaletteGenerator.fromImageProvider(
+        CachedNetworkImageProvider(widget.item.coverUrl!),
+        maximumColorCount: 16,
+      );
+      if (mounted) {
+        setState(() {
+          _dominantColor = paletteGenerator.dominantColor?.color ??
+              paletteGenerator.vibrantColor?.color ??
+              paletteGenerator.mutedColor?.color;
+        });
+      }
+    } catch (_) {
+      // Ignore palette extraction errors
+    }
   }
 
   Future<void> _checkFile() async {
@@ -91,21 +130,47 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final coverSize = screenWidth * 0.5;
+    final bgColor = _dominantColor ?? colorScheme.surface;
 
     return Scaffold(
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
           SliverAppBar(
-            expandedHeight: 280,
+            expandedHeight: 320,
             pinned: true,
             stretch: true,
-            backgroundColor: colorScheme.surface,
-            flexibleSpace: FlexibleSpaceBar(
-              background: _buildHeaderBackground(context, colorScheme),
-              stretchModes: const [
-                StretchMode.zoomBackground,
-                StretchMode.blurBackground,
-              ],
+            backgroundColor: colorScheme.surface, // Use theme color for collapsed state
+            surfaceTintColor: Colors.transparent,
+            title: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: _showTitleInAppBar ? 1.0 : 0.0,
+              child: Text(
+                trackName,
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            flexibleSpace: LayoutBuilder(
+              builder: (context, constraints) {
+                final collapseRatio = (constraints.maxHeight - kToolbarHeight) / (320 - kToolbarHeight);
+                final showContent = collapseRatio > 0.3;
+                
+                return FlexibleSpaceBar(
+                  collapseMode: CollapseMode.pin,
+                  background: _buildHeaderBackground(context, colorScheme, coverSize, bgColor, showContent),
+                  stretchModes: const [
+                    StretchMode.zoomBackground,
+                    StretchMode.blurBackground,
+                  ],
+                );
+              },
             ),
             leading: IconButton(
               icon: Container(
@@ -167,74 +232,74 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     );
   }
 
-  Widget _buildHeaderBackground(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildHeaderBackground(BuildContext context, ColorScheme colorScheme, double coverSize, Color bgColor, bool showContent) {
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (item.coverUrl != null)
-          CachedNetworkImage(
-            imageUrl: item.coverUrl!,
-            fit: BoxFit.cover,
-            color: Colors.black.withValues(alpha: 0.5),
-            colorBlendMode: BlendMode.darken,
-          ),
-        
-        Container(
+        // Background with dominant color
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 500),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.transparent,
-                colorScheme.surface.withValues(alpha: 0.8),
+                bgColor,
+                bgColor.withValues(alpha: 0.8),
                 colorScheme.surface,
               ],
-              stops: const [0.0, 0.7, 1.0],
+              stops: const [0.0, 0.6, 1.0],
             ),
           ),
         ),
         
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 60),
-            child: Hero(
-              tag: 'cover_${item.id}',
-              child: Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: item.coverUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: item.coverUrl!,
-                          fit: BoxFit.cover,
-                          placeholder: (_, _) => Container(
+        // Cover image centered - fade out when collapsing
+        AnimatedOpacity(
+          duration: const Duration(milliseconds: 150),
+          opacity: showContent ? 1.0 : 0.0,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 60),
+              child: Hero(
+                tag: 'cover_${item.id}',
+                child: Container(
+                  width: coverSize,
+                  height: coverSize,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        blurRadius: 30,
+                        offset: const Offset(0, 15),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: item.coverUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: item.coverUrl!,
+                            fit: BoxFit.cover,
+                            memCacheWidth: (coverSize * 2).toInt(),
+                            placeholder: (_, _) => Container(
+                              color: colorScheme.surfaceContainerHighest,
+                              child: Icon(
+                                Icons.music_note,
+                                size: 64,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          )
+                        : Container(
                             color: colorScheme.surfaceContainerHighest,
                             child: Icon(
                               Icons.music_note,
-                              size: 48,
+                              size: 64,
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
-                        )
-                      : Container(
-                          color: colorScheme.surfaceContainerHighest,
-                          child: Icon(
-                            Icons.music_note,
-                            size: 48,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
+                  ),
                 ),
               ),
             ),

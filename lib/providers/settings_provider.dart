@@ -223,6 +223,15 @@ class SettingsNotifier extends Notifier<AppSettings> {
     state = state.copyWith(locale: locale);
     _saveSettings();
   }
+
+  void setEnableMp3Option(bool enabled) {
+    state = state.copyWith(enableMp3Option: enabled);
+    // If MP3 is disabled and current quality is MP3, reset to LOSSLESS
+    if (!enabled && state.audioQuality == 'MP3') {
+      state = state.copyWith(audioQuality: 'LOSSLESS');
+    }
+    _saveSettings();
+  }
 }
 
 final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(

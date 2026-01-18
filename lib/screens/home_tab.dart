@@ -17,6 +17,7 @@ import 'package:spotiflac_android/screens/artist_screen.dart';
 import 'package:spotiflac_android/services/csv_import_service.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/screens/playlist_screen.dart';
+import 'package:spotiflac_android/screens/downloaded_album_screen.dart';
 import 'package:spotiflac_android/models/download_item.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
 
@@ -650,12 +651,25 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
   Widget _buildRecentAccess(List<RecentAccessItem> items, ColorScheme colorScheme) {
     final historyItems = ref.read(downloadHistoryProvider).items;
     
-    final downloadItems = historyItems.take(10).where((h) => h.spotifyId != null && h.spotifyId!.isNotEmpty).map((h) => RecentAccessItem(
-      id: h.spotifyId!,
-      name: h.trackName,
-      subtitle: h.artistName,
+    // Group download history by album to avoid flooding recents with individual tracks
+    final albumMap = <String, DownloadHistoryItem>{};
+    for (final h in historyItems) {
+      // Use album name + artist as unique key
+      final albumKey = '${h.albumName}|${h.albumArtist ?? h.artistName}';
+      // Keep the most recent download for each album
+      if (!albumMap.containsKey(albumKey) || 
+          h.downloadedAt.isAfter(albumMap[albumKey]!.downloadedAt)) {
+        albumMap[albumKey] = h;
+      }
+    }
+    
+    // Convert grouped albums to RecentAccessItem with album type
+    final downloadItems = albumMap.values.take(10).map((h) => RecentAccessItem(
+      id: '${h.albumName}|${h.albumArtist ?? h.artistName}', // Use album key as ID
+      name: h.albumName,
+      subtitle: h.albumArtist ?? h.artistName,
       imageUrl: h.coverUrl,
-      type: RecentAccessType.track,
+      type: RecentAccessType.album,
       accessedAt: h.downloadedAt,
       providerId: 'download',
     )).toList();
@@ -815,7 +829,16 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
           ));
         }
       case RecentAccessType.album:
-        if (item.providerId != null && item.providerId!.isNotEmpty && item.providerId != 'deezer' && item.providerId != 'spotify') {
+        // Handle downloaded albums - navigate to DownloadedAlbumScreen
+        if (item.providerId == 'download') {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (context) => DownloadedAlbumScreen(
+              albumName: item.name,
+              artistName: item.subtitle ?? '',
+              coverUrl: item.imageUrl,
+            ),
+          ));
+        } else if (item.providerId != null && item.providerId!.isNotEmpty && item.providerId != 'deezer' && item.providerId != 'spotify') {
           Navigator.push(context, MaterialPageRoute(
             builder: (context) => ExtensionAlbumScreen(
               extensionId: item.providerId!,

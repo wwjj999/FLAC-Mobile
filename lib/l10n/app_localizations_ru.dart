@@ -74,9 +74,9 @@ class AppLocalizationsRu extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count треков',
-      one: '1 трек',
       many: '$count треков',
       few: '$count трека',
+      one: '$count трек',
     );
     return '$_temp0';
   }
@@ -87,9 +87,9 @@ class AppLocalizationsRu extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count альбомов',
-      one: '1 альбом',
       many: '$count альбомов',
       few: '$count альбома',
+      one: '$count альбом',
     );
     return '$_temp0';
   }
@@ -489,9 +489,9 @@ class AppLocalizationsRu extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count треков',
-      one: '1 трек',
       many: '$count треков',
       few: '$count трека',
+      one: '$count трек',
     );
     return '$_temp0';
   }
@@ -523,9 +523,9 @@ class AppLocalizationsRu extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count релизов',
-      one: '1 релиз',
       many: '$count релизов',
       few: '$count релиза',
+      one: '$count релиз',
     );
     return '$_temp0';
   }
@@ -901,9 +901,9 @@ class AppLocalizationsRu extends AppLocalizations {
       count,
       locale: localeName,
       other: 'треков',
-      one: 'трек',
       many: 'треков',
       few: 'трека',
+      one: 'трек',
     );
     return 'Удалить $count $_temp0 из истории?\n\nЭто также удалит файлы из хранилища.';
   }
@@ -946,9 +946,9 @@ class AppLocalizationsRu extends AppLocalizations {
       count,
       locale: localeName,
       other: 'треков',
-      one: 'трек',
       many: 'треков',
       few: 'трека',
+      one: 'трек',
     );
     return 'Удалено $count $_temp0';
   }
@@ -1095,9 +1095,9 @@ class AppLocalizationsRu extends AppLocalizations {
       count,
       locale: localeName,
       other: 'треков',
-      one: 'трек',
       many: 'треков',
       few: 'трека',
+      one: 'трек',
     );
     return 'Удалить $count $_temp0';
   }
@@ -1510,9 +1510,9 @@ class AppLocalizationsRu extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count треков',
-      one: '1 трек',
       many: '$count треков',
       few: '$count трека',
+      one: '$count трек',
     );
     return '$_temp0';
   }
@@ -1821,6 +1821,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get qualityHiResFlacMaxSubtitle => '24-бит / до 192кГц';
 
   @override
+  String get qualityMp3 => 'MP3';
+
+  @override
+  String get qualityMp3Subtitle => '320kbps (converted from FLAC)';
+
+  @override
+  String get enableMp3Option => 'Enable MP3 Option';
+
+  @override
+  String get enableMp3OptionSubtitleOn => 'MP3 quality option is available';
+
+  @override
+  String get enableMp3OptionSubtitleOff =>
+      'Downloads FLAC then converts to 320kbps MP3';
+
+  @override
   String get qualityNote =>
       'Фактическое качество зависит от доступности треков в сервисе';
 
@@ -1976,9 +1992,9 @@ class AppLocalizationsRu extends AppLocalizations {
       count,
       locale: localeName,
       other: 'треков',
-      one: 'трек',
       many: 'треков',
       few: 'трека',
+      one: 'трек',
     );
     return 'Удалить $count $_temp0 из этого альбома?\n\nЭто также удалит файлы из хранилища.';
   }
@@ -2008,15 +2024,20 @@ class AppLocalizationsRu extends AppLocalizations {
       count,
       locale: localeName,
       other: 'треков',
-      one: 'трек',
       many: 'треков',
       few: 'трека',
+      one: 'трек',
     );
     return 'Удалить $count $_temp0';
   }
 
   @override
   String get downloadedAlbumSelectToDelete => 'Выберите треки для удаления';
+
+  @override
+  String downloadedAlbumDiscHeader(int discNumber) {
+    return 'Disc $discNumber';
+  }
 
   @override
   String get utilityFunctions => 'Функции утилиты';

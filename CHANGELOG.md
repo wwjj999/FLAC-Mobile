@@ -1,5 +1,83 @@
 # Changelog
 
+## [3.1.2] - 2026-01-18
+
+### Added
+
+- **MP3 Quality Option**: Optional MP3 download format with FLAC-to-MP3 conversion
+  - New "Enable MP3 Option" toggle in Settings > Download > Audio Quality
+  - When enabled, MP3 (320kbps) appears as a quality option alongside FLAC options
+  - Available in both the quality picker dialog and default quality settings
+  - Works with all services (Tidal, Qobuz, Amazon) and extensions
+
+- **MP3 Metadata Embedding**: Full metadata support for MP3 files
+  - Cover art embedded using ID3v2 tags
+  - Synced lyrics embedded (fetched from lrclib.net)
+  - All metadata preserved: title, artist, album, album artist, track/disc number, date, ISRC
+  - Automatic tag conversion from Vorbis comments (FLAC) to ID3v2 (MP3)
+
+- **Dominant Color Header**: Album, Playlist, Downloaded Album, and Track Metadata screens now feature dynamic header backgrounds
+  - Extracts dominant color from cover art using `palette_generator`
+  - Creates a gradient from dominant color to theme surface color
+  - Smooth 500ms color transition animation
+
+- **Larger Cover Art**: Cover images on detail screens are now 50% of screen width (previously 140px fixed)
+  - More prominent album artwork display
+  - Larger shadow and rounded corners (20px radius)
+  - Higher resolution cover caching
+
+- **Spotify-style Sticky Title**: Title appears in AppBar when scrolling past the info card
+  - Smooth fade-in animation (200ms) when scrolling down
+  - Title hidden when header is expanded (shows in info card instead)
+  - AppBar uses theme color (surface) for clean, native look
+  - Works on Album, Playlist, Downloaded Album, Track Metadata, and Artist screens
+
+- **Artist Name in Album Screen**: Album info card now displays artist name below album title
+  - Extracted from first track's artist metadata
+  - Styled with `onSurfaceVariant` color for visual hierarchy
+
+- **Disc Separation for Multi-Disc Albums**: Downloaded albums with multiple discs now display tracks grouped by disc
+  - Visual disc separator header showing "Disc 1", "Disc 2", etc.
+  - Tracks sorted by disc number first, then by track number
+  - Single-disc albums display normally without separators
+  - Fixes confusion when albums have duplicate track numbers across discs
+
+- **Album Grouping in Recents**: Downloads now show as albums instead of individual tracks in the Recent section
+  - Prevents flooding the recents list when downloading full albums
+  - Groups tracks by album name and artist
+  - Tapping navigates directly to the downloaded album screen
+  - Shows the most recent download time for each album
+
+### Changed
+
+- **FFmpeg FLAC-to-MP3 Conversion**: Improved conversion process
+  - MP3 files now saved in the same folder as FLAC (no separate MP3 subfolder)
+  - Original FLAC file automatically deleted after successful conversion
+  - New `embedMetadataToMp3()` method for MP3-specific tag embedding
+
+- **Sticky Header Theme Integration**: AppBar background uses `colorScheme.surface` instead of dominant color when collapsed
+  - Dark theme: Black background with white text
+  - Light theme: White background with black text
+  - Matches Spotify's behavior for better readability
+
+### Fixed
+
+- **Empty Catch Blocks**: Fixed analyzer warnings for empty catch blocks
+  - `download_queue_provider.dart`: Added comments explaining why polling errors are silently ignored
+  - `track_provider.dart`: Added comments explaining why availability check errors are silently ignored
+  - `ffmpeg_service.dart`: Added proper error logging for temp file cleanup failures
+
+- **Russian Plural Forms**: Fixed ICU syntax warnings in Russian localization
+  - Removed redundant `=1` clauses that were overriding `one` plural category
+  - Affected 10 plural strings including track counts and delete confirmations
+  - Plurals now correctly handle Russian grammar (1 трек, 2 трека, 5 треков)
+
+### Dependencies
+
+- Added `palette_generator: ^0.3.3+4` for cover art color extraction
+
+---
+
 ## [3.1.1] - 2026-01-17
 
 ### Added

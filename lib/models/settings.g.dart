@@ -36,6 +36,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
       json['albumFolderStructure'] as String? ?? 'artist_album',
   showExtensionStore: json['showExtensionStore'] as bool? ?? true,
   locale: json['locale'] as String? ?? 'system',
+  enableMp3Option: json['enableMp3Option'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$AppSettingsToJson(AppSettings instance) =>
@@ -67,4 +68,5 @@ Map<String, dynamic> _$AppSettingsToJson(AppSettings instance) =>
       'albumFolderStructure': instance.albumFolderStructure,
       'showExtensionStore': instance.showExtensionStore,
       'locale': instance.locale,
+      'enableMp3Option': instance.enableMp3Option,
     };

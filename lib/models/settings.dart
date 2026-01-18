@@ -31,6 +31,7 @@ class AppSettings {
   final String albumFolderStructure; // artist_album, album_only, artist_year_album, year_album
   final bool showExtensionStore; // Show Extension Store tab in navigation
   final String locale; // App language: 'system', 'en', 'id', etc.
+  final bool enableMp3Option; // Enable MP3 quality option (default off, requires FFmpeg conversion)
 
   const AppSettings({
     this.defaultService = 'tidal',
@@ -60,6 +61,7 @@ class AppSettings {
     this.albumFolderStructure = 'artist_album', // Default: Albums/Artist/Album
     this.showExtensionStore = true, // Default: show store
     this.locale = 'system', // Default: follow system language
+    this.enableMp3Option = false, // Default: disabled
   });
 
   AppSettings copyWith({
@@ -91,6 +93,7 @@ class AppSettings {
     String? albumFolderStructure,
     bool? showExtensionStore,
     String? locale,
+    bool? enableMp3Option,
   }) {
     return AppSettings(
       defaultService: defaultService ?? this.defaultService,
@@ -120,6 +123,7 @@ class AppSettings {
       albumFolderStructure: albumFolderStructure ?? this.albumFolderStructure,
       showExtensionStore: showExtensionStore ?? this.showExtensionStore,
       locale: locale ?? this.locale,
+      enableMp3Option: enableMp3Option ?? this.enableMp3Option,
     );
   }
 

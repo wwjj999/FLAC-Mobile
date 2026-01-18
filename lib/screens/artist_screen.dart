@@ -95,10 +95,17 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
   String? _headerImageUrl;
   int? _monthlyListeners;
   String? _error;
+  
+  // Sticky title state
+  bool _showTitleInAppBar = false;
+  final ScrollController _scrollController = ScrollController();
 
-  @override
+@override
   void initState() {
     super.initState();
+    
+    // Setup scroll listener for sticky title
+    _scrollController.addListener(_onScroll);
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final providerId = widget.extensionId ?? 
@@ -141,7 +148,22 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       }
     } else {
       _fetchDiscography();
+}
+  }
+
+  void _onScroll() {
+    // Show title when scrolled past the header (280px trigger)
+    final shouldShow = _scrollController.offset > 280;
+    if (shouldShow != _showTitleInAppBar) {
+      setState(() => _showTitleInAppBar = shouldShow);
     }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchDiscography() async {
@@ -256,8 +278,9 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     final singles = albums.where((a) => a.albumType == 'single').toList();
     final compilations = albums.where((a) => a.albumType == 'compilation').toList();
 
-    return Scaffold(
+return Scaffold(
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
           _buildHeader(context, colorScheme),
           if (_isLoadingDiscography)
@@ -307,12 +330,20 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       listenersText = context.l10n.artistMonthlyListeners(formatter.format(listeners));
     }
     
-    return SliverAppBar(
+return SliverAppBar(
       expandedHeight: 380,
       pinned: true,
       stretch: true,
       backgroundColor: colorScheme.surface,
       surfaceTintColor: Colors.transparent,
+      title: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: _showTitleInAppBar ? 1.0 : 0.0,
+        child: Text(
+          widget.artistName,
+          style: TextStyle(color: colorScheme.onSurface),
+        ),
+      ),
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,

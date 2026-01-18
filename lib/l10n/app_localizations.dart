@@ -3252,6 +3252,36 @@ abstract class AppLocalizations {
   /// **'24-bit / up to 192kHz'**
   String get qualityHiResFlacMaxSubtitle;
 
+  /// Quality option - MP3 lossy format
+  ///
+  /// In en, this message translates to:
+  /// **'MP3'**
+  String get qualityMp3;
+
+  /// Technical spec for MP3
+  ///
+  /// In en, this message translates to:
+  /// **'320kbps (converted from FLAC)'**
+  String get qualityMp3Subtitle;
+
+  /// Setting - enable MP3 quality option
+  ///
+  /// In en, this message translates to:
+  /// **'Enable MP3 Option'**
+  String get enableMp3Option;
+
+  /// Subtitle when MP3 is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'MP3 quality option is available'**
+  String get enableMp3OptionSubtitleOn;
+
+  /// Subtitle when MP3 is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads FLAC then converts to 320kbps MP3'**
+  String get enableMp3OptionSubtitleOff;
+
   /// Note about quality availability
   ///
   /// In en, this message translates to:
@@ -3587,6 +3617,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select tracks to delete'**
   String get downloadedAlbumSelectToDelete;
+
+  /// Header for disc separator in multi-disc albums
+  ///
+  /// In en, this message translates to:
+  /// **'Disc {discNumber}'**
+  String downloadedAlbumDiscHeader(int discNumber);
 
   /// Extension capability - utility functions
   ///
