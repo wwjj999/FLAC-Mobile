@@ -1,39 +1,39 @@
 {
-  "@@locale": "id",
+  "@@locale": "pt-PT",
   "@@last_modified": "2026-01-16",
   "appName": "SpotiFLAC",
   "@appName": {
     "description": "App name - DO NOT TRANSLATE"
   },
-  "appDescription": "Unduh lagu Spotify dalam kualitas lossless dari Tidal, Qobuz, dan Amazon Music.",
+  "appDescription": "Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.",
   "@appDescription": {
     "description": "App description shown in about page"
   },
-  "navHome": "Beranda",
+  "navHome": "Home",
   "@navHome": {
     "description": "Bottom navigation - Home tab"
   },
-  "navHistory": "Riwayat",
+  "navHistory": "History",
   "@navHistory": {
     "description": "Bottom navigation - History tab"
   },
-  "navSettings": "Pengaturan",
+  "navSettings": "Settings",
   "@navSettings": {
     "description": "Bottom navigation - Settings tab"
   },
-  "navStore": "Toko",
+  "navStore": "Store",
   "@navStore": {
     "description": "Bottom navigation - Extension store tab"
   },
-  "homeTitle": "Beranda",
+  "homeTitle": "Home",
   "@homeTitle": {
     "description": "Home screen title"
   },
-  "homeSearchHint": "Tempel URL Spotify atau cari...",
+  "homeSearchHint": "Paste Spotify URL or search...",
   "@homeSearchHint": {
     "description": "Placeholder text in search box"
   },
-  "homeSearchHintExtension": "Cari dengan {extensionName}...",
+  "homeSearchHintExtension": "Search with {extensionName}...",
   "@homeSearchHintExtension": {
     "description": "Placeholder when extension search is active",
     "placeholders": {
@@ -43,23 +43,23 @@
       }
     }
   },
-  "homeSubtitle": "Tempel link Spotify atau cari berdasarkan nama",
+  "homeSubtitle": "Paste a Spotify link or search by name",
   "@homeSubtitle": {
     "description": "Subtitle shown below search box"
   },
-  "homeSupports": "Mendukung: URL Track, Album, Playlist, Artis",
+  "homeSupports": "Supports: Track, Album, Playlist, Artist URLs",
   "@homeSupports": {
     "description": "Info text about supported URL types"
   },
-  "homeRecent": "Terbaru",
+  "homeRecent": "Recent",
   "@homeRecent": {
     "description": "Section header for recent searches"
   },
-  "historyTitle": "Riwayat",
+  "historyTitle": "History",
   "@historyTitle": {
     "description": "History screen title"
   },
-  "historyDownloading": "Mengunduh ({count})",
+  "historyDownloading": "Downloading ({count})",
   "@historyDownloading": {
     "description": "Tab showing active downloads count",
     "placeholders": {
@@ -69,23 +69,23 @@
       }
     }
   },
-  "historyDownloaded": "Terunduh",
+  "historyDownloaded": "Downloaded",
   "@historyDownloaded": {
     "description": "Tab showing completed downloads"
   },
-  "historyFilterAll": "Semua",
+  "historyFilterAll": "All",
   "@historyFilterAll": {
     "description": "Filter chip - show all items"
   },
-  "historyFilterAlbums": "Album",
+  "historyFilterAlbums": "Albums",
   "@historyFilterAlbums": {
     "description": "Filter chip - show albums only"
   },
-  "historyFilterSingles": "Single",
+  "historyFilterSingles": "Singles",
   "@historyFilterSingles": {
     "description": "Filter chip - show singles only"
   },
-  "historyTracksCount": "{count, plural, =1{1 lagu} other{{count} lagu}}",
+  "historyTracksCount": "{count, plural, =1{1 track} other{{count} tracks}}",
   "@historyTracksCount": {
     "description": "Track count with plural form",
     "placeholders": {
@@ -94,7 +94,7 @@
       }
     }
   },
-  "historyAlbumsCount": "{count, plural, =1{1 album} other{{count} album}}",
+  "historyAlbumsCount": "{count, plural, =1{1 album} other{{count} albums}}",
   "@historyAlbumsCount": {
     "description": "Album count with plural form",
     "placeholders": {
@@ -103,107 +103,107 @@
       }
     }
   },
-  "historyNoDownloads": "Tidak ada riwayat unduhan",
+  "historyNoDownloads": "No download history",
   "@historyNoDownloads": {
     "description": "Empty state title"
   },
-  "historyNoDownloadsSubtitle": "Lagu yang diunduh akan muncul di sini",
+  "historyNoDownloadsSubtitle": "Downloaded tracks will appear here",
   "@historyNoDownloadsSubtitle": {
     "description": "Empty state subtitle"
   },
-  "historyNoAlbums": "Tidak ada unduhan album",
+  "historyNoAlbums": "No album downloads",
   "@historyNoAlbums": {
     "description": "Empty state when filtering albums"
   },
-  "historyNoAlbumsSubtitle": "Unduh beberapa lagu dari album untuk melihatnya di sini",
+  "historyNoAlbumsSubtitle": "Download multiple tracks from an album to see them here",
   "@historyNoAlbumsSubtitle": {
     "description": "Empty state subtitle for albums filter"
   },
-  "historyNoSingles": "Tidak ada unduhan single",
+  "historyNoSingles": "No single downloads",
   "@historyNoSingles": {
     "description": "Empty state when filtering singles"
   },
-  "historyNoSinglesSubtitle": "Unduhan lagu satuan akan muncul di sini",
+  "historyNoSinglesSubtitle": "Single track downloads will appear here",
   "@historyNoSinglesSubtitle": {
     "description": "Empty state subtitle for singles filter"
   },
-  "settingsTitle": "Pengaturan",
+  "settingsTitle": "Settings",
   "@settingsTitle": {
     "description": "Settings screen title"
   },
-  "settingsDownload": "Unduhan",
+  "settingsDownload": "Download",
   "@settingsDownload": {
     "description": "Settings section - download options"
   },
-  "settingsAppearance": "Tampilan",
+  "settingsAppearance": "Appearance",
   "@settingsAppearance": {
     "description": "Settings section - visual customization"
   },
-  "settingsOptions": "Opsi",
+  "settingsOptions": "Options",
   "@settingsOptions": {
     "description": "Settings section - app options"
   },
-  "settingsExtensions": "Ekstensi",
+  "settingsExtensions": "Extensions",
   "@settingsExtensions": {
     "description": "Settings section - extension management"
   },
-  "settingsAbout": "Tentang",
+  "settingsAbout": "About",
   "@settingsAbout": {
     "description": "Settings section - app info"
   },
-  "downloadTitle": "Unduhan",
+  "downloadTitle": "Download",
   "@downloadTitle": {
     "description": "Download settings page title"
   },
-  "downloadLocation": "Lokasi Unduhan",
+  "downloadLocation": "Download Location",
   "@downloadLocation": {
     "description": "Setting for download folder"
   },
-  "downloadLocationSubtitle": "Pilih tempat menyimpan file",
+  "downloadLocationSubtitle": "Choose where to save files",
   "@downloadLocationSubtitle": {
     "description": "Subtitle for download location"
   },
-  "downloadLocationDefault": "Lokasi default",
+  "downloadLocationDefault": "Default location",
   "@downloadLocationDefault": {
     "description": "Shown when using default folder"
   },
-  "downloadDefaultService": "Layanan Default",
+  "downloadDefaultService": "Default Service",
   "@downloadDefaultService": {
     "description": "Setting for preferred download service (Tidal/Qobuz/Amazon)"
   },
-  "downloadDefaultServiceSubtitle": "Layanan yang digunakan untuk unduhan",
+  "downloadDefaultServiceSubtitle": "Service used for downloads",
   "@downloadDefaultServiceSubtitle": {
     "description": "Subtitle for default service"
   },
-  "downloadDefaultQuality": "Kualitas Default",
+  "downloadDefaultQuality": "Default Quality",
   "@downloadDefaultQuality": {
     "description": "Setting for audio quality"
   },
-  "downloadAskQuality": "Tanya Kualitas Sebelum Unduh",
+  "downloadAskQuality": "Ask Quality Before Download",
   "@downloadAskQuality": {
     "description": "Toggle to show quality picker"
   },
-  "downloadAskQualitySubtitle": "Tampilkan pemilih kualitas untuk setiap unduhan",
+  "downloadAskQualitySubtitle": "Show quality picker for each download",
   "@downloadAskQualitySubtitle": {
     "description": "Subtitle for ask quality toggle"
   },
-  "downloadFilenameFormat": "Format Nama File",
+  "downloadFilenameFormat": "Filename Format",
   "@downloadFilenameFormat": {
     "description": "Setting for output filename pattern"
   },
-  "downloadFolderOrganization": "Organisasi Folder",
+  "downloadFolderOrganization": "Folder Organization",
   "@downloadFolderOrganization": {
     "description": "Setting for folder structure"
   },
-  "downloadSeparateSingles": "Pisahkan Single",
+  "downloadSeparateSingles": "Separate Singles",
   "@downloadSeparateSingles": {
     "description": "Toggle to separate single tracks"
   },
-  "downloadSeparateSinglesSubtitle": "Letakkan lagu satuan di folder terpisah",
+  "downloadSeparateSinglesSubtitle": "Put single tracks in a separate folder",
   "@downloadSeparateSinglesSubtitle": {
     "description": "Subtitle for separate singles toggle"
   },
-  "qualityBest": "Terbaik",
+  "qualityBest": "Best Available",
   "@qualityBest": {
     "description": "Audio quality option - highest available"
   },
@@ -219,43 +219,43 @@
   "@quality128": {
     "description": "Audio quality option - 128kbps MP3"
   },
-  "appearanceTitle": "Tampilan",
+  "appearanceTitle": "Appearance",
   "@appearanceTitle": {
     "description": "Appearance settings page title"
   },
-  "appearanceTheme": "Tema",
+  "appearanceTheme": "Theme",
   "@appearanceTheme": {
     "description": "Theme mode setting"
   },
-  "appearanceThemeSystem": "Sistem",
+  "appearanceThemeSystem": "System",
   "@appearanceThemeSystem": {
     "description": "Follow system theme"
   },
-  "appearanceThemeLight": "Terang",
+  "appearanceThemeLight": "Light",
   "@appearanceThemeLight": {
     "description": "Light theme"
   },
-  "appearanceThemeDark": "Gelap",
+  "appearanceThemeDark": "Dark",
   "@appearanceThemeDark": {
     "description": "Dark theme"
   },
-  "appearanceDynamicColor": "Warna Dinamis",
+  "appearanceDynamicColor": "Dynamic Color",
   "@appearanceDynamicColor": {
     "description": "Material You dynamic colors"
   },
-  "appearanceDynamicColorSubtitle": "Gunakan warna dari wallpaper Anda",
+  "appearanceDynamicColorSubtitle": "Use colors from your wallpaper",
   "@appearanceDynamicColorSubtitle": {
     "description": "Subtitle for dynamic color"
   },
-  "appearanceAccentColor": "Warna Aksen",
+  "appearanceAccentColor": "Accent Color",
   "@appearanceAccentColor": {
     "description": "Custom accent color picker"
   },
-  "appearanceHistoryView": "Tampilan Riwayat",
+  "appearanceHistoryView": "History View",
   "@appearanceHistoryView": {
     "description": "Layout style for history"
   },
-  "appearanceHistoryViewList": "Daftar",
+  "appearanceHistoryViewList": "List",
   "@appearanceHistoryViewList": {
     "description": "List layout option"
   },
@@ -263,23 +263,23 @@
   "@appearanceHistoryViewGrid": {
     "description": "Grid layout option"
   },
-  "optionsTitle": "Opsi",
+  "optionsTitle": "Options",
   "@optionsTitle": {
     "description": "Options settings page title"
   },
-  "optionsSearchSource": "Sumber Pencarian",
+  "optionsSearchSource": "Search Source",
   "@optionsSearchSource": {
     "description": "Section for search provider settings"
   },
-  "optionsPrimaryProvider": "Provider Utama",
+  "optionsPrimaryProvider": "Primary Provider",
   "@optionsPrimaryProvider": {
     "description": "Main search provider setting"
   },
-  "optionsPrimaryProviderSubtitle": "Layanan yang digunakan saat mencari berdasarkan nama lagu.",
+  "optionsPrimaryProviderSubtitle": "Service used when searching by track name.",
   "@optionsPrimaryProviderSubtitle": {
     "description": "Subtitle for primary provider"
   },
-  "optionsUsingExtension": "Menggunakan ekstensi: {extensionName}",
+  "optionsUsingExtension": "Using extension: {extensionName}",
   "@optionsUsingExtension": {
     "description": "Shows active extension name",
     "placeholders": {
@@ -288,7 +288,7 @@
       }
     }
   },
-  "optionsSwitchBack": "Ketuk Deezer atau Spotify untuk beralih dari ekstensi",
+  "optionsSwitchBack": "Tap Deezer or Spotify to switch back from extension",
   "@optionsSwitchBack": {
     "description": "Hint to switch back to built-in providers"
   },
@@ -296,47 +296,47 @@
   "@optionsAutoFallback": {
     "description": "Auto-retry with other services"
   },
-  "optionsAutoFallbackSubtitle": "Coba layanan lain jika unduhan gagal",
+  "optionsAutoFallbackSubtitle": "Try other services if download fails",
   "@optionsAutoFallbackSubtitle": {
     "description": "Subtitle for auto fallback"
   },
-  "optionsUseExtensionProviders": "Gunakan Provider Ekstensi",
+  "optionsUseExtensionProviders": "Use Extension Providers",
   "@optionsUseExtensionProviders": {
     "description": "Enable extension download providers"
   },
-  "optionsUseExtensionProvidersOn": "Ekstensi akan dicoba terlebih dahulu",
+  "optionsUseExtensionProvidersOn": "Extensions will be tried first",
   "@optionsUseExtensionProvidersOn": {
     "description": "Status when extension providers enabled"
   },
-  "optionsUseExtensionProvidersOff": "Hanya menggunakan provider bawaan",
+  "optionsUseExtensionProvidersOff": "Using built-in providers only",
   "@optionsUseExtensionProvidersOff": {
     "description": "Status when extension providers disabled"
   },
-  "optionsEmbedLyrics": "Sematkan Lirik",
+  "optionsEmbedLyrics": "Embed Lyrics",
   "@optionsEmbedLyrics": {
     "description": "Embed lyrics in audio files"
   },
-  "optionsEmbedLyricsSubtitle": "Sematkan lirik sinkron ke file FLAC",
+  "optionsEmbedLyricsSubtitle": "Embed synced lyrics into FLAC files",
   "@optionsEmbedLyricsSubtitle": {
     "description": "Subtitle for embed lyrics"
   },
-  "optionsMaxQualityCover": "Cover Kualitas Maksimal",
+  "optionsMaxQualityCover": "Max Quality Cover",
   "@optionsMaxQualityCover": {
     "description": "Download highest quality album art"
   },
-  "optionsMaxQualityCoverSubtitle": "Unduh cover art resolusi tertinggi",
+  "optionsMaxQualityCoverSubtitle": "Download highest resolution cover art",
   "@optionsMaxQualityCoverSubtitle": {
     "description": "Subtitle for max quality cover"
   },
-  "optionsConcurrentDownloads": "Unduhan Bersamaan",
+  "optionsConcurrentDownloads": "Concurrent Downloads",
   "@optionsConcurrentDownloads": {
     "description": "Number of parallel downloads"
   },
-  "optionsConcurrentSequential": "Berurutan (1 per waktu)",
+  "optionsConcurrentSequential": "Sequential (1 at a time)",
   "@optionsConcurrentSequential": {
     "description": "Download one at a time"
   },
-  "optionsConcurrentParallel": "{count} unduhan paralel",
+  "optionsConcurrentParallel": "{count} parallel downloads",
   "@optionsConcurrentParallel": {
     "description": "Multiple parallel downloads",
     "placeholders": {
@@ -345,63 +345,63 @@
       }
     }
   },
-  "optionsConcurrentWarning": "Unduhan paralel dapat memicu pembatasan rate",
+  "optionsConcurrentWarning": "Parallel downloads may trigger rate limiting",
   "@optionsConcurrentWarning": {
     "description": "Warning about rate limits"
   },
-  "optionsExtensionStore": "Toko Ekstensi",
+  "optionsExtensionStore": "Extension Store",
   "@optionsExtensionStore": {
     "description": "Show/hide store tab"
   },
-  "optionsExtensionStoreSubtitle": "Tampilkan tab Toko di navigasi",
+  "optionsExtensionStoreSubtitle": "Show Store tab in navigation",
   "@optionsExtensionStoreSubtitle": {
     "description": "Subtitle for extension store toggle"
   },
-  "optionsCheckUpdates": "Periksa Pembaruan",
+  "optionsCheckUpdates": "Check for Updates",
   "@optionsCheckUpdates": {
     "description": "Auto update check toggle"
   },
-  "optionsCheckUpdatesSubtitle": "Beritahu saat versi baru tersedia",
+  "optionsCheckUpdatesSubtitle": "Notify when new version is available",
   "@optionsCheckUpdatesSubtitle": {
     "description": "Subtitle for update check"
   },
-  "optionsUpdateChannel": "Saluran Pembaruan",
+  "optionsUpdateChannel": "Update Channel",
   "@optionsUpdateChannel": {
     "description": "Stable vs preview releases"
   },
-  "optionsUpdateChannelStable": "Hanya rilis stabil",
+  "optionsUpdateChannelStable": "Stable releases only",
   "@optionsUpdateChannelStable": {
     "description": "Only stable updates"
   },
-  "optionsUpdateChannelPreview": "Dapatkan rilis preview",
+  "optionsUpdateChannelPreview": "Get preview releases",
   "@optionsUpdateChannelPreview": {
     "description": "Include beta/preview updates"
   },
-  "optionsUpdateChannelWarning": "Preview mungkin mengandung bug atau fitur belum lengkap",
+  "optionsUpdateChannelWarning": "Preview may contain bugs or incomplete features",
   "@optionsUpdateChannelWarning": {
     "description": "Warning about preview channel"
   },
-  "optionsClearHistory": "Hapus Riwayat Unduhan",
+  "optionsClearHistory": "Clear Download History",
   "@optionsClearHistory": {
     "description": "Delete all download history"
   },
-  "optionsClearHistorySubtitle": "Hapus semua lagu dari riwayat",
+  "optionsClearHistorySubtitle": "Remove all downloaded tracks from history",
   "@optionsClearHistorySubtitle": {
     "description": "Subtitle for clear history"
   },
-  "optionsDetailedLogging": "Log Detail",
+  "optionsDetailedLogging": "Detailed Logging",
   "@optionsDetailedLogging": {
     "description": "Enable verbose logs for debugging"
   },
-  "optionsDetailedLoggingOn": "Log detail sedang direkam",
+  "optionsDetailedLoggingOn": "Detailed logs are being recorded",
   "@optionsDetailedLoggingOn": {
     "description": "Status when logging enabled"
   },
-  "optionsDetailedLoggingOff": "Aktifkan untuk laporan bug",
+  "optionsDetailedLoggingOff": "Enable for bug reports",
   "@optionsDetailedLoggingOff": {
     "description": "Status when logging disabled"
   },
-  "optionsSpotifyCredentials": "Kredensial Spotify",
+  "optionsSpotifyCredentials": "Spotify Credentials",
   "@optionsSpotifyCredentials": {
     "description": "Spotify API credentials setting"
   },
@@ -414,39 +414,39 @@
       }
     }
   },
-  "optionsSpotifyCredentialsRequired": "Diperlukan - ketuk untuk mengatur",
+  "optionsSpotifyCredentialsRequired": "Required - tap to configure",
   "@optionsSpotifyCredentialsRequired": {
     "description": "Prompt to set up credentials"
   },
-  "optionsSpotifyWarning": "Spotify memerlukan kredensial API Anda sendiri. Dapatkan gratis dari developer.spotify.com",
+  "optionsSpotifyWarning": "Spotify requires your own API credentials. Get them free from developer.spotify.com",
   "@optionsSpotifyWarning": {
     "description": "Info about Spotify API requirement"
   },
-  "extensionsTitle": "Ekstensi",
+  "extensionsTitle": "Extensions",
   "@extensionsTitle": {
     "description": "Extensions page title"
   },
-  "extensionsInstalled": "Ekstensi Terpasang",
+  "extensionsInstalled": "Installed Extensions",
   "@extensionsInstalled": {
     "description": "Section header for installed extensions"
   },
-  "extensionsNone": "Tidak ada ekstensi terpasang",
+  "extensionsNone": "No extensions installed",
   "@extensionsNone": {
     "description": "Empty state title"
   },
-  "extensionsNoneSubtitle": "Pasang ekstensi dari tab Toko",
+  "extensionsNoneSubtitle": "Install extensions from the Store tab",
   "@extensionsNoneSubtitle": {
     "description": "Empty state subtitle"
   },
-  "extensionsEnabled": "Aktif",
+  "extensionsEnabled": "Enabled",
   "@extensionsEnabled": {
     "description": "Extension status - active"
   },
-  "extensionsDisabled": "Nonaktif",
+  "extensionsDisabled": "Disabled",
   "@extensionsDisabled": {
     "description": "Extension status - inactive"
   },
-  "extensionsVersion": "Versi {version}",
+  "extensionsVersion": "Version {version}",
   "@extensionsVersion": {
     "description": "Extension version display",
     "placeholders": {
@@ -455,7 +455,7 @@
       }
     }
   },
-  "extensionsAuthor": "oleh {author}",
+  "extensionsAuthor": "by {author}",
   "@extensionsAuthor": {
     "description": "Extension author credit",
     "placeholders": {
@@ -464,111 +464,111 @@
       }
     }
   },
-  "extensionsUninstall": "Copot",
+  "extensionsUninstall": "Uninstall",
   "@extensionsUninstall": {
     "description": "Uninstall extension button"
   },
-  "extensionsSetAsSearch": "Jadikan Provider Pencarian",
+  "extensionsSetAsSearch": "Set as Search Provider",
   "@extensionsSetAsSearch": {
     "description": "Use extension for search"
   },
-  "storeTitle": "Toko Ekstensi",
+  "storeTitle": "Extension Store",
   "@storeTitle": {
     "description": "Store screen title"
   },
-  "storeSearch": "Cari ekstensi...",
+  "storeSearch": "Search extensions...",
   "@storeSearch": {
     "description": "Store search placeholder"
   },
-  "storeInstall": "Pasang",
+  "storeInstall": "Install",
   "@storeInstall": {
     "description": "Install extension button"
   },
-  "storeInstalled": "Terpasang",
+  "storeInstalled": "Installed",
   "@storeInstalled": {
     "description": "Already installed badge"
   },
-  "storeUpdate": "Perbarui",
+  "storeUpdate": "Update",
   "@storeUpdate": {
     "description": "Update available button"
   },
-  "aboutTitle": "Tentang",
+  "aboutTitle": "About",
   "@aboutTitle": {
     "description": "About page title"
   },
-  "aboutContributors": "Kontributor",
+  "aboutContributors": "Contributors",
   "@aboutContributors": {
     "description": "Section for contributors"
   },
-  "aboutMobileDeveloper": "Pengembang versi mobile",
+  "aboutMobileDeveloper": "Mobile version developer",
   "@aboutMobileDeveloper": {
     "description": "Role description for mobile dev"
   },
-  "aboutOriginalCreator": "Pembuat SpotiFLAC asli",
+  "aboutOriginalCreator": "Creator of the original SpotiFLAC",
   "@aboutOriginalCreator": {
     "description": "Role description for original creator"
   },
-  "aboutLogoArtist": "Seniman berbakat yang membuat logo aplikasi kita yang indah!",
+  "aboutLogoArtist": "The talented artist who created our beautiful app logo!",
   "@aboutLogoArtist": {
     "description": "Role description for logo artist"
   },
-  "aboutSpecialThanks": "Terima Kasih Khusus",
+  "aboutSpecialThanks": "Special Thanks",
   "@aboutSpecialThanks": {
     "description": "Section for special thanks"
   },
-  "aboutLinks": "Tautan",
+  "aboutLinks": "Links",
   "@aboutLinks": {
     "description": "Section for external links"
   },
-  "aboutMobileSource": "Kode sumber mobile",
+  "aboutMobileSource": "Mobile source code",
   "@aboutMobileSource": {
     "description": "Link to mobile GitHub repo"
   },
-  "aboutPCSource": "Kode sumber PC",
+  "aboutPCSource": "PC source code",
   "@aboutPCSource": {
     "description": "Link to PC GitHub repo"
   },
-  "aboutReportIssue": "Laporkan masalah",
+  "aboutReportIssue": "Report an issue",
   "@aboutReportIssue": {
     "description": "Link to report bugs"
   },
-  "aboutReportIssueSubtitle": "Laporkan masalah yang Anda temui",
+  "aboutReportIssueSubtitle": "Report any problems you encounter",
   "@aboutReportIssueSubtitle": {
     "description": "Subtitle for report issue"
   },
-  "aboutFeatureRequest": "Permintaan fitur",
+  "aboutFeatureRequest": "Feature request",
   "@aboutFeatureRequest": {
     "description": "Link to suggest features"
   },
-  "aboutFeatureRequestSubtitle": "Sarankan fitur baru untuk aplikasi",
+  "aboutFeatureRequestSubtitle": "Suggest new features for the app",
   "@aboutFeatureRequestSubtitle": {
     "description": "Subtitle for feature request"
   },
-  "aboutSupport": "Dukungan",
+  "aboutSupport": "Support",
   "@aboutSupport": {
     "description": "Section for support/donation links"
   },
-  "aboutBuyMeCoffee": "Belikan saya kopi",
+  "aboutBuyMeCoffee": "Buy me a coffee",
   "@aboutBuyMeCoffee": {
     "description": "Donation link"
   },
-  "aboutBuyMeCoffeeSubtitle": "Dukung pengembangan di Ko-fi",
+  "aboutBuyMeCoffeeSubtitle": "Support development on Ko-fi",
   "@aboutBuyMeCoffeeSubtitle": {
     "description": "Subtitle for donation"
   },
-  "aboutApp": "Aplikasi",
+  "aboutApp": "App",
   "@aboutApp": {
     "description": "Section for app info"
   },
-  "aboutVersion": "Versi",
+  "aboutVersion": "Version",
   "@aboutVersion": {
     "description": "Version info label"
   },
-  "aboutBinimumDesc": "Pembuat QQDL & HiFi API. Tanpa API ini, unduhan Tidal tidak akan ada!",
+  "aboutBinimumDesc": "The creator of QQDL & HiFi API. Without this API, Tidal downloads wouldn't exist!",
   "@aboutBinimumDesc": {
     "description": "Credit description for binimum"
   },
-  "aboutSachinsenalDesc": "Pembuat proyek HiFi asli. Fondasi dari integrasi Tidal!",
+  "aboutSachinsenalDesc": "The original HiFi project creator. The foundation of Tidal integration!",
   "@aboutSachinsenalDesc": {
     "description": "Credit description for sachinsenal0x64"
   },
@@ -576,7 +576,7 @@
   "@aboutDoubleDouble": {
     "description": "Name of Amazon API service - DO NOT TRANSLATE"
   },
-  "aboutDoubleDoubleDesc": "API luar biasa untuk unduhan Amazon Music. Terima kasih sudah membuatnya gratis!",
+  "aboutDoubleDoubleDesc": "Amazing API for Amazon Music downloads. Thank you for making it free!",
   "@aboutDoubleDoubleDesc": {
     "description": "Credit for DoubleDouble API"
   },
@@ -584,11 +584,11 @@
   "@aboutDabMusic": {
     "description": "Name of Qobuz API service - DO NOT TRANSLATE"
   },
-  "aboutDabMusicDesc": "API streaming Qobuz terbaik. Unduhan Hi-Res tidak akan mungkin tanpa ini!",
+  "aboutDabMusicDesc": "The best Qobuz streaming API. Hi-Res downloads wouldn't be possible without this!",
   "@aboutDabMusicDesc": {
     "description": "Credit for DAB Music API"
   },
-  "aboutAppDescription": "Unduh lagu Spotify dalam kualitas lossless dari Tidal, Qobuz, dan Amazon Music.",
+  "aboutAppDescription": "Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
@@ -596,7 +596,7 @@
   "@albumTitle": {
     "description": "Album screen title"
   },
-  "albumTracks": "{count, plural, =1{1 lagu} other{{count} lagu}}",
+  "albumTracks": "{count, plural, =1{1 track} other{{count} tracks}}",
   "@albumTracks": {
     "description": "Album track count",
     "placeholders": {
@@ -605,11 +605,11 @@
       }
     }
   },
-  "albumDownloadAll": "Unduh Semua",
+  "albumDownloadAll": "Download All",
   "@albumDownloadAll": {
     "description": "Button to download all tracks"
   },
-  "albumDownloadRemaining": "Unduh Sisanya",
+  "albumDownloadRemaining": "Download Remaining",
   "@albumDownloadRemaining": {
     "description": "Button to download remaining tracks"
   },
@@ -617,23 +617,23 @@
   "@playlistTitle": {
     "description": "Playlist screen title"
   },
-  "artistTitle": "Artis",
+  "artistTitle": "Artist",
   "@artistTitle": {
     "description": "Artist screen title"
   },
-  "artistAlbums": "Album",
+  "artistAlbums": "Albums",
   "@artistAlbums": {
     "description": "Section header for artist albums"
   },
-  "artistSingles": "Single & EP",
+  "artistSingles": "Singles & EPs",
   "@artistSingles": {
     "description": "Section header for singles/EPs"
   },
-  "artistCompilations": "Kompilasi",
+  "artistCompilations": "Compilations",
   "@artistCompilations": {
     "description": "Section header for compilations"
   },
-  "artistReleases": "{count, plural, =1{1 rilis} other{{count} rilis}}",
+  "artistReleases": "{count, plural, =1{1 release} other{{count} releases}}",
   "@artistReleases": {
     "description": "Artist release count",
     "placeholders": {
@@ -642,11 +642,11 @@
       }
     }
   },
-  "artistPopular": "Populer",
+  "artistPopular": "Popular",
   "@artistPopular": {
     "description": "Section header for popular/top tracks"
   },
-  "artistMonthlyListeners": "{count} pendengar bulanan",
+  "artistMonthlyListeners": "{count} monthly listeners",
   "@artistMonthlyListeners": {
     "description": "Monthly listener count display",
     "placeholders": {
@@ -656,11 +656,11 @@
       }
     }
   },
-  "trackMetadataTitle": "Info Lagu",
+  "trackMetadataTitle": "Track Info",
   "@trackMetadataTitle": {
     "description": "Track metadata screen title"
   },
-  "trackMetadataArtist": "Artis",
+  "trackMetadataArtist": "Artist",
   "@trackMetadataArtist": {
     "description": "Metadata field - artist name"
   },
@@ -668,111 +668,111 @@
   "@trackMetadataAlbum": {
     "description": "Metadata field - album name"
   },
-  "trackMetadataDuration": "Durasi",
+  "trackMetadataDuration": "Duration",
   "@trackMetadataDuration": {
     "description": "Metadata field - track length"
   },
-  "trackMetadataQuality": "Kualitas",
+  "trackMetadataQuality": "Quality",
   "@trackMetadataQuality": {
     "description": "Metadata field - audio quality"
   },
-  "trackMetadataPath": "Lokasi File",
+  "trackMetadataPath": "File Path",
   "@trackMetadataPath": {
     "description": "Metadata field - file location"
   },
-  "trackMetadataDownloadedAt": "Diunduh",
+  "trackMetadataDownloadedAt": "Downloaded",
   "@trackMetadataDownloadedAt": {
     "description": "Metadata field - download date"
   },
-  "trackMetadataService": "Layanan",
+  "trackMetadataService": "Service",
   "@trackMetadataService": {
     "description": "Metadata field - download service used"
   },
-  "trackMetadataPlay": "Putar",
+  "trackMetadataPlay": "Play",
   "@trackMetadataPlay": {
     "description": "Action button - play track"
   },
-  "trackMetadataShare": "Bagikan",
+  "trackMetadataShare": "Share",
   "@trackMetadataShare": {
     "description": "Action button - share track"
   },
-  "trackMetadataDelete": "Hapus",
+  "trackMetadataDelete": "Delete",
   "@trackMetadataDelete": {
     "description": "Action button - delete track"
   },
-  "trackMetadataRedownload": "Unduh ulang",
+  "trackMetadataRedownload": "Re-download",
   "@trackMetadataRedownload": {
     "description": "Action button - download again"
   },
-  "trackMetadataOpenFolder": "Buka Folder",
+  "trackMetadataOpenFolder": "Open Folder",
   "@trackMetadataOpenFolder": {
     "description": "Action button - open containing folder"
   },
-  "setupTitle": "Selamat Datang di SpotiFLAC",
+  "setupTitle": "Welcome to SpotiFLAC",
   "@setupTitle": {
     "description": "Setup wizard title"
   },
-  "setupSubtitle": "Mari mulai pengaturan",
+  "setupSubtitle": "Let's get you started",
   "@setupSubtitle": {
     "description": "Setup wizard subtitle"
   },
-  "setupStoragePermission": "Izin Penyimpanan",
+  "setupStoragePermission": "Storage Permission",
   "@setupStoragePermission": {
     "description": "Storage permission step title"
   },
-  "setupStoragePermissionSubtitle": "Diperlukan untuk menyimpan file unduhan",
+  "setupStoragePermissionSubtitle": "Required to save downloaded files",
   "@setupStoragePermissionSubtitle": {
     "description": "Explanation for storage permission"
   },
-  "setupStoragePermissionGranted": "Izin diberikan",
+  "setupStoragePermissionGranted": "Permission granted",
   "@setupStoragePermissionGranted": {
     "description": "Status when permission granted"
   },
-  "setupStoragePermissionDenied": "Izin ditolak",
+  "setupStoragePermissionDenied": "Permission denied",
   "@setupStoragePermissionDenied": {
     "description": "Status when permission denied"
   },
-  "setupGrantPermission": "Berikan Izin",
+  "setupGrantPermission": "Grant Permission",
   "@setupGrantPermission": {
     "description": "Button to request permission"
   },
-  "setupDownloadLocation": "Lokasi Unduhan",
+  "setupDownloadLocation": "Download Location",
   "@setupDownloadLocation": {
     "description": "Download folder step title"
   },
-  "setupChooseFolder": "Pilih Folder",
+  "setupChooseFolder": "Choose Folder",
   "@setupChooseFolder": {
     "description": "Button to pick folder"
   },
-  "setupContinue": "Lanjutkan",
+  "setupContinue": "Continue",
   "@setupContinue": {
     "description": "Continue to next step button"
   },
-  "setupSkip": "Lewati untuk sekarang",
+  "setupSkip": "Skip for now",
   "@setupSkip": {
     "description": "Skip current step button"
   },
-  "setupStorageAccessRequired": "Akses Penyimpanan Diperlukan",
+  "setupStorageAccessRequired": "Storage Access Required",
   "@setupStorageAccessRequired": {
     "description": "Title when storage access needed"
   },
-  "setupStorageAccessMessage": "SpotiFLAC membutuhkan izin \"Akses semua file\" untuk menyimpan file musik ke folder pilihan Anda.",
+  "setupStorageAccessMessage": "SpotiFLAC needs \"All files access\" permission to save music files to your chosen folder.",
   "@setupStorageAccessMessage": {
     "description": "Explanation for storage access"
   },
-  "setupStorageAccessMessageAndroid11": "Android 11+ memerlukan izin \"Akses semua file\" untuk menyimpan file ke folder unduhan pilihan Anda.",
+  "setupStorageAccessMessageAndroid11": "Android 11+ requires \"All files access\" permission to save files to your chosen download folder.",
   "@setupStorageAccessMessageAndroid11": {
     "description": "Android 11+ specific explanation"
   },
-  "setupOpenSettings": "Buka Pengaturan",
+  "setupOpenSettings": "Open Settings",
   "@setupOpenSettings": {
     "description": "Button to open system settings"
   },
-  "setupPermissionDeniedMessage": "Izin ditolak. Harap berikan semua izin untuk melanjutkan.",
+  "setupPermissionDeniedMessage": "Permission denied. Please grant all permissions to continue.",
   "@setupPermissionDeniedMessage": {
     "description": "Error when permission denied"
   },
-  "setupPermissionRequired": "Izin {permissionType} Diperlukan",
+  "setupPermissionRequired": "{permissionType} Permission Required",
   "@setupPermissionRequired": {
     "description": "Generic permission required title",
     "placeholders": {
@@ -782,7 +782,7 @@
       }
     }
   },
-  "setupPermissionRequiredMessage": "Izin {permissionType} diperlukan untuk pengalaman terbaik. Anda dapat mengubahnya nanti di Pengaturan.",
+  "setupPermissionRequiredMessage": "{permissionType} permission is required for the best experience. You can change this later in Settings.",
   "@setupPermissionRequiredMessage": {
     "description": "Generic permission required message",
     "placeholders": {
@@ -791,59 +791,59 @@
       }
     }
   },
-  "setupSelectDownloadFolder": "Pilih Folder Unduhan",
+  "setupSelectDownloadFolder": "Select Download Folder",
   "@setupSelectDownloadFolder": {
     "description": "Folder selection step title"
   },
-  "setupUseDefaultFolder": "Gunakan Folder Default?",
+  "setupUseDefaultFolder": "Use Default Folder?",
   "@setupUseDefaultFolder": {
     "description": "Dialog title for default folder"
   },
-  "setupNoFolderSelected": "Tidak ada folder dipilih. Apakah Anda ingin menggunakan folder Musik default?",
+  "setupNoFolderSelected": "No folder selected. Would you like to use the default Music folder?",
   "@setupNoFolderSelected": {
     "description": "Prompt when no folder selected"
   },
-  "setupUseDefault": "Gunakan Default",
+  "setupUseDefault": "Use Default",
   "@setupUseDefault": {
     "description": "Button to use default folder"
   },
-  "setupDownloadLocationTitle": "Lokasi Unduhan",
+  "setupDownloadLocationTitle": "Download Location",
   "@setupDownloadLocationTitle": {
     "description": "Download location dialog title"
   },
-  "setupDownloadLocationIosMessage": "Di iOS, unduhan disimpan ke folder Documents aplikasi. Anda dapat mengaksesnya melalui aplikasi Files.",
+  "setupDownloadLocationIosMessage": "On iOS, downloads are saved to the app's Documents folder. You can access them via the Files app.",
   "@setupDownloadLocationIosMessage": {
     "description": "iOS-specific folder info"
   },
-  "setupAppDocumentsFolder": "Folder Documents Aplikasi",
+  "setupAppDocumentsFolder": "App Documents Folder",
   "@setupAppDocumentsFolder": {
     "description": "iOS documents folder option"
   },
-  "setupAppDocumentsFolderSubtitle": "Direkomendasikan - dapat diakses via aplikasi Files",
+  "setupAppDocumentsFolderSubtitle": "Recommended - accessible via Files app",
   "@setupAppDocumentsFolderSubtitle": {
     "description": "Subtitle for documents folder"
   },
-  "setupChooseFromFiles": "Pilih dari Files",
+  "setupChooseFromFiles": "Choose from Files",
   "@setupChooseFromFiles": {
     "description": "iOS file picker option"
   },
-  "setupChooseFromFilesSubtitle": "Pilih lokasi iCloud atau lainnya",
+  "setupChooseFromFilesSubtitle": "Select iCloud or other location",
   "@setupChooseFromFilesSubtitle": {
     "description": "Subtitle for file picker"
   },
-  "setupIosEmptyFolderWarning": "Batasan iOS: Folder kosong tidak dapat dipilih. Pilih folder dengan minimal satu file.",
+  "setupIosEmptyFolderWarning": "iOS limitation: Empty folders cannot be selected. Choose a folder with at least one file.",
   "@setupIosEmptyFolderWarning": {
     "description": "iOS folder selection warning"
   },
-  "setupDownloadInFlac": "Unduh lagu Spotify dalam format FLAC",
+  "setupDownloadInFlac": "Download Spotify tracks in FLAC",
   "@setupDownloadInFlac": {
     "description": "App tagline in setup"
   },
-  "setupStepStorage": "Penyimpanan",
+  "setupStepStorage": "Storage",
   "@setupStepStorage": {
     "description": "Setup step indicator - storage"
   },
-  "setupStepNotification": "Notifikasi",
+  "setupStepNotification": "Notification",
   "@setupStepNotification": {
     "description": "Setup step indicator - notification"
   },
@@ -855,131 +855,131 @@
   "@setupStepSpotify": {
     "description": "Setup step indicator - Spotify API"
   },
-  "setupStepPermission": "Izin",
+  "setupStepPermission": "Permission",
   "@setupStepPermission": {
     "description": "Setup step indicator - permission"
   },
-  "setupStorageGranted": "Izin Penyimpanan Diberikan!",
+  "setupStorageGranted": "Storage Permission Granted!",
   "@setupStorageGranted": {
     "description": "Success message for storage permission"
   },
-  "setupStorageRequired": "Izin Penyimpanan Diperlukan",
+  "setupStorageRequired": "Storage Permission Required",
   "@setupStorageRequired": {
     "description": "Title when storage permission needed"
   },
-  "setupStorageDescription": "SpotiFLAC membutuhkan izin penyimpanan untuk menyimpan file musik yang diunduh.",
+  "setupStorageDescription": "SpotiFLAC needs storage permission to save your downloaded music files.",
   "@setupStorageDescription": {
     "description": "Explanation for storage permission"
   },
-  "setupNotificationGranted": "Izin Notifikasi Diberikan!",
+  "setupNotificationGranted": "Notification Permission Granted!",
   "@setupNotificationGranted": {
     "description": "Success message for notification permission"
   },
-  "setupNotificationEnable": "Aktifkan Notifikasi",
+  "setupNotificationEnable": "Enable Notifications",
   "@setupNotificationEnable": {
     "description": "Button to enable notifications"
   },
-  "setupNotificationDescription": "Dapatkan pemberitahuan saat unduhan selesai atau membutuhkan perhatian.",
+  "setupNotificationDescription": "Get notified when downloads complete or require attention.",
   "@setupNotificationDescription": {
     "description": "Explanation for notifications"
   },
-  "setupFolderSelected": "Folder Unduhan Dipilih!",
+  "setupFolderSelected": "Download Folder Selected!",
   "@setupFolderSelected": {
     "description": "Success message for folder selection"
   },
-  "setupFolderChoose": "Pilih Folder Unduhan",
+  "setupFolderChoose": "Choose Download Folder",
   "@setupFolderChoose": {
     "description": "Button to choose folder"
   },
-  "setupFolderDescription": "Pilih folder tempat musik yang diunduh akan disimpan.",
+  "setupFolderDescription": "Select a folder where your downloaded music will be saved.",
   "@setupFolderDescription": {
     "description": "Explanation for folder selection"
   },
-  "setupChangeFolder": "Ubah Folder",
+  "setupChangeFolder": "Change Folder",
   "@setupChangeFolder": {
     "description": "Button to change selected folder"
   },
-  "setupSelectFolder": "Pilih Folder",
+  "setupSelectFolder": "Select Folder",
   "@setupSelectFolder": {
     "description": "Button to select folder"
   },
-  "setupSpotifyApiOptional": "Spotify API (Opsional)",
+  "setupSpotifyApiOptional": "Spotify API (Optional)",
   "@setupSpotifyApiOptional": {
     "description": "Spotify API step title"
   },
-  "setupSpotifyApiDescription": "Tambahkan kredensial Spotify API untuk hasil pencarian lebih baik dan akses ke konten eksklusif Spotify.",
+  "setupSpotifyApiDescription": "Add your Spotify API credentials for better search results and access to Spotify-exclusive content.",
   "@setupSpotifyApiDescription": {
     "description": "Explanation for Spotify API"
   },
-  "setupUseSpotifyApi": "Gunakan Spotify API",
+  "setupUseSpotifyApi": "Use Spotify API",
   "@setupUseSpotifyApi": {
     "description": "Toggle to enable Spotify API"
   },
-  "setupEnterCredentialsBelow": "Masukkan kredensial Anda di bawah",
+  "setupEnterCredentialsBelow": "Enter your credentials below",
   "@setupEnterCredentialsBelow": {
     "description": "Prompt to enter credentials"
   },
-  "setupUsingDeezer": "Menggunakan Deezer (tidak perlu akun)",
+  "setupUsingDeezer": "Using Deezer (no account needed)",
   "@setupUsingDeezer": {
     "description": "Status when using Deezer"
   },
-  "setupEnterClientId": "Masukkan Spotify Client ID",
+  "setupEnterClientId": "Enter Spotify Client ID",
   "@setupEnterClientId": {
     "description": "Placeholder for client ID field"
   },
-  "setupEnterClientSecret": "Masukkan Spotify Client Secret",
+  "setupEnterClientSecret": "Enter Spotify Client Secret",
   "@setupEnterClientSecret": {
     "description": "Placeholder for client secret field"
   },
-  "setupGetFreeCredentials": "Dapatkan kredensial API gratis dari Spotify Developer Dashboard.",
+  "setupGetFreeCredentials": "Get your free API credentials from the Spotify Developer Dashboard.",
   "@setupGetFreeCredentials": {
     "description": "Info about getting Spotify credentials"
   },
-  "setupEnableNotifications": "Aktifkan Notifikasi",
+  "setupEnableNotifications": "Enable Notifications",
   "@setupEnableNotifications": {
     "description": "Button to enable notifications"
   },
-  "setupProceedToNextStep": "Anda dapat melanjutkan ke langkah berikutnya.",
+  "setupProceedToNextStep": "You can now proceed to the next step.",
   "@setupProceedToNextStep": {
     "description": "Message after completing a step"
   },
-  "setupNotificationProgressDescription": "Anda akan menerima notifikasi progres unduhan.",
+  "setupNotificationProgressDescription": "You will receive download progress notifications.",
   "@setupNotificationProgressDescription": {
     "description": "Info about notification usage"
   },
-  "setupNotificationBackgroundDescription": "Dapatkan notifikasi tentang progres dan penyelesaian unduhan. Ini membantu Anda melacak unduhan saat aplikasi di latar belakang.",
+  "setupNotificationBackgroundDescription": "Get notified about download progress and completion. This helps you track downloads when the app is in background.",
   "@setupNotificationBackgroundDescription": {
     "description": "Detailed notification explanation"
   },
-  "setupSkipForNow": "Lewati untuk sekarang",
+  "setupSkipForNow": "Skip for now",
   "@setupSkipForNow": {
     "description": "Skip button text"
   },
-  "setupBack": "Kembali",
+  "setupBack": "Back",
   "@setupBack": {
     "description": "Back button text"
   },
-  "setupNext": "Lanjut",
+  "setupNext": "Next",
   "@setupNext": {
     "description": "Next button text"
   },
-  "setupGetStarted": "Mulai",
+  "setupGetStarted": "Get Started",
   "@setupGetStarted": {
     "description": "Final setup button"
   },
-  "setupSkipAndStart": "Lewati & Mulai",
+  "setupSkipAndStart": "Skip & Start",
   "@setupSkipAndStart": {
     "description": "Skip setup and start app"
   },
-  "setupAllowAccessToManageFiles": "Harap aktifkan \"Izinkan akses untuk mengelola semua file\" di layar berikutnya.",
+  "setupAllowAccessToManageFiles": "Please enable \"Allow access to manage all files\" in the next screen.",
   "@setupAllowAccessToManageFiles": {
     "description": "Instruction for file access permission"
   },
-  "setupGetCredentialsFromSpotify": "Dapatkan kredensial dari developer.spotify.com",
+  "setupGetCredentialsFromSpotify": "Get credentials from developer.spotify.com",
   "@setupGetCredentialsFromSpotify": {
     "description": "Link text for Spotify developer portal"
   },
-  "dialogCancel": "Batal",
+  "dialogCancel": "Cancel",
   "@dialogCancel": {
     "description": "Dialog button - cancel action"
   },
@@ -987,75 +987,75 @@
   "@dialogOk": {
     "description": "Dialog button - confirm/acknowledge"
   },
-  "dialogSave": "Simpan",
+  "dialogSave": "Save",
   "@dialogSave": {
     "description": "Dialog button - save changes"
   },
-  "dialogDelete": "Hapus",
+  "dialogDelete": "Delete",
   "@dialogDelete": {
     "description": "Dialog button - delete item"
   },
-  "dialogRetry": "Coba Lagi",
+  "dialogRetry": "Retry",
   "@dialogRetry": {
     "description": "Dialog button - retry action"
   },
-  "dialogClose": "Tutup",
+  "dialogClose": "Close",
   "@dialogClose": {
     "description": "Dialog button - close dialog"
   },
-  "dialogYes": "Ya",
+  "dialogYes": "Yes",
   "@dialogYes": {
     "description": "Dialog button - confirm yes"
   },
-  "dialogNo": "Tidak",
+  "dialogNo": "No",
   "@dialogNo": {
     "description": "Dialog button - confirm no"
   },
-  "dialogClear": "Hapus",
+  "dialogClear": "Clear",
   "@dialogClear": {
     "description": "Dialog button - clear items"
   },
-  "dialogConfirm": "Konfirmasi",
+  "dialogConfirm": "Confirm",
   "@dialogConfirm": {
     "description": "Dialog button - confirm action"
   },
-  "dialogDone": "Selesai",
+  "dialogDone": "Done",
   "@dialogDone": {
     "description": "Dialog button - action completed"
   },
-  "dialogImport": "Impor",
+  "dialogImport": "Import",
   "@dialogImport": {
     "description": "Dialog button - import data"
   },
-  "dialogDiscard": "Buang",
+  "dialogDiscard": "Discard",
   "@dialogDiscard": {
     "description": "Dialog button - discard changes"
   },
-  "dialogRemove": "Hapus",
+  "dialogRemove": "Remove",
   "@dialogRemove": {
     "description": "Dialog button - remove item"
   },
-  "dialogUninstall": "Copot",
+  "dialogUninstall": "Uninstall",
   "@dialogUninstall": {
     "description": "Dialog button - uninstall extension"
   },
-  "dialogDiscardChanges": "Buang Perubahan?",
+  "dialogDiscardChanges": "Discard Changes?",
   "@dialogDiscardChanges": {
     "description": "Dialog title - unsaved changes warning"
   },
-  "dialogUnsavedChanges": "Anda memiliki perubahan yang belum disimpan. Apakah Anda ingin membuangnya?",
+  "dialogUnsavedChanges": "You have unsaved changes. Do you want to discard them?",
   "@dialogUnsavedChanges": {
     "description": "Dialog message - unsaved changes"
   },
-  "dialogDownloadFailed": "Unduhan Gagal",
+  "dialogDownloadFailed": "Download Failed",
   "@dialogDownloadFailed": {
     "description": "Dialog title - download error"
   },
-  "dialogTrackLabel": "Lagu:",
+  "dialogTrackLabel": "Track:",
   "@dialogTrackLabel": {
     "description": "Label for track name in error dialog"
   },
-  "dialogArtistLabel": "Artis:",
+  "dialogArtistLabel": "Artist:",
   "@dialogArtistLabel": {
     "description": "Label for artist name in error dialog"
   },
@@ -1063,31 +1063,31 @@
   "@dialogErrorLabel": {
     "description": "Label for error message"
   },
-  "dialogClearAll": "Hapus Semua",
+  "dialogClearAll": "Clear All",
   "@dialogClearAll": {
     "description": "Dialog title - clear all items"
   },
-  "dialogClearAllDownloads": "Apakah Anda yakin ingin menghapus semua unduhan?",
+  "dialogClearAllDownloads": "Are you sure you want to clear all downloads?",
   "@dialogClearAllDownloads": {
     "description": "Dialog message - clear downloads confirmation"
   },
-  "dialogRemoveFromDevice": "Hapus dari perangkat?",
+  "dialogRemoveFromDevice": "Remove from device?",
   "@dialogRemoveFromDevice": {
     "description": "Dialog title - delete file confirmation"
   },
-  "dialogRemoveExtension": "Hapus Ekstensi",
+  "dialogRemoveExtension": "Remove Extension",
   "@dialogRemoveExtension": {
     "description": "Dialog title - uninstall extension"
   },
-  "dialogRemoveExtensionMessage": "Apakah Anda yakin ingin menghapus ekstensi ini? Tindakan ini tidak dapat dibatalkan.",
+  "dialogRemoveExtensionMessage": "Are you sure you want to remove this extension? This cannot be undone.",
   "@dialogRemoveExtensionMessage": {
     "description": "Dialog message - uninstall confirmation"
   },
-  "dialogUninstallExtension": "Copot Ekstensi?",
+  "dialogUninstallExtension": "Uninstall Extension?",
   "@dialogUninstallExtension": {
     "description": "Dialog title - uninstall extension"
   },
-  "dialogUninstallExtensionMessage": "Apakah Anda yakin ingin menghapus {extensionName}?",
+  "dialogUninstallExtensionMessage": "Are you sure you want to remove {extensionName}?",
   "@dialogUninstallExtensionMessage": {
     "description": "Dialog message - uninstall specific extension",
     "placeholders": {
@@ -1096,19 +1096,19 @@
       }
     }
   },
-  "dialogClearHistoryTitle": "Hapus Riwayat",
+  "dialogClearHistoryTitle": "Clear History",
   "@dialogClearHistoryTitle": {
     "description": "Dialog title - clear download history"
   },
-  "dialogClearHistoryMessage": "Apakah Anda yakin ingin menghapus semua riwayat unduhan? Ini tidak dapat dibatalkan.",
+  "dialogClearHistoryMessage": "Are you sure you want to clear all download history? This cannot be undone.",
   "@dialogClearHistoryMessage": {
     "description": "Dialog message - clear history confirmation"
   },
-  "dialogDeleteSelectedTitle": "Hapus yang Dipilih",
+  "dialogDeleteSelectedTitle": "Delete Selected",
   "@dialogDeleteSelectedTitle": {
     "description": "Dialog title - delete selected items"
   },
-  "dialogDeleteSelectedMessage": "Hapus {count} {count, plural, =1{lagu} other{lagu}} dari riwayat?\n\nIni juga akan menghapus file dari penyimpanan.",
+  "dialogDeleteSelectedMessage": "Delete {count} {count, plural, =1{track} other{tracks}} from history?\n\nThis will also delete the files from storage.",
   "@dialogDeleteSelectedMessage": {
     "description": "Dialog message - delete selected tracks",
     "placeholders": {
@@ -1117,11 +1117,11 @@
       }
     }
   },
-  "dialogImportPlaylistTitle": "Impor Playlist",
+  "dialogImportPlaylistTitle": "Import Playlist",
   "@dialogImportPlaylistTitle": {
     "description": "Dialog title - import CSV playlist"
   },
-  "dialogImportPlaylistMessage": "Ditemukan {count} lagu di CSV. Tambahkan ke antrian unduhan?",
+  "dialogImportPlaylistMessage": "Found {count} tracks in CSV. Add them to download queue?",
   "@dialogImportPlaylistMessage": {
     "description": "Dialog message - import playlist confirmation",
     "placeholders": {
@@ -1130,7 +1130,7 @@
       }
     }
   },
-  "snackbarAddedToQueue": "Menambahkan \"{trackName}\" ke antrian",
+  "snackbarAddedToQueue": "Added \"{trackName}\" to queue",
   "@snackbarAddedToQueue": {
     "description": "Snackbar - track added to download queue",
     "placeholders": {
@@ -1139,7 +1139,7 @@
       }
     }
   },
-  "snackbarAddedTracksToQueue": "Menambahkan {count} lagu ke antrian",
+  "snackbarAddedTracksToQueue": "Added {count} tracks to queue",
   "@snackbarAddedTracksToQueue": {
     "description": "Snackbar - multiple tracks added to queue",
     "placeholders": {
@@ -1148,7 +1148,7 @@
       }
     }
   },
-  "snackbarAlreadyDownloaded": "\"{trackName}\" sudah diunduh",
+  "snackbarAlreadyDownloaded": "\"{trackName}\" already downloaded",
   "@snackbarAlreadyDownloaded": {
     "description": "Snackbar - track already exists",
     "placeholders": {
@@ -1157,19 +1157,19 @@
       }
     }
   },
-  "snackbarHistoryCleared": "Riwayat dihapus",
+  "snackbarHistoryCleared": "History cleared",
   "@snackbarHistoryCleared": {
     "description": "Snackbar - history deleted"
   },
-  "snackbarCredentialsSaved": "Kredensial disimpan",
+  "snackbarCredentialsSaved": "Credentials saved",
   "@snackbarCredentialsSaved": {
     "description": "Snackbar - Spotify credentials saved"
   },
-  "snackbarCredentialsCleared": "Kredensial dihapus",
+  "snackbarCredentialsCleared": "Credentials cleared",
   "@snackbarCredentialsCleared": {
     "description": "Snackbar - Spotify credentials removed"
   },
-  "snackbarDeletedTracks": "Menghapus {count} {count, plural, =1{lagu} other{lagu}}",
+  "snackbarDeletedTracks": "Deleted {count} {count, plural, =1{track} other{tracks}}",
   "@snackbarDeletedTracks": {
     "description": "Snackbar - tracks deleted",
     "placeholders": {
@@ -1178,7 +1178,7 @@
       }
     }
   },
-  "snackbarCannotOpenFile": "Tidak dapat membuka file: {error}",
+  "snackbarCannotOpenFile": "Cannot open file: {error}",
   "@snackbarCannotOpenFile": {
     "description": "Snackbar - file open error",
     "placeholders": {
@@ -1187,15 +1187,15 @@
       }
     }
   },
-  "snackbarFillAllFields": "Harap isi semua field",
+  "snackbarFillAllFields": "Please fill all fields",
   "@snackbarFillAllFields": {
     "description": "Snackbar - validation error"
   },
-  "snackbarViewQueue": "Lihat Antrian",
+  "snackbarViewQueue": "View Queue",
   "@snackbarViewQueue": {
     "description": "Snackbar action - view download queue"
   },
-  "snackbarFailedToLoad": "Gagal memuat: {error}",
+  "snackbarFailedToLoad": "Failed to load: {error}",
   "@snackbarFailedToLoad": {
     "description": "Snackbar - loading error",
     "placeholders": {
@@ -1204,7 +1204,7 @@
       }
     }
   },
-  "snackbarUrlCopied": "URL {platform} disalin ke clipboard",
+  "snackbarUrlCopied": "{platform} URL copied to clipboard",
   "@snackbarUrlCopied": {
     "description": "Snackbar - URL copied",
     "placeholders": {
@@ -1214,23 +1214,23 @@
       }
     }
   },
-  "snackbarFileNotFound": "File tidak ditemukan",
+  "snackbarFileNotFound": "File not found",
   "@snackbarFileNotFound": {
     "description": "Snackbar - file doesn't exist"
   },
-  "snackbarSelectExtFile": "Harap pilih file .spotiflac-ext",
+  "snackbarSelectExtFile": "Please select a .spotiflac-ext file",
   "@snackbarSelectExtFile": {
     "description": "Snackbar - wrong file type selected"
   },
-  "snackbarProviderPrioritySaved": "Prioritas provider disimpan",
+  "snackbarProviderPrioritySaved": "Provider priority saved",
   "@snackbarProviderPrioritySaved": {
     "description": "Snackbar - provider order saved"
   },
-  "snackbarMetadataProviderSaved": "Prioritas provider metadata disimpan",
+  "snackbarMetadataProviderSaved": "Metadata provider priority saved",
   "@snackbarMetadataProviderSaved": {
     "description": "Snackbar - metadata provider order saved"
   },
-  "snackbarExtensionInstalled": "{extensionName} terpasang.",
+  "snackbarExtensionInstalled": "{extensionName} installed.",
   "@snackbarExtensionInstalled": {
     "description": "Snackbar - extension installed successfully",
     "placeholders": {
@@ -1239,7 +1239,7 @@
       }
     }
   },
-  "snackbarExtensionUpdated": "{extensionName} diperbarui.",
+  "snackbarExtensionUpdated": "{extensionName} updated.",
   "@snackbarExtensionUpdated": {
     "description": "Snackbar - extension updated successfully",
     "placeholders": {
@@ -1248,23 +1248,23 @@
       }
     }
   },
-  "snackbarFailedToInstall": "Gagal memasang ekstensi",
+  "snackbarFailedToInstall": "Failed to install extension",
   "@snackbarFailedToInstall": {
     "description": "Snackbar - extension install error"
   },
-  "snackbarFailedToUpdate": "Gagal memperbarui ekstensi",
+  "snackbarFailedToUpdate": "Failed to update extension",
   "@snackbarFailedToUpdate": {
     "description": "Snackbar - extension update error"
   },
-  "errorRateLimited": "Dibatasi",
+  "errorRateLimited": "Rate Limited",
   "@errorRateLimited": {
     "description": "Error title - too many requests"
   },
-  "errorRateLimitedMessage": "Terlalu banyak permintaan. Harap tunggu sebentar sebelum mencari lagi.",
+  "errorRateLimitedMessage": "Too many requests. Please wait a moment before searching again.",
   "@errorRateLimitedMessage": {
     "description": "Error message - rate limit explanation"
   },
-  "errorFailedToLoad": "Gagal memuat {item}",
+  "errorFailedToLoad": "Failed to load {item}",
   "@errorFailedToLoad": {
     "description": "Error message - loading failed",
     "placeholders": {
@@ -1274,11 +1274,11 @@
       }
     }
   },
-  "errorNoTracksFound": "Tidak ada lagu ditemukan",
+  "errorNoTracksFound": "No tracks found",
   "@errorNoTracksFound": {
     "description": "Error - search returned no results"
   },
-  "errorMissingExtensionSource": "Tidak dapat memuat {item}: sumber ekstensi tidak ada",
+  "errorMissingExtensionSource": "Cannot load {item}: missing extension source",
   "@errorMissingExtensionSource": {
     "description": "Error - extension source not available",
     "placeholders": {
@@ -1287,79 +1287,79 @@
       }
     }
   },
-  "statusQueued": "Mengantri",
+  "statusQueued": "Queued",
   "@statusQueued": {
     "description": "Download status - waiting in queue"
   },
-  "statusDownloading": "Mengunduh",
+  "statusDownloading": "Downloading",
   "@statusDownloading": {
     "description": "Download status - in progress"
   },
-  "statusFinalizing": "Menyelesaikan",
+  "statusFinalizing": "Finalizing",
   "@statusFinalizing": {
     "description": "Download status - writing metadata"
   },
-  "statusCompleted": "Selesai",
+  "statusCompleted": "Completed",
   "@statusCompleted": {
     "description": "Download status - finished"
   },
-  "statusFailed": "Gagal",
+  "statusFailed": "Failed",
   "@statusFailed": {
     "description": "Download status - error occurred"
   },
-  "statusSkipped": "Dilewati",
+  "statusSkipped": "Skipped",
   "@statusSkipped": {
     "description": "Download status - already exists"
   },
-  "statusPaused": "Dijeda",
+  "statusPaused": "Paused",
   "@statusPaused": {
     "description": "Download status - paused"
   },
-  "actionPause": "Jeda",
+  "actionPause": "Pause",
   "@actionPause": {
     "description": "Action button - pause download"
   },
-  "actionResume": "Lanjutkan",
+  "actionResume": "Resume",
   "@actionResume": {
     "description": "Action button - resume download"
   },
-  "actionCancel": "Batal",
+  "actionCancel": "Cancel",
   "@actionCancel": {
     "description": "Action button - cancel operation"
   },
-  "actionStop": "Hentikan",
+  "actionStop": "Stop",
   "@actionStop": {
     "description": "Action button - stop operation"
   },
-  "actionSelect": "Pilih",
+  "actionSelect": "Select",
   "@actionSelect": {
     "description": "Action button - enter selection mode"
   },
-  "actionSelectAll": "Pilih Semua",
+  "actionSelectAll": "Select All",
   "@actionSelectAll": {
     "description": "Action button - select all items"
   },
-  "actionDeselect": "Batal Pilih",
+  "actionDeselect": "Deselect",
   "@actionDeselect": {
     "description": "Action button - deselect all"
   },
-  "actionPaste": "Tempel",
+  "actionPaste": "Paste",
   "@actionPaste": {
     "description": "Action button - paste from clipboard"
   },
-  "actionImportCsv": "Impor CSV",
+  "actionImportCsv": "Import CSV",
   "@actionImportCsv": {
     "description": "Action button - import CSV file"
   },
-  "actionRemoveCredentials": "Hapus Kredensial",
+  "actionRemoveCredentials": "Remove Credentials",
   "@actionRemoveCredentials": {
     "description": "Action button - delete Spotify credentials"
   },
-  "actionSaveCredentials": "Simpan Kredensial",
+  "actionSaveCredentials": "Save Credentials",
   "@actionSaveCredentials": {
     "description": "Action button - save Spotify credentials"
   },
-  "selectionSelected": "{count} dipilih",
+  "selectionSelected": "{count} selected",
   "@selectionSelected": {
     "description": "Selection count indicator",
     "placeholders": {
@@ -1368,15 +1368,15 @@
       }
     }
   },
-  "selectionAllSelected": "Semua lagu dipilih",
+  "selectionAllSelected": "All tracks selected",
   "@selectionAllSelected": {
     "description": "Status - all items selected"
   },
-  "selectionTapToSelect": "Ketuk lagu untuk memilih",
+  "selectionTapToSelect": "Tap tracks to select",
   "@selectionTapToSelect": {
     "description": "Hint - how to select items"
   },
-  "selectionDeleteTracks": "Hapus {count} {count, plural, =1{lagu} other{lagu}}",
+  "selectionDeleteTracks": "Delete {count} {count, plural, =1{track} other{tracks}}",
   "@selectionDeleteTracks": {
     "description": "Delete button with count",
     "placeholders": {
@@ -1385,11 +1385,11 @@
       }
     }
   },
-  "selectionSelectToDelete": "Pilih lagu untuk dihapus",
+  "selectionSelectToDelete": "Select tracks to delete",
   "@selectionSelectToDelete": {
     "description": "Placeholder when nothing selected"
   },
-  "progressFetchingMetadata": "Mengambil metadata... {current}/{total}",
+  "progressFetchingMetadata": "Fetching metadata... {current}/{total}",
   "@progressFetchingMetadata": {
     "description": "Progress indicator - loading track info",
     "placeholders": {
@@ -1401,59 +1401,59 @@
       }
     }
   },
-  "progressReadingCsv": "Membaca CSV...",
+  "progressReadingCsv": "Reading CSV...",
   "@progressReadingCsv": {
     "description": "Progress indicator - parsing CSV file"
   },
-  "searchSongs": "Lagu",
+  "searchSongs": "Songs",
   "@searchSongs": {
     "description": "Search result category - songs"
   },
-  "searchArtists": "Artis",
+  "searchArtists": "Artists",
   "@searchArtists": {
     "description": "Search result category - artists"
   },
-  "searchAlbums": "Album",
+  "searchAlbums": "Albums",
   "@searchAlbums": {
     "description": "Search result category - albums"
   },
-  "searchPlaylists": "Playlist",
+  "searchPlaylists": "Playlists",
   "@searchPlaylists": {
     "description": "Search result category - playlists"
   },
-  "tooltipPlay": "Putar",
+  "tooltipPlay": "Play",
   "@tooltipPlay": {
     "description": "Tooltip - play button"
   },
-  "tooltipCancel": "Batal",
+  "tooltipCancel": "Cancel",
   "@tooltipCancel": {
     "description": "Tooltip - cancel button"
   },
-  "tooltipStop": "Hentikan",
+  "tooltipStop": "Stop",
   "@tooltipStop": {
     "description": "Tooltip - stop button"
   },
-  "tooltipRetry": "Coba Lagi",
+  "tooltipRetry": "Retry",
   "@tooltipRetry": {
     "description": "Tooltip - retry button"
   },
-  "tooltipRemove": "Hapus",
+  "tooltipRemove": "Remove",
   "@tooltipRemove": {
     "description": "Tooltip - remove button"
   },
-  "tooltipClear": "Hapus",
+  "tooltipClear": "Clear",
   "@tooltipClear": {
     "description": "Tooltip - clear button"
   },
-  "tooltipPaste": "Tempel",
+  "tooltipPaste": "Paste",
   "@tooltipPaste": {
     "description": "Tooltip - paste button"
   },
-  "filenameFormat": "Format Nama File",
+  "filenameFormat": "Filename Format",
   "@filenameFormat": {
     "description": "Setting title - filename pattern"
   },
-  "filenameFormatPreview": "Pratinjau: {preview}",
+  "filenameFormatPreview": "Preview: {preview}",
   "@filenameFormatPreview": {
     "description": "Preview of filename pattern",
     "placeholders": {
@@ -1462,7 +1462,7 @@
       }
     }
   },
-  "filenameAvailablePlaceholders": "Placeholder yang tersedia:",
+  "filenameAvailablePlaceholders": "Available placeholders:",
   "@filenameAvailablePlaceholders": {
     "description": "Label for placeholder list"
   },
@@ -1470,51 +1470,51 @@
   "@filenameHint": {
     "description": "Default filename format hint"
   },
-  "folderOrganization": "Organisasi Folder",
+  "folderOrganization": "Folder Organization",
   "@folderOrganization": {
     "description": "Setting title - folder structure"
   },
-  "folderOrganizationNone": "Tidak ada",
+  "folderOrganizationNone": "No organization",
   "@folderOrganizationNone": {
     "description": "Folder option - flat structure"
   },
-  "folderOrganizationByArtist": "Berdasarkan Artis",
+  "folderOrganizationByArtist": "By Artist",
   "@folderOrganizationByArtist": {
     "description": "Folder option - artist folders"
   },
-  "folderOrganizationByAlbum": "Berdasarkan Album",
+  "folderOrganizationByAlbum": "By Album",
   "@folderOrganizationByAlbum": {
     "description": "Folder option - album folders"
   },
-  "folderOrganizationByArtistAlbum": "Berdasarkan Artis & Album",
+  "folderOrganizationByArtistAlbum": "Artist/Album",
   "@folderOrganizationByArtistAlbum": {
     "description": "Folder option - nested folders"
   },
-  "folderOrganizationDescription": "Atur file yang diunduh ke dalam folder",
+  "folderOrganizationDescription": "Organize downloaded files into folders",
   "@folderOrganizationDescription": {
     "description": "Folder organization sheet description"
   },
-  "folderOrganizationNoneSubtitle": "Semua file di folder unduhan",
+  "folderOrganizationNoneSubtitle": "All files in download folder",
   "@folderOrganizationNoneSubtitle": {
     "description": "Subtitle for no organization option"
   },
-  "folderOrganizationByArtistSubtitle": "Folder terpisah untuk setiap artis",
+  "folderOrganizationByArtistSubtitle": "Separate folder for each artist",
   "@folderOrganizationByArtistSubtitle": {
     "description": "Subtitle for artist folder option"
   },
-  "folderOrganizationByAlbumSubtitle": "Folder terpisah untuk setiap album",
+  "folderOrganizationByAlbumSubtitle": "Separate folder for each album",
   "@folderOrganizationByAlbumSubtitle": {
     "description": "Subtitle for album folder option"
   },
-  "folderOrganizationByArtistAlbumSubtitle": "Folder bersarang untuk artis dan album",
+  "folderOrganizationByArtistAlbumSubtitle": "Nested folders for artist and album",
   "@folderOrganizationByArtistAlbumSubtitle": {
     "description": "Subtitle for nested folder option"
   },
-  "updateAvailable": "Pembaruan Tersedia",
+  "updateAvailable": "Update Available",
   "@updateAvailable": {
     "description": "Update dialog title"
   },
-  "updateNewVersion": "Versi {version} tersedia",
+  "updateNewVersion": "Version {version} is available",
   "@updateNewVersion": {
     "description": "Update available message",
     "placeholders": {
@@ -1523,139 +1523,139 @@
       }
     }
   },
-  "updateDownload": "Unduh",
+  "updateDownload": "Download",
   "@updateDownload": {
     "description": "Update button - download update"
   },
-  "updateLater": "Nanti",
+  "updateLater": "Later",
   "@updateLater": {
     "description": "Update button - dismiss"
   },
-  "updateChangelog": "Log Perubahan",
+  "updateChangelog": "Changelog",
   "@updateChangelog": {
     "description": "Link to changelog"
   },
-  "updateStartingDownload": "Memulai unduhan...",
+  "updateStartingDownload": "Starting download...",
   "@updateStartingDownload": {
     "description": "Update status - initializing"
   },
-  "updateDownloadFailed": "Unduhan gagal",
+  "updateDownloadFailed": "Download failed",
   "@updateDownloadFailed": {
     "description": "Update error title"
   },
-  "updateFailedMessage": "Gagal mengunduh pembaruan",
+  "updateFailedMessage": "Failed to download update",
   "@updateFailedMessage": {
     "description": "Update error message"
   },
-  "updateNewVersionReady": "Versi baru sudah siap",
+  "updateNewVersionReady": "A new version is ready",
   "@updateNewVersionReady": {
     "description": "Update subtitle"
   },
-  "updateCurrent": "Saat ini",
+  "updateCurrent": "Current",
   "@updateCurrent": {
     "description": "Label for current version"
   },
-  "updateNew": "Baru",
+  "updateNew": "New",
   "@updateNew": {
     "description": "Label for new version"
   },
-  "updateDownloading": "Mengunduh...",
+  "updateDownloading": "Downloading...",
   "@updateDownloading": {
     "description": "Update status - downloading"
   },
-  "updateWhatsNew": "Yang Baru",
+  "updateWhatsNew": "What's New",
   "@updateWhatsNew": {
     "description": "Changelog section title"
   },
-  "updateDownloadInstall": "Unduh & Pasang",
+  "updateDownloadInstall": "Download & Install",
   "@updateDownloadInstall": {
     "description": "Update button - download and install"
   },
-  "updateDontRemind": "Jangan ingatkan",
+  "updateDontRemind": "Don't remind",
   "@updateDontRemind": {
     "description": "Update button - skip this version"
   },
-  "providerPriority": "Prioritas Provider",
+  "providerPriority": "Provider Priority",
   "@providerPriority": {
     "description": "Setting title - download provider order"
   },
-  "providerPrioritySubtitle": "Seret untuk mengatur ulang provider unduhan",
+  "providerPrioritySubtitle": "Drag to reorder download providers",
   "@providerPrioritySubtitle": {
     "description": "Subtitle for provider priority"
   },
-  "providerPriorityTitle": "Prioritas Provider",
+  "providerPriorityTitle": "Provider Priority",
   "@providerPriorityTitle": {
     "description": "Provider priority page title"
   },
-  "providerPriorityDescription": "Seret untuk mengatur ulang urutan provider unduhan. Aplikasi akan mencoba provider dari atas ke bawah saat mengunduh lagu.",
+  "providerPriorityDescription": "Drag to reorder download providers. The app will try providers from top to bottom when downloading tracks.",
   "@providerPriorityDescription": {
     "description": "Provider priority page description"
   },
-  "providerPriorityInfo": "Jika lagu tidak tersedia di provider pertama, aplikasi akan otomatis mencoba yang berikutnya.",
+  "providerPriorityInfo": "If a track is not available on the first provider, the app will automatically try the next one.",
   "@providerPriorityInfo": {
     "description": "Info tip about fallback behavior"
   },
-  "providerBuiltIn": "Bawaan",
+  "providerBuiltIn": "Built-in",
   "@providerBuiltIn": {
     "description": "Label for built-in providers (Tidal/Qobuz/Amazon)"
   },
-  "providerExtension": "Ekstensi",
+  "providerExtension": "Extension",
   "@providerExtension": {
     "description": "Label for extension-provided providers"
   },
-  "metadataProviderPriority": "Prioritas Provider Metadata",
+  "metadataProviderPriority": "Metadata Provider Priority",
   "@metadataProviderPriority": {
     "description": "Setting title - metadata provider order"
   },
-  "metadataProviderPrioritySubtitle": "Urutan yang digunakan saat mengambil metadata lagu",
+  "metadataProviderPrioritySubtitle": "Order used when fetching track metadata",
   "@metadataProviderPrioritySubtitle": {
     "description": "Subtitle for metadata priority"
   },
-  "metadataProviderPriorityTitle": "Prioritas Metadata",
+  "metadataProviderPriorityTitle": "Metadata Priority",
   "@metadataProviderPriorityTitle": {
     "description": "Metadata priority page title"
   },
-  "metadataProviderPriorityDescription": "Seret untuk mengatur ulang urutan provider metadata. Aplikasi akan mencoba provider dari atas ke bawah saat mencari lagu dan mengambil metadata.",
+  "metadataProviderPriorityDescription": "Drag to reorder metadata providers. The app will try providers from top to bottom when searching for tracks and fetching metadata.",
   "@metadataProviderPriorityDescription": {
     "description": "Metadata priority page description"
   },
-  "metadataProviderPriorityInfo": "Deezer tidak memiliki batas rate dan direkomendasikan sebagai utama. Spotify mungkin membatasi rate setelah banyak permintaan.",
+  "metadataProviderPriorityInfo": "Deezer has no rate limits and is recommended as primary. Spotify may rate limit after many requests.",
   "@metadataProviderPriorityInfo": {
     "description": "Info tip about rate limits"
   },
-  "metadataNoRateLimits": "Tidak ada batas rate",
+  "metadataNoRateLimits": "No rate limits",
   "@metadataNoRateLimits": {
     "description": "Deezer provider description"
   },
-  "metadataMayRateLimit": "Mungkin dibatasi rate",
+  "metadataMayRateLimit": "May rate limit",
   "@metadataMayRateLimit": {
     "description": "Spotify provider description"
   },
-  "logTitle": "Log",
+  "logTitle": "Logs",
   "@logTitle": {
     "description": "Logs screen title"
   },
-  "logCopy": "Salin Log",
+  "logCopy": "Copy Logs",
   "@logCopy": {
     "description": "Action - copy logs to clipboard"
   },
-  "logClear": "Hapus Log",
+  "logClear": "Clear Logs",
   "@logClear": {
     "description": "Action - delete all logs"
   },
-  "logShare": "Bagikan Log",
+  "logShare": "Share Logs",
   "@logShare": {
     "description": "Action - share logs file"
   },
-  "logEmpty": "Belum ada log",
+  "logEmpty": "No logs yet",
   "@logEmpty": {
     "description": "Empty state title"
   },
-  "logCopied": "Log disalin ke clipboard",
+  "logCopied": "Logs copied to clipboard",
   "@logCopied": {
     "description": "Snackbar - logs copied"
   },
-  "logSearchHint": "Cari log...",
+  "logSearchHint": "Search logs...",
   "@logSearchHint": {
     "description": "Log search placeholder"
   },
@@ -1667,87 +1667,87 @@
   "@logFilterSection": {
     "description": "Filter section title"
   },
-  "logShareLogs": "Bagikan log",
+  "logShareLogs": "Share logs",
   "@logShareLogs": {
     "description": "Share button tooltip"
   },
-  "logClearLogs": "Hapus log",
+  "logClearLogs": "Clear logs",
   "@logClearLogs": {
     "description": "Clear button tooltip"
   },
-  "logClearLogsTitle": "Hapus Log",
+  "logClearLogsTitle": "Clear Logs",
   "@logClearLogsTitle": {
     "description": "Clear logs dialog title"
   },
-  "logClearLogsMessage": "Apakah Anda yakin ingin menghapus semua log?",
+  "logClearLogsMessage": "Are you sure you want to clear all logs?",
   "@logClearLogsMessage": {
     "description": "Clear logs confirmation message"
   },
-  "logIspBlocking": "PEMBLOKIRAN ISP TERDETEKSI",
+  "logIspBlocking": "ISP BLOCKING DETECTED",
   "@logIspBlocking": {
     "description": "Error category - ISP blocking"
   },
-  "logRateLimited": "DIBATASI",
+  "logRateLimited": "RATE LIMITED",
   "@logRateLimited": {
     "description": "Error category - rate limiting"
   },
-  "logNetworkError": "ERROR JARINGAN",
+  "logNetworkError": "NETWORK ERROR",
   "@logNetworkError": {
     "description": "Error category - network issues"
   },
-  "logTrackNotFound": "LAGU TIDAK DITEMUKAN",
+  "logTrackNotFound": "TRACK NOT FOUND",
   "@logTrackNotFound": {
     "description": "Error category - missing tracks"
   },
-  "logFilterBySeverity": "Filter log berdasarkan tingkat keparahan",
+  "logFilterBySeverity": "Filter logs by severity",
   "@logFilterBySeverity": {
     "description": "Filter dialog title"
   },
-  "logNoLogsYet": "Belum ada log",
+  "logNoLogsYet": "No logs yet",
   "@logNoLogsYet": {
     "description": "Empty state title"
   },
-  "logNoLogsYetSubtitle": "Log akan muncul di sini saat Anda menggunakan aplikasi",
+  "logNoLogsYetSubtitle": "Logs will appear here as you use the app",
   "@logNoLogsYetSubtitle": {
     "description": "Empty state subtitle"
   },
-  "logIssueSummary": "Ringkasan Masalah",
+  "logIssueSummary": "Issue Summary",
   "@logIssueSummary": {
     "description": "Section header for error summary"
   },
-  "logIspBlockingDescription": "ISP Anda mungkin memblokir akses ke layanan unduhan",
+  "logIspBlockingDescription": "Your ISP may be blocking access to download services",
   "@logIspBlockingDescription": {
     "description": "ISP blocking explanation"
   },
-  "logIspBlockingSuggestion": "Coba gunakan VPN atau ubah DNS ke 1.1.1.1 atau 8.8.8.8",
+  "logIspBlockingSuggestion": "Try using a VPN or change DNS to 1.1.1.1 or 8.8.8.8",
   "@logIspBlockingSuggestion": {
     "description": "ISP blocking fix suggestion"
   },
-  "logRateLimitedDescription": "Terlalu banyak permintaan ke layanan",
+  "logRateLimitedDescription": "Too many requests to the service",
   "@logRateLimitedDescription": {
     "description": "Rate limit explanation"
   },
-  "logRateLimitedSuggestion": "Tunggu beberapa menit sebelum mencoba lagi",
+  "logRateLimitedSuggestion": "Wait a few minutes before trying again",
   "@logRateLimitedSuggestion": {
     "description": "Rate limit fix suggestion"
   },
-  "logNetworkErrorDescription": "Masalah koneksi terdeteksi",
+  "logNetworkErrorDescription": "Connection issues detected",
   "@logNetworkErrorDescription": {
     "description": "Network error explanation"
   },
-  "logNetworkErrorSuggestion": "Periksa koneksi internet Anda",
+  "logNetworkErrorSuggestion": "Check your internet connection",
   "@logNetworkErrorSuggestion": {
     "description": "Network error fix suggestion"
   },
-  "logTrackNotFoundDescription": "Beberapa lagu tidak dapat ditemukan di layanan unduhan",
+  "logTrackNotFoundDescription": "Some tracks could not be found on download services",
   "@logTrackNotFoundDescription": {
     "description": "Track not found explanation"
   },
-  "logTrackNotFoundSuggestion": "Lagu mungkin tidak tersedia dalam kualitas lossless",
+  "logTrackNotFoundSuggestion": "The track may not be available in lossless quality",
   "@logTrackNotFoundSuggestion": {
     "description": "Track not found explanation"
   },
-  "logTotalErrors": "Total error: {count}",
+  "logTotalErrors": "Total errors: {count}",
   "@logTotalErrors": {
     "description": "Error count display",
     "placeholders": {
@@ -1756,7 +1756,7 @@
       }
     }
   },
-  "logAffected": "Terpengaruh: {domains}",
+  "logAffected": "Affected: {domains}",
   "@logAffected": {
     "description": "Affected domains display",
     "placeholders": {
@@ -1765,7 +1765,7 @@
       }
     }
   },
-  "logEntriesFiltered": "Entri ({count} difilter)",
+  "logEntriesFiltered": "Entries ({count} filtered)",
   "@logEntriesFiltered": {
     "description": "Log count with filter active",
     "placeholders": {
@@ -1774,7 +1774,7 @@
       }
     }
   },
-  "logEntries": "Entri ({count})",
+  "logEntries": "Entries ({count})",
   "@logEntries": {
     "description": "Total log count",
     "placeholders": {
@@ -1783,11 +1783,11 @@
       }
     }
   },
-  "credentialsTitle": "Kredensial Spotify",
+  "credentialsTitle": "Spotify Credentials",
   "@credentialsTitle": {
     "description": "Credentials dialog title"
   },
-  "credentialsDescription": "Masukkan Client ID dan Secret Anda untuk menggunakan kuota aplikasi Spotify Anda sendiri.",
+  "credentialsDescription": "Enter your Client ID and Secret to use your own Spotify application quota.",
   "@credentialsDescription": {
     "description": "Credentials dialog explanation"
   },
@@ -1795,7 +1795,7 @@
   "@credentialsClientId": {
     "description": "Client ID field label - DO NOT TRANSLATE"
   },
-  "credentialsClientIdHint": "Tempel Client ID",
+  "credentialsClientIdHint": "Paste Client ID",
   "@credentialsClientIdHint": {
     "description": "Client ID placeholder"
   },
@@ -1803,11 +1803,11 @@
   "@credentialsClientSecret": {
     "description": "Client Secret field label - DO NOT TRANSLATE"
   },
-  "credentialsClientSecretHint": "Tempel Client Secret",
+  "credentialsClientSecretHint": "Paste Client Secret",
   "@credentialsClientSecretHint": {
     "description": "Client Secret placeholder"
   },
-  "channelStable": "Stabil",
+  "channelStable": "Stable",
   "@channelStable": {
     "description": "Update channel - stable releases"
   },
@@ -1815,19 +1815,19 @@
   "@channelPreview": {
     "description": "Update channel - beta/preview releases"
   },
-  "sectionSearchSource": "Sumber Pencarian",
+  "sectionSearchSource": "Search Source",
   "@sectionSearchSource": {
     "description": "Settings section header"
   },
-  "sectionDownload": "Unduhan",
+  "sectionDownload": "Download",
   "@sectionDownload": {
     "description": "Settings section header"
   },
-  "sectionPerformance": "Performa",
+  "sectionPerformance": "Performance",
   "@sectionPerformance": {
     "description": "Settings section header"
   },
-  "sectionApp": "Aplikasi",
+  "sectionApp": "App",
   "@sectionApp": {
     "description": "Settings section header"
   },
@@ -1839,75 +1839,75 @@
   "@sectionDebug": {
     "description": "Settings section header"
   },
-  "sectionService": "Layanan",
+  "sectionService": "Service",
   "@sectionService": {
     "description": "Settings section header"
   },
-  "sectionAudioQuality": "Kualitas Audio",
+  "sectionAudioQuality": "Audio Quality",
   "@sectionAudioQuality": {
     "description": "Settings section header"
   },
-  "sectionFileSettings": "Pengaturan File",
+  "sectionFileSettings": "File Settings",
   "@sectionFileSettings": {
     "description": "Settings section header"
   },
-  "sectionColor": "Warna",
+  "sectionColor": "Color",
   "@sectionColor": {
     "description": "Settings section header"
   },
-  "sectionTheme": "Tema",
+  "sectionTheme": "Theme",
   "@sectionTheme": {
     "description": "Settings section header"
   },
-  "sectionLayout": "Tata Letak",
+  "sectionLayout": "Layout",
   "@sectionLayout": {
     "description": "Settings section header"
   },
-  "sectionLanguage": "Bahasa",
+  "sectionLanguage": "Language",
   "@sectionLanguage": {
     "description": "Settings section header for language"
   },
-  "appearanceLanguage": "Bahasa Aplikasi",
+  "appearanceLanguage": "App Language",
   "@appearanceLanguage": {
     "description": "Language setting title"
   },
-  "appearanceLanguageSubtitle": "Pilih bahasa yang kamu inginkan",
+  "appearanceLanguageSubtitle": "Choose your preferred language",
   "@appearanceLanguageSubtitle": {
     "description": "Language setting subtitle"
   },
-  "settingsAppearanceSubtitle": "Tema, warna, tampilan",
+  "settingsAppearanceSubtitle": "Theme, colors, display",
   "@settingsAppearanceSubtitle": {
     "description": "Appearance settings description"
   },
-  "settingsDownloadSubtitle": "Layanan, kualitas, format nama file",
+  "settingsDownloadSubtitle": "Service, quality, filename format",
   "@settingsDownloadSubtitle": {
     "description": "Download settings description"
   },
-  "settingsOptionsSubtitle": "Fallback, lirik, cover art, pembaruan",
+  "settingsOptionsSubtitle": "Fallback, lyrics, cover art, updates",
   "@settingsOptionsSubtitle": {
     "description": "Options settings description"
   },
-  "settingsExtensionsSubtitle": "Kelola provider unduhan",
+  "settingsExtensionsSubtitle": "Manage download providers",
   "@settingsExtensionsSubtitle": {
     "description": "Extensions settings description"
   },
-  "settingsLogsSubtitle": "Lihat log aplikasi untuk debugging",
+  "settingsLogsSubtitle": "View app logs for debugging",
   "@settingsLogsSubtitle": {
     "description": "Logs settings description"
   },
-  "loadingSharedLink": "Memuat link yang dibagikan...",
+  "loadingSharedLink": "Loading shared link...",
   "@loadingSharedLink": {
     "description": "Status when opening shared URL"
   },
-  "pressBackAgainToExit": "Tekan kembali sekali lagi untuk keluar",
+  "pressBackAgainToExit": "Press back again to exit",
   "@pressBackAgainToExit": {
     "description": "Exit confirmation message"
   },
-  "tracksHeader": "Lagu",
+  "tracksHeader": "Tracks",
   "@tracksHeader": {
     "description": "Section header for track list"
   },
-  "downloadAllCount": "Unduh Semua ({count})",
+  "downloadAllCount": "Download All ({count})",
   "@downloadAllCount": {
     "description": "Download all button with count",
     "placeholders": {
@@ -1916,7 +1916,7 @@
       }
     }
   },
-  "tracksCount": "{count, plural, =1{1 lagu} other{{count} lagu}}",
+  "tracksCount": "{count, plural, =1{1 track} other{{count} tracks}}",
   "@tracksCount": {
     "description": "Track count display",
     "placeholders": {
@@ -1925,15 +1925,15 @@
       }
     }
   },
-  "trackCopyFilePath": "Salin lokasi file",
+  "trackCopyFilePath": "Copy file path",
   "@trackCopyFilePath": {
     "description": "Action - copy file path"
   },
-  "trackRemoveFromDevice": "Hapus dari perangkat",
+  "trackRemoveFromDevice": "Remove from device",
   "@trackRemoveFromDevice": {
     "description": "Action - delete downloaded file"
   },
-  "trackLoadLyrics": "Muat Lirik",
+  "trackLoadLyrics": "Load Lyrics",
   "@trackLoadLyrics": {
     "description": "Action - fetch lyrics"
   },
@@ -1941,35 +1941,35 @@
   "@trackMetadata": {
     "description": "Tab title - track metadata"
   },
-  "trackFileInfo": "Info File",
+  "trackFileInfo": "File Info",
   "@trackFileInfo": {
     "description": "Tab title - file information"
   },
-  "trackLyrics": "Lirik",
+  "trackLyrics": "Lyrics",
   "@trackLyrics": {
     "description": "Tab title - lyrics"
   },
-  "trackFileNotFound": "File tidak ditemukan",
+  "trackFileNotFound": "File not found",
   "@trackFileNotFound": {
     "description": "Error - file doesn't exist"
   },
-  "trackOpenInDeezer": "Buka di Deezer",
+  "trackOpenInDeezer": "Open in Deezer",
   "@trackOpenInDeezer": {
     "description": "Action - open track in Deezer app"
   },
-  "trackOpenInSpotify": "Buka di Spotify",
+  "trackOpenInSpotify": "Open in Spotify",
   "@trackOpenInSpotify": {
     "description": "Action - open track in Spotify app"
   },
-  "trackTrackName": "Nama lagu",
+  "trackTrackName": "Track name",
   "@trackTrackName": {
     "description": "Metadata label - track title"
   },
-  "trackArtist": "Artis",
+  "trackArtist": "Artist",
   "@trackArtist": {
     "description": "Metadata label - artist name"
   },
-  "trackAlbumArtist": "Artis album",
+  "trackAlbumArtist": "Album artist",
   "@trackAlbumArtist": {
     "description": "Metadata label - album artist"
   },
@@ -1977,59 +1977,59 @@
   "@trackAlbum": {
     "description": "Metadata label - album name"
   },
-  "trackTrackNumber": "Nomor lagu",
+  "trackTrackNumber": "Track number",
   "@trackTrackNumber": {
     "description": "Metadata label - track number"
   },
-  "trackDiscNumber": "Nomor disc",
+  "trackDiscNumber": "Disc number",
   "@trackDiscNumber": {
     "description": "Metadata label - disc number"
   },
-  "trackDuration": "Durasi",
+  "trackDuration": "Duration",
   "@trackDuration": {
     "description": "Metadata label - track length"
   },
-  "trackAudioQuality": "Kualitas audio",
+  "trackAudioQuality": "Audio quality",
   "@trackAudioQuality": {
     "description": "Metadata label - audio quality"
   },
-  "trackReleaseDate": "Tanggal rilis",
+  "trackReleaseDate": "Release date",
   "@trackReleaseDate": {
     "description": "Metadata label - release date"
   },
-  "trackDownloaded": "Diunduh",
+  "trackDownloaded": "Downloaded",
   "@trackDownloaded": {
     "description": "Metadata label - download date"
   },
-  "trackCopyLyrics": "Salin lirik",
+  "trackCopyLyrics": "Copy lyrics",
   "@trackCopyLyrics": {
     "description": "Action - copy lyrics to clipboard"
   },
-  "trackLyricsNotAvailable": "Lirik tidak tersedia untuk lagu ini",
+  "trackLyricsNotAvailable": "Lyrics not available for this track",
   "@trackLyricsNotAvailable": {
     "description": "Message when lyrics not found"
   },
-  "trackLyricsTimeout": "Permintaan timeout. Coba lagi nanti.",
+  "trackLyricsTimeout": "Request timed out. Try again later.",
   "@trackLyricsTimeout": {
     "description": "Message when lyrics request times out"
   },
-  "trackLyricsLoadFailed": "Gagal memuat lirik",
+  "trackLyricsLoadFailed": "Failed to load lyrics",
   "@trackLyricsLoadFailed": {
     "description": "Message when lyrics loading fails"
   },
-  "trackCopiedToClipboard": "Disalin ke clipboard",
+  "trackCopiedToClipboard": "Copied to clipboard",
   "@trackCopiedToClipboard": {
     "description": "Snackbar - content copied"
   },
-  "trackDeleteConfirmTitle": "Hapus dari perangkat?",
+  "trackDeleteConfirmTitle": "Remove from device?",
   "@trackDeleteConfirmTitle": {
     "description": "Delete confirmation title"
   },
-  "trackDeleteConfirmMessage": "Ini akan menghapus file unduhan secara permanen dan menghapusnya dari riwayat Anda.",
+  "trackDeleteConfirmMessage": "This will permanently delete the downloaded file and remove it from your history.",
   "@trackDeleteConfirmMessage": {
     "description": "Delete confirmation message"
   },
-  "trackCannotOpen": "Tidak dapat membuka: {message}",
+  "trackCannotOpen": "Cannot open: {message}",
   "@trackCannotOpen": {
     "description": "Error opening file",
     "placeholders": {
@@ -2038,15 +2038,15 @@
       }
     }
   },
-  "dateToday": "Hari ini",
+  "dateToday": "Today",
   "@dateToday": {
     "description": "Relative date - today"
   },
-  "dateYesterday": "Kemarin",
+  "dateYesterday": "Yesterday",
   "@dateYesterday": {
     "description": "Relative date - yesterday"
   },
-  "dateDaysAgo": "{count} hari lalu",
+  "dateDaysAgo": "{count} days ago",
   "@dateDaysAgo": {
     "description": "Relative date - days ago",
     "placeholders": {
@@ -2055,7 +2055,7 @@
       }
     }
   },
-  "dateWeeksAgo": "{count} minggu lalu",
+  "dateWeeksAgo": "{count} weeks ago",
   "@dateWeeksAgo": {
     "description": "Relative date - weeks ago",
     "placeholders": {
@@ -2064,7 +2064,7 @@
       }
     }
   },
-  "dateMonthsAgo": "{count} bulan lalu",
+  "dateMonthsAgo": "{count} months ago",
   "@dateMonthsAgo": {
     "description": "Relative date - months ago",
     "placeholders": {
@@ -2073,23 +2073,23 @@
       }
     }
   },
-  "concurrentSequential": "Berurutan",
+  "concurrentSequential": "Sequential",
   "@concurrentSequential": {
     "description": "Download mode - one at a time"
   },
-  "concurrentParallel2": "2 Paralel",
+  "concurrentParallel2": "2 Parallel",
   "@concurrentParallel2": {
     "description": "Download mode - 2 simultaneous"
   },
-  "concurrentParallel3": "3 Paralel",
+  "concurrentParallel3": "3 Parallel",
   "@concurrentParallel3": {
     "description": "Download mode - 3 simultaneous"
   },
-  "tapToSeeError": "Ketuk untuk melihat detail error",
+  "tapToSeeError": "Tap to see error details",
   "@tapToSeeError": {
     "description": "Tooltip for failed download"
   },
-  "storeFilterAll": "Semua",
+  "storeFilterAll": "All",
   "@storeFilterAll": {
     "description": "Store filter - all extensions"
   },
@@ -2097,35 +2097,35 @@
   "@storeFilterMetadata": {
     "description": "Store filter - metadata providers"
   },
-  "storeFilterDownload": "Unduhan",
+  "storeFilterDownload": "Download",
   "@storeFilterDownload": {
     "description": "Store filter - download providers"
   },
-  "storeFilterUtility": "Utilitas",
+  "storeFilterUtility": "Utility",
   "@storeFilterUtility": {
     "description": "Store filter - utility extensions"
   },
-  "storeFilterLyrics": "Lirik",
+  "storeFilterLyrics": "Lyrics",
   "@storeFilterLyrics": {
     "description": "Store filter - lyrics providers"
   },
-  "storeFilterIntegration": "Integrasi",
+  "storeFilterIntegration": "Integration",
   "@storeFilterIntegration": {
     "description": "Store filter - integrations"
   },
-  "storeClearFilters": "Hapus filter",
+  "storeClearFilters": "Clear filters",
   "@storeClearFilters": {
     "description": "Button to clear all filters"
   },
-  "storeNoResults": "Tidak ada ekstensi ditemukan",
+  "storeNoResults": "No extensions found",
   "@storeNoResults": {
     "description": "Empty state when no extensions match filters"
   },
-  "extensionProviderPriority": "Prioritas Provider",
+  "extensionProviderPriority": "Provider Priority",
   "@extensionProviderPriority": {
     "description": "Extension capability - provider priority"
   },
-  "extensionInstallButton": "Pasang Ekstensi",
+  "extensionInstallButton": "Install Extension",
   "@extensionInstallButton": {
     "description": "Button to install extension"
   },
@@ -2133,11 +2133,11 @@
   "@extensionDefaultProvider": {
     "description": "Default search provider option"
   },
-  "extensionDefaultProviderSubtitle": "Gunakan pencarian bawaan",
+  "extensionDefaultProviderSubtitle": "Use built-in search",
   "@extensionDefaultProviderSubtitle": {
     "description": "Subtitle for default provider"
   },
-  "extensionAuthor": "Pembuat",
+  "extensionAuthor": "Author",
   "@extensionAuthor": {
     "description": "Extension detail - author"
   },
@@ -2149,63 +2149,63 @@
   "@extensionError": {
     "description": "Extension detail - error message"
   },
-  "extensionCapabilities": "Kemampuan",
+  "extensionCapabilities": "Capabilities",
   "@extensionCapabilities": {
     "description": "Section header - extension features"
   },
-  "extensionMetadataProvider": "Provider Metadata",
+  "extensionMetadataProvider": "Metadata Provider",
   "@extensionMetadataProvider": {
     "description": "Capability - provides metadata"
   },
-  "extensionDownloadProvider": "Provider Unduhan",
+  "extensionDownloadProvider": "Download Provider",
   "@extensionDownloadProvider": {
     "description": "Capability - provides downloads"
   },
-  "extensionLyricsProvider": "Provider Lirik",
+  "extensionLyricsProvider": "Lyrics Provider",
   "@extensionLyricsProvider": {
     "description": "Capability - provides lyrics"
   },
-  "extensionUrlHandler": "Penanganan URL",
+  "extensionUrlHandler": "URL Handler",
   "@extensionUrlHandler": {
     "description": "Capability - handles URLs"
   },
-  "extensionQualityOptions": "Opsi Kualitas",
+  "extensionQualityOptions": "Quality Options",
   "@extensionQualityOptions": {
     "description": "Capability - quality selection"
   },
-  "extensionPostProcessingHooks": "Hook Pasca-Pemrosesan",
+  "extensionPostProcessingHooks": "Post-Processing Hooks",
   "@extensionPostProcessingHooks": {
     "description": "Capability - post-processing"
   },
-  "extensionPermissions": "Izin",
+  "extensionPermissions": "Permissions",
   "@extensionPermissions": {
     "description": "Section header - required permissions"
   },
-  "extensionSettings": "Pengaturan",
+  "extensionSettings": "Settings",
   "@extensionSettings": {
     "description": "Section header - extension settings"
   },
-  "extensionRemoveButton": "Hapus Ekstensi",
+  "extensionRemoveButton": "Remove Extension",
   "@extensionRemoveButton": {
     "description": "Button to uninstall extension"
   },
-  "extensionUpdated": "Diperbarui",
+  "extensionUpdated": "Updated",
   "@extensionUpdated": {
     "description": "Extension detail - last update"
   },
-  "extensionMinAppVersion": "Versi App Minimum",
+  "extensionMinAppVersion": "Min App Version",
   "@extensionMinAppVersion": {
     "description": "Extension detail - minimum app version"
   },
-  "extensionCustomTrackMatching": "Pencocokan Lagu Kustom",
+  "extensionCustomTrackMatching": "Custom Track Matching",
   "@extensionCustomTrackMatching": {
     "description": "Capability - custom track matching algorithm"
   },
-  "extensionPostProcessing": "Pasca-Pemrosesan",
+  "extensionPostProcessing": "Post-Processing",
   "@extensionPostProcessing": {
     "description": "Capability - post-download processing"
   },
-  "extensionHooksAvailable": "{count} hook tersedia",
+  "extensionHooksAvailable": "{count} hook(s) available",
   "@extensionHooksAvailable": {
     "description": "Post-processing hooks count",
     "placeholders": {
@@ -2214,7 +2214,7 @@
       }
     }
   },
-  "extensionPatternsCount": "{count} pola",
+  "extensionPatternsCount": "{count} pattern(s)",
   "@extensionPatternsCount": {
     "description": "URL patterns count",
     "placeholders": {
@@ -2223,7 +2223,7 @@
       }
     }
   },
-  "extensionStrategy": "Strategi: {strategy}",
+  "extensionStrategy": "Strategy: {strategy}",
   "@extensionStrategy": {
     "description": "Track matching strategy name",
     "placeholders": {
@@ -2232,75 +2232,75 @@
       }
     }
   },
-  "extensionsProviderPrioritySection": "Prioritas Provider",
+  "extensionsProviderPrioritySection": "Provider Priority",
   "@extensionsProviderPrioritySection": {
     "description": "Section header - provider priority"
   },
-  "extensionsInstalledSection": "Ekstensi Terpasang",
+  "extensionsInstalledSection": "Installed Extensions",
   "@extensionsInstalledSection": {
     "description": "Section header - installed extensions"
   },
-  "extensionsNoExtensions": "Tidak ada ekstensi terpasang",
+  "extensionsNoExtensions": "No extensions installed",
   "@extensionsNoExtensions": {
     "description": "Empty state - no extensions"
   },
-  "extensionsNoExtensionsSubtitle": "Pasang file .spotiflac-ext untuk menambahkan provider baru",
+  "extensionsNoExtensionsSubtitle": "Install .spotiflac-ext files to add new providers",
   "@extensionsNoExtensionsSubtitle": {
     "description": "Empty state subtitle"
   },
-  "extensionsInstallButton": "Pasang Ekstensi",
+  "extensionsInstallButton": "Install Extension",
   "@extensionsInstallButton": {
     "description": "Button to install extension from file"
   },
-  "extensionsInfoTip": "Ekstensi dapat menambahkan provider metadata dan unduhan baru. Hanya pasang ekstensi dari sumber terpercaya.",
+  "extensionsInfoTip": "Extensions can add new metadata and download providers. Only install extensions from trusted sources.",
   "@extensionsInfoTip": {
     "description": "Security warning about extensions"
   },
-  "extensionsInstalledSuccess": "Ekstensi berhasil dipasang",
+  "extensionsInstalledSuccess": "Extension installed successfully",
   "@extensionsInstalledSuccess": {
     "description": "Success message after install"
   },
-  "extensionsDownloadPriority": "Prioritas Unduhan",
+  "extensionsDownloadPriority": "Download Priority",
   "@extensionsDownloadPriority": {
     "description": "Setting - download provider order"
   },
-  "extensionsDownloadPrioritySubtitle": "Atur urutan layanan unduhan",
+  "extensionsDownloadPrioritySubtitle": "Set download service order",
   "@extensionsDownloadPrioritySubtitle": {
     "description": "Subtitle for download priority"
   },
-  "extensionsNoDownloadProvider": "Tidak ada ekstensi dengan provider unduhan",
+  "extensionsNoDownloadProvider": "No extensions with download provider",
   "@extensionsNoDownloadProvider": {
     "description": "Empty state - no download providers"
   },
-  "extensionsMetadataPriority": "Prioritas Metadata",
+  "extensionsMetadataPriority": "Metadata Priority",
   "@extensionsMetadataPriority": {
     "description": "Setting - metadata provider order"
   },
-  "extensionsMetadataPrioritySubtitle": "Atur urutan sumber pencarian & metadata",
+  "extensionsMetadataPrioritySubtitle": "Set search & metadata source order",
   "@extensionsMetadataPrioritySubtitle": {
     "description": "Subtitle for metadata priority"
   },
-  "extensionsNoMetadataProvider": "Tidak ada ekstensi dengan provider metadata",
+  "extensionsNoMetadataProvider": "No extensions with metadata provider",
   "@extensionsNoMetadataProvider": {
     "description": "Empty state - no metadata providers"
   },
-  "extensionsSearchProvider": "Provider Pencarian",
+  "extensionsSearchProvider": "Search Provider",
   "@extensionsSearchProvider": {
     "description": "Setting - search provider selection"
   },
-  "extensionsNoCustomSearch": "Tidak ada ekstensi dengan pencarian kustom",
+  "extensionsNoCustomSearch": "No extensions with custom search",
   "@extensionsNoCustomSearch": {
     "description": "Empty state - no search providers"
   },
-  "extensionsSearchProviderDescription": "Pilih layanan yang digunakan untuk mencari lagu",
+  "extensionsSearchProviderDescription": "Choose which service to use for searching tracks",
   "@extensionsSearchProviderDescription": {
     "description": "Search provider setting description"
   },
-  "extensionsCustomSearch": "Pencarian kustom",
+  "extensionsCustomSearch": "Custom search",
   "@extensionsCustomSearch": {
     "description": "Label for custom search provider"
   },
-  "extensionsErrorLoading": "Error memuat ekstensi",
+  "extensionsErrorLoading": "Error loading extension",
   "@extensionsErrorLoading": {
     "description": "Error message when extension fails to load"
   },
@@ -2316,7 +2316,7 @@
   "@qualityHiResFlac": {
     "description": "Quality option - high resolution FLAC"
   },
-  "qualityHiResFlacSubtitle": "24-bit / hingga 96kHz",
+  "qualityHiResFlacSubtitle": "24-bit / up to 96kHz",
   "@qualityHiResFlacSubtitle": {
     "description": "Technical spec for hi-res"
   },
@@ -2324,67 +2324,67 @@
   "@qualityHiResFlacMax": {
     "description": "Quality option - maximum resolution FLAC"
   },
-  "qualityHiResFlacMaxSubtitle": "24-bit / hingga 192kHz",
+  "qualityHiResFlacMaxSubtitle": "24-bit / up to 192kHz",
   "@qualityHiResFlacMaxSubtitle": {
     "description": "Technical spec for hi-res max"
   },
-  "qualityNote": "Kualitas sebenarnya tergantung ketersediaan lagu dari layanan",
+  "qualityNote": "Actual quality depends on track availability from the service",
   "@qualityNote": {
     "description": "Note about quality availability"
   },
-  "downloadAskBeforeDownload": "Tanya Sebelum Unduh",
+  "downloadAskBeforeDownload": "Ask Before Download",
   "@downloadAskBeforeDownload": {
     "description": "Setting - show quality picker"
   },
-  "downloadDirectory": "Direktori Unduhan",
+  "downloadDirectory": "Download Directory",
   "@downloadDirectory": {
     "description": "Setting - download folder"
   },
-  "downloadSeparateSinglesFolder": "Folder Singles Terpisah",
+  "downloadSeparateSinglesFolder": "Separate Singles Folder",
   "@downloadSeparateSinglesFolder": {
     "description": "Setting - separate folder for singles"
   },
-  "downloadAlbumFolderStructure": "Struktur Folder Album",
+  "downloadAlbumFolderStructure": "Album Folder Structure",
   "@downloadAlbumFolderStructure": {
     "description": "Setting - album folder organization"
   },
-  "downloadSaveFormat": "Simpan Format",
+  "downloadSaveFormat": "Save Format",
   "@downloadSaveFormat": {
     "description": "Setting - output file format"
   },
-  "downloadSelectService": "Pilih Layanan",
+  "downloadSelectService": "Select Service",
   "@downloadSelectService": {
     "description": "Dialog title - choose download service"
   },
-  "downloadSelectQuality": "Pilih Kualitas",
+  "downloadSelectQuality": "Select Quality",
   "@downloadSelectQuality": {
     "description": "Dialog title - choose audio quality"
   },
-  "downloadFrom": "Unduh Dari",
+  "downloadFrom": "Download From",
   "@downloadFrom": {
     "description": "Label - download source"
   },
-  "downloadDefaultQualityLabel": "Kualitas Default",
+  "downloadDefaultQualityLabel": "Default Quality",
   "@downloadDefaultQualityLabel": {
     "description": "Label - default quality setting"
   },
-  "downloadBestAvailable": "Terbaik tersedia",
+  "downloadBestAvailable": "Best available",
   "@downloadBestAvailable": {
     "description": "Quality option - highest available"
   },
-  "folderNone": "Tidak ada",
+  "folderNone": "None",
   "@folderNone": {
     "description": "Folder option - no organization"
   },
-  "folderNoneSubtitle": "Simpan semua file langsung ke folder unduhan",
+  "folderNoneSubtitle": "Save all files directly to download folder",
   "@folderNoneSubtitle": {
     "description": "Subtitle for no folder organization"
   },
-  "folderArtist": "Artis",
+  "folderArtist": "Artist",
   "@folderArtist": {
     "description": "Folder option - by artist"
   },
-  "folderArtistSubtitle": "Nama Artis/namafile",
+  "folderArtistSubtitle": "Artist Name/filename",
   "@folderArtistSubtitle": {
     "description": "Folder structure example"
   },
@@ -2392,15 +2392,15 @@
   "@folderAlbum": {
     "description": "Folder option - by album"
   },
-  "folderAlbumSubtitle": "Nama Album/namafile",
+  "folderAlbumSubtitle": "Album Name/filename",
   "@folderAlbumSubtitle": {
     "description": "Folder structure example"
   },
-  "folderArtistAlbum": "Artis/Album",
+  "folderArtistAlbum": "Artist/Album",
   "@folderArtistAlbum": {
     "description": "Folder option - nested"
   },
-  "folderArtistAlbumSubtitle": "Nama Artis/Nama Album/namafile",
+  "folderArtistAlbumSubtitle": "Artist Name/Album Name/filename",
   "@folderArtistAlbumSubtitle": {
     "description": "Folder structure example"
   },
@@ -2424,55 +2424,55 @@
   "@serviceSpotify": {
     "description": "Service name - DO NOT TRANSLATE"
   },
-  "appearanceAmoledDark": "AMOLED Gelap",
+  "appearanceAmoledDark": "AMOLED Dark",
   "@appearanceAmoledDark": {
     "description": "Theme option - pure black"
   },
-  "appearanceAmoledDarkSubtitle": "Latar belakang hitam murni",
+  "appearanceAmoledDarkSubtitle": "Pure black background",
   "@appearanceAmoledDarkSubtitle": {
     "description": "Subtitle for AMOLED dark"
   },
-  "appearanceChooseAccentColor": "Pilih Warna Aksen",
+  "appearanceChooseAccentColor": "Choose Accent Color",
   "@appearanceChooseAccentColor": {
     "description": "Color picker dialog title"
   },
-  "appearanceChooseTheme": "Mode Tema",
+  "appearanceChooseTheme": "Theme Mode",
   "@appearanceChooseTheme": {
     "description": "Theme picker dialog title"
   },
-  "queueTitle": "Antrian Unduhan",
+  "queueTitle": "Download Queue",
   "@queueTitle": {
     "description": "Queue screen title"
   },
-  "queueClearAll": "Hapus Semua",
+  "queueClearAll": "Clear All",
   "@queueClearAll": {
     "description": "Button - clear all queue items"
   },
-  "queueClearAllMessage": "Apakah Anda yakin ingin menghapus semua unduhan?",
+  "queueClearAllMessage": "Are you sure you want to clear all downloads?",
   "@queueClearAllMessage": {
     "description": "Clear queue confirmation"
   },
-  "queueEmpty": "Tidak ada unduhan dalam antrian",
+  "queueEmpty": "No downloads in queue",
   "@queueEmpty": {
     "description": "Empty queue state title"
   },
-  "queueEmptySubtitle": "Tambahkan lagu dari layar beranda",
+  "queueEmptySubtitle": "Add tracks from the home screen",
   "@queueEmptySubtitle": {
     "description": "Empty queue state subtitle"
   },
-  "queueClearCompleted": "Hapus yang selesai",
+  "queueClearCompleted": "Clear completed",
   "@queueClearCompleted": {
     "description": "Button - clear finished downloads"
   },
-  "queueDownloadFailed": "Unduhan Gagal",
+  "queueDownloadFailed": "Download Failed",
   "@queueDownloadFailed": {
     "description": "Error dialog title"
   },
-  "queueTrackLabel": "Lagu:",
+  "queueTrackLabel": "Track:",
   "@queueTrackLabel": {
     "description": "Label in error dialog"
   },
-  "queueArtistLabel": "Artis:",
+  "queueArtistLabel": "Artist:",
   "@queueArtistLabel": {
     "description": "Label in error dialog"
   },
@@ -2480,47 +2480,47 @@
   "@queueErrorLabel": {
     "description": "Label in error dialog"
   },
-  "queueUnknownError": "Error tidak diketahui",
+  "queueUnknownError": "Unknown error",
   "@queueUnknownError": {
     "description": "Fallback error message"
   },
-  "albumFolderArtistAlbum": "Artis / Album",
+  "albumFolderArtistAlbum": "Artist / Album",
   "@albumFolderArtistAlbum": {
     "description": "Album folder option"
   },
-  "albumFolderArtistAlbumSubtitle": "Albums/Nama Artis/Nama Album/",
+  "albumFolderArtistAlbumSubtitle": "Albums/Artist Name/Album Name/",
   "@albumFolderArtistAlbumSubtitle": {
     "description": "Folder structure example"
   },
-  "albumFolderArtistYearAlbum": "Artis / [Tahun] Album",
+  "albumFolderArtistYearAlbum": "Artist / [Year] Album",
   "@albumFolderArtistYearAlbum": {
     "description": "Album folder option with year"
   },
-  "albumFolderArtistYearAlbumSubtitle": "Albums/Nama Artis/[2005] Nama Album/",
+  "albumFolderArtistYearAlbumSubtitle": "Albums/Artist Name/[2005] Album Name/",
   "@albumFolderArtistYearAlbumSubtitle": {
     "description": "Folder structure example"
   },
-  "albumFolderAlbumOnly": "Album Saja",
+  "albumFolderAlbumOnly": "Album Only",
   "@albumFolderAlbumOnly": {
     "description": "Album folder option"
   },
-  "albumFolderAlbumOnlySubtitle": "Albums/Nama Album/",
+  "albumFolderAlbumOnlySubtitle": "Albums/Album Name/",
   "@albumFolderAlbumOnlySubtitle": {
     "description": "Folder structure example"
   },
-  "albumFolderYearAlbum": "[Tahun] Album",
+  "albumFolderYearAlbum": "[Year] Album",
   "@albumFolderYearAlbum": {
     "description": "Album folder option with year"
   },
-  "albumFolderYearAlbumSubtitle": "Albums/[2005] Nama Album/",
+  "albumFolderYearAlbumSubtitle": "Albums/[2005] Album Name/",
   "@albumFolderYearAlbumSubtitle": {
     "description": "Folder structure example"
   },
-  "downloadedAlbumDeleteSelected": "Hapus yang Dipilih",
+  "downloadedAlbumDeleteSelected": "Delete Selected",
   "@downloadedAlbumDeleteSelected": {
     "description": "Button - delete selected tracks"
   },
-  "downloadedAlbumDeleteMessage": "Hapus {count} {count, plural, =1{lagu} other{lagu}} dari album ini?\n\nIni juga akan menghapus file dari penyimpanan.",
+  "downloadedAlbumDeleteMessage": "Delete {count} {count, plural, =1{track} other{tracks}} from this album?\n\nThis will also delete the files from storage.",
   "@downloadedAlbumDeleteMessage": {
     "description": "Delete confirmation with count",
     "placeholders": {
@@ -2529,11 +2529,11 @@
       }
     }
   },
-  "downloadedAlbumTracksHeader": "Lagu",
+  "downloadedAlbumTracksHeader": "Tracks",
   "@downloadedAlbumTracksHeader": {
     "description": "Section header for tracks"
   },
-  "downloadedAlbumDownloadedCount": "{count} diunduh",
+  "downloadedAlbumDownloadedCount": "{count} downloaded",
   "@downloadedAlbumDownloadedCount": {
     "description": "Downloaded tracks count badge",
     "placeholders": {
@@ -2542,7 +2542,7 @@
       }
     }
   },
-  "downloadedAlbumSelectedCount": "{count} dipilih",
+  "downloadedAlbumSelectedCount": "{count} selected",
   "@downloadedAlbumSelectedCount": {
     "description": "Selection count indicator",
     "placeholders": {
@@ -2551,15 +2551,15 @@
       }
     }
   },
-  "downloadedAlbumAllSelected": "Semua lagu dipilih",
+  "downloadedAlbumAllSelected": "All tracks selected",
   "@downloadedAlbumAllSelected": {
     "description": "Status - all items selected"
   },
-  "downloadedAlbumTapToSelect": "Ketuk lagu untuk memilih",
+  "downloadedAlbumTapToSelect": "Tap tracks to select",
   "@downloadedAlbumTapToSelect": {
     "description": "Selection hint"
   },
-  "downloadedAlbumDeleteCount": "Hapus {count} {count, plural, =1{lagu} other{lagu}}",
+  "downloadedAlbumDeleteCount": "Delete {count} {count, plural, =1{track} other{tracks}}",
   "@downloadedAlbumDeleteCount": {
     "description": "Delete button text with count",
     "placeholders": {
@@ -2568,15 +2568,15 @@
       }
     }
   },
-  "downloadedAlbumSelectToDelete": "Pilih lagu untuk dihapus",
+  "downloadedAlbumSelectToDelete": "Select tracks to delete",
   "@downloadedAlbumSelectToDelete": {
     "description": "Placeholder when nothing selected"
   },
-  "utilityFunctions": "Fungsi Utilitas",
+  "utilityFunctions": "Utility Functions",
   "@utilityFunctions": {
     "description": "Extension capability - utility functions"
   },
-  "recentTypeArtist": "Artis",
+  "recentTypeArtist": "Artist",
   "@recentTypeArtist": {
     "description": "Recent access item type - artist"
   },
@@ -2584,7 +2584,7 @@
   "@recentTypeAlbum": {
     "description": "Recent access item type - album"
   },
-  "recentTypeSong": "Lagu",
+  "recentTypeSong": "Song",
   "@recentTypeSong": {
     "description": "Recent access item type - song/track"
   },
