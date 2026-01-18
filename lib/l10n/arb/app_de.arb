@@ -131,7 +131,7 @@
   "@settingsTitle": {
     "description": "Settings screen title"
   },
-  "settingsDownload": "Download",
+  "settingsDownload": "Herunterladen",
   "@settingsDownload": {
     "description": "Settings section - download options"
   },
@@ -151,7 +151,7 @@
   "@settingsAbout": {
     "description": "Settings section - app info"
   },
-  "downloadTitle": "Download",
+  "downloadTitle": "Herunterladen",
   "@downloadTitle": {
     "description": "Download settings page title"
   },
@@ -508,11 +508,11 @@
   "@aboutOriginalCreator": {
     "description": "Role description for original creator"
   },
-  "aboutLogoArtist": "The talented artist who created our beautiful app logo!",
+  "aboutLogoArtist": "Der talentierte Künstler, der unser wunderschönes App-Logo entworfen hat!",
   "@aboutLogoArtist": {
     "description": "Role description for logo artist"
   },
-  "aboutSpecialThanks": "Special Thanks",
+  "aboutSpecialThanks": "Besonderer Dank",
   "@aboutSpecialThanks": {
     "description": "Section for special thanks"
   },
@@ -520,27 +520,27 @@
   "@aboutLinks": {
     "description": "Section for external links"
   },
-  "aboutMobileSource": "Mobile source code",
+  "aboutMobileSource": "Mobiler Quellcode",
   "@aboutMobileSource": {
     "description": "Link to mobile GitHub repo"
   },
-  "aboutPCSource": "PC source code",
+  "aboutPCSource": "PC Quellcode",
   "@aboutPCSource": {
     "description": "Link to PC GitHub repo"
   },
-  "aboutReportIssue": "Report an issue",
+  "aboutReportIssue": "Problem melden",
   "@aboutReportIssue": {
     "description": "Link to report bugs"
   },
-  "aboutReportIssueSubtitle": "Report any problems you encounter",
+  "aboutReportIssueSubtitle": "Melde jedes Problem, die dir auftreten",
   "@aboutReportIssueSubtitle": {
     "description": "Subtitle for report issue"
   },
-  "aboutFeatureRequest": "Feature request",
+  "aboutFeatureRequest": "Feature vorschlagen",
   "@aboutFeatureRequest": {
     "description": "Link to suggest features"
   },
-  "aboutFeatureRequestSubtitle": "Suggest new features for the app",
+  "aboutFeatureRequestSubtitle": "Schlage neue Funktionen für die App vor",
   "@aboutFeatureRequestSubtitle": {
     "description": "Subtitle for feature request"
   },
@@ -548,11 +548,11 @@
   "@aboutSupport": {
     "description": "Section for support/donation links"
   },
-  "aboutBuyMeCoffee": "Buy me a coffee",
+  "aboutBuyMeCoffee": "Spendiere mir einen Kaffee",
   "@aboutBuyMeCoffee": {
     "description": "Donation link"
   },
-  "aboutBuyMeCoffeeSubtitle": "Support development on Ko-fi",
+  "aboutBuyMeCoffeeSubtitle": "Unterstütze die Entwicklung auf Ko-fi",
   "@aboutBuyMeCoffeeSubtitle": {
     "description": "Subtitle for donation"
   },
@@ -564,11 +564,11 @@
   "@aboutVersion": {
     "description": "Version info label"
   },
-  "aboutBinimumDesc": "The creator of QQDL & HiFi API. Without this API, Tidal downloads wouldn't exist!",
+  "aboutBinimumDesc": "Der Schöpfer der QQDL & HiFi API. Ohne diese API gäbe es keine Tidal-Downloads!",
   "@aboutBinimumDesc": {
     "description": "Credit description for binimum"
   },
-  "aboutSachinsenalDesc": "The original HiFi project creator. The foundation of Tidal integration!",
+  "aboutSachinsenalDesc": "Der ursprüngliche Entwickler des HiFi-Projekts. Die Grundlage der Tidal-Integration!",
   "@aboutSachinsenalDesc": {
     "description": "Credit description for sachinsenal0x64"
   },
@@ -576,7 +576,7 @@
   "@aboutDoubleDouble": {
     "description": "Name of Amazon API service - DO NOT TRANSLATE"
   },
-  "aboutDoubleDoubleDesc": "Amazing API for Amazon Music downloads. Thank you for making it free!",
+  "aboutDoubleDoubleDesc": "Wundervolle API für Amazon Music Downloads.\nVielen Dank, dass Sie sie kostenlos zur Verfügung stellen!",
   "@aboutDoubleDoubleDesc": {
     "description": "Credit for DoubleDouble API"
   },
@@ -584,7 +584,7 @@
   "@aboutDabMusic": {
     "description": "Name of Qobuz API service - DO NOT TRANSLATE"
   },
-  "aboutDabMusicDesc": "The best Qobuz streaming API. Hi-Res downloads wouldn't be possible without this!",
+  "aboutDabMusicDesc": "Die beste Qobuz-Streaming-API. Hi-Res-Downloads wären ohne diese nicht möglich!",
   "@aboutDabMusicDesc": {
     "description": "Credit for DAB Music API"
   },
