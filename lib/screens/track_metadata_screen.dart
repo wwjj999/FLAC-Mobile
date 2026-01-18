@@ -490,8 +490,14 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   }
 
   Widget _buildMetadataGrid(BuildContext context, ColorScheme colorScheme) {
+    // Determine audio quality string based on file type
     String? audioQualityStr;
-    if (bitDepth != null && sampleRate != null) {
+    final fileName = item.filePath.split('/').last;
+    final fileExt = fileName.contains('.') ? fileName.split('.').last.toUpperCase() : '';
+    
+    if (fileExt == 'MP3') {
+      audioQualityStr = '320kbps';
+    } else if (bitDepth != null && sampleRate != null) {
       final sampleRateKHz = (sampleRate! / 1000).toStringAsFixed(1);
       audioQualityStr = '$bitDepth-bit/${sampleRateKHz}kHz';
     }
@@ -643,7 +649,24 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                       ),
                     ),
                   ),
-                if (bitDepth != null && sampleRate != null)
+                // Show 320kbps for MP3, bit depth/sample rate for FLAC
+                if (fileExtension == 'MP3')
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: colorScheme.tertiaryContainer,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '320kbps',
+                      style: TextStyle(
+                        color: colorScheme.onTertiaryContainer,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  )
+                else if (bitDepth != null && sampleRate != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(

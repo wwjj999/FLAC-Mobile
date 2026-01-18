@@ -56,7 +56,13 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
   }
 
   Future<void> _extractDominantColor() async {
-    if (widget.coverUrl == null) return;
+    if (widget.coverUrl == null || widget.coverUrl!.isEmpty) return;
+    
+    // Only use network images for palette extraction
+    final isNetworkUrl = widget.coverUrl!.startsWith('http://') || 
+                         widget.coverUrl!.startsWith('https://');
+    if (!isNetworkUrl) return;
+    
     try {
       final paletteGenerator = await PaletteGenerator.fromImageProvider(
         CachedNetworkImageProvider(widget.coverUrl!),
@@ -77,7 +83,11 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
   /// Get tracks for this album from history provider (reactive)
   List<DownloadHistoryItem> _getAlbumTracks(List<DownloadHistoryItem> allItems) {
     return allItems.where((item) {
-      final itemKey = '${item.albumName}|${item.albumArtist ?? item.artistName}';
+      // Use albumArtist if available and not empty, otherwise artistName
+      final itemArtist = (item.albumArtist != null && item.albumArtist!.isNotEmpty) 
+          ? item.albumArtist! 
+          : item.artistName;
+      final itemKey = '${item.albumName}|$itemArtist';
       final albumKey = '${widget.albumName}|${widget.artistName}';
       return itemKey == albumKey;
     }).toList()
@@ -229,11 +239,16 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     final allHistoryItems = ref.watch(downloadHistoryProvider.select((s) => s.items));
     final tracks = _getAlbumTracks(allHistoryItems);
     
-    if (tracks.length < 2) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) Navigator.pop(context);
-      });
-      return const SizedBox.shrink();
+    // Show empty state if no tracks found
+    if (tracks.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.albumName),
+        ),
+        body: Center(
+          child: Text('No tracks found for this album'),
+        ),
+      );
     }
     
     final validIds = tracks.map((t) => t.id).toSet();

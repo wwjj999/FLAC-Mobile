@@ -1671,8 +1671,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       if (result['success'] == true) {
         var filePath = result['file_path'] as String?;
         
-        if (filePath != null && filePath.startsWith('EXISTS:')) {
+        // Track if this was an existing file (not a new download)
+        // This is important to prevent converting existing FLAC files to MP3
+        final wasExisting = filePath != null && filePath.startsWith('EXISTS:');
+        if (wasExisting) {
           filePath = filePath.substring(7); // Remove "EXISTS:" prefix
+          _log.i('Using existing file: $filePath');
         }
         
         _log.i('Download success, file: $filePath');
@@ -1806,39 +1810,48 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         }
 
         // Convert FLAC to MP3 if MP3 quality was selected
+        // IMPORTANT: Only convert NEW downloads, never convert existing files
+        // to prevent overwriting the user's existing FLAC files
         if (quality == 'MP3' && filePath != null && filePath.endsWith('.flac')) {
-          _log.i('MP3 quality selected, converting FLAC to MP3...');
-          updateItemStatus(
-            item.id,
-            DownloadStatus.downloading,
-            progress: 0.97,
-          );
-          
-          try {
-            final mp3Path = await FFmpegService.convertFlacToMp3(
-              filePath,
-              bitrate: '320k',
-              deleteOriginal: true,
+          if (wasExisting) {
+            // User wanted MP3 but an existing FLAC file was found
+            // Do NOT convert it - that would delete their existing FLAC
+            _log.i('MP3 requested but existing FLAC found - skipping conversion to preserve original file');
+            // Keep the existing FLAC file as-is
+          } else {
+            _log.i('MP3 quality selected, converting FLAC to MP3...');
+            updateItemStatus(
+              item.id,
+              DownloadStatus.downloading,
+              progress: 0.97,
             );
             
-            if (mp3Path != null) {
-              filePath = mp3Path;
-              actualQuality = 'MP3 320kbps';
-              _log.i('Successfully converted to MP3: $mp3Path');
-              
-              // Embed metadata, lyrics, and cover to the MP3 file
-              _log.i('Embedding metadata to MP3...');
-              updateItemStatus(
-                item.id,
-                DownloadStatus.downloading,
-                progress: 0.99,
+            try {
+              final mp3Path = await FFmpegService.convertFlacToMp3(
+                filePath,
+                bitrate: '320k',
+                deleteOriginal: true,
               );
-              await _embedMetadataToMp3(mp3Path, trackToDownload);
-            } else {
-              _log.w('MP3 conversion failed, keeping FLAC file');
+              
+              if (mp3Path != null) {
+                filePath = mp3Path;
+                actualQuality = 'MP3 320kbps';
+                _log.i('Successfully converted to MP3: $mp3Path');
+                
+                // Embed metadata, lyrics, and cover to the MP3 file
+                _log.i('Embedding metadata to MP3...');
+                updateItemStatus(
+                  item.id,
+                  DownloadStatus.downloading,
+                  progress: 0.99,
+                );
+                await _embedMetadataToMp3(mp3Path, trackToDownload);
+              } else {
+                _log.w('MP3 conversion failed, keeping FLAC file');
+              }
+            } catch (e) {
+              _log.e('MP3 conversion error: $e, keeping FLAC file');
             }
-          } catch (e) {
-            _log.e('MP3 conversion error: $e, keeping FLAC file');
           }
         }
 
@@ -1881,6 +1894,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                   ? normalizedAlbumArtist
                   : null;
 
+          // For MP3 files, don't save FLAC bitDepth/sampleRate - they're not applicable
+          final isMp3 = filePath.endsWith('.mp3');
+          final historyBitDepth = isMp3 ? null : backendBitDepth;
+          final historySampleRate = isMp3 ? null : backendSampleRate;
+
           ref
               .read(downloadHistoryProvider.notifier)
               .addToHistory(
@@ -1915,8 +1933,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                       ? backendYear
                       : trackToDownload.releaseDate,
                   quality: actualQuality,
-                  bitDepth: backendBitDepth,
-                  sampleRate: backendSampleRate,
+                  bitDepth: historyBitDepth,
+                  sampleRate: historySampleRate,
                 ),
               );
 

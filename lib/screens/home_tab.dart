@@ -654,8 +654,11 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     // Group download history by album to avoid flooding recents with individual tracks
     final albumMap = <String, DownloadHistoryItem>{};
     for (final h in historyItems) {
-      // Use album name + artist as unique key
-      final albumKey = '${h.albumName}|${h.albumArtist ?? h.artistName}';
+      // Use album name + artist as unique key (handle empty albumArtist)
+      final artistForKey = (h.albumArtist != null && h.albumArtist!.isNotEmpty) 
+          ? h.albumArtist! 
+          : h.artistName;
+      final albumKey = '${h.albumName}|$artistForKey';
       // Keep the most recent download for each album
       if (!albumMap.containsKey(albumKey) || 
           h.downloadedAt.isAfter(albumMap[albumKey]!.downloadedAt)) {
@@ -664,15 +667,21 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     }
     
     // Convert grouped albums to RecentAccessItem with album type
-    final downloadItems = albumMap.values.take(10).map((h) => RecentAccessItem(
-      id: '${h.albumName}|${h.albumArtist ?? h.artistName}', // Use album key as ID
-      name: h.albumName,
-      subtitle: h.albumArtist ?? h.artistName,
-      imageUrl: h.coverUrl,
-      type: RecentAccessType.album,
-      accessedAt: h.downloadedAt,
-      providerId: 'download',
-    )).toList();
+    final downloadItems = albumMap.values.take(10).map((h) {
+      // Use albumArtist if available and not empty, otherwise artistName
+      final artistForKey = (h.albumArtist != null && h.albumArtist!.isNotEmpty) 
+          ? h.albumArtist! 
+          : h.artistName;
+      return RecentAccessItem(
+        id: '${h.albumName}|$artistForKey', // Use album key as ID
+        name: h.albumName,
+        subtitle: artistForKey,
+        imageUrl: h.coverUrl,
+        type: RecentAccessType.album,
+        accessedAt: h.downloadedAt,
+        providerId: 'download',
+      );
+    }).toList();
     
     final allItems = [...items, ...downloadItems];
     allItems.sort((a, b) => b.accessedAt.compareTo(a.accessedAt));

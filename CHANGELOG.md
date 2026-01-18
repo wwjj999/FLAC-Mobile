@@ -62,6 +62,11 @@
 
 ### Fixed
 
+- **MP3 Quality Display in Track Metadata**: Fixed incorrect quality display for MP3 files
+  - MP3 files now show "320kbps" instead of FLAC's bit depth/sample rate
+  - History no longer stores FLAC audio specs for converted MP3 files
+  - Both File Info badges and metadata grid show correct MP3 quality
+
 - **Empty Catch Blocks**: Fixed analyzer warnings for empty catch blocks
   - `download_queue_provider.dart`: Added comments explaining why polling errors are silently ignored
   - `track_provider.dart`: Added comments explaining why availability check errors are silently ignored
