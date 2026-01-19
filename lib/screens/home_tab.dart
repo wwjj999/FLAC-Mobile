@@ -548,7 +548,11 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
           
           if (showRecentAccess)
             SliverToBoxAdapter(
-              child: _buildRecentAccess(recentAccessItems, colorScheme),
+              child: _buildRecentAccess(
+                recentAccessItems,
+                historyItems,
+                colorScheme,
+              ),
             ),
           
           SliverToBoxAdapter(
@@ -666,9 +670,11 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     );
   }
 
-  Widget _buildRecentAccess(List<RecentAccessItem> items, ColorScheme colorScheme) {
-    final historyItems = ref.read(downloadHistoryProvider).items;
-    
+  Widget _buildRecentAccess(
+    List<RecentAccessItem> items,
+    List<DownloadHistoryItem> historyItems,
+    ColorScheme colorScheme,
+  ) {
     // Group download history by album
     final albumGroups = <String, List<DownloadHistoryItem>>{};
     for (final h in historyItems) {

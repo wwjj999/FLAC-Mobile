@@ -26,6 +26,10 @@ String? _normalizeOptionalString(String? value) {
   return trimmed;
 }
 
+final _invalidFolderChars = RegExp(r'[<>:"/\\|?*]');
+final _trailingDotsRegex = RegExp(r'\.+$');
+final _yearRegex = RegExp(r'^(\d{4})');
+
 class DownloadHistoryItem {
   final String id;
   final String trackName;
@@ -143,6 +147,7 @@ class DownloadHistoryState {
 
 class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
   static const _storageKey = 'download_history';
+  final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   bool _isLoaded = false;
 
   @override
@@ -162,7 +167,7 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
 
   Future<void> _loadFromStorage() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _prefs;
       final jsonStr = prefs.getString(_storageKey);
       if (jsonStr != null && jsonStr.isNotEmpty) {
         final List<dynamic> jsonList = jsonDecode(jsonStr);
@@ -223,7 +228,7 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
 
   Future<void> _saveToStorage() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _prefs;
       final jsonList = state.items.map((e) => e.toJson()).toList();
       await prefs.setString(_storageKey, jsonEncode(jsonList));
       _historyLog.d('Saved ${state.items.length} items to storage');
@@ -385,6 +390,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   static const _cleanupInterval = 50;
   static const _queueStorageKey = 'download_queue';
   final NotificationService _notificationService = NotificationService();
+  final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   int _totalQueuedAtStart = 0;
   int _completedInSession = 0;
   int _failedInSession = 0;
@@ -410,7 +416,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     _isLoaded = true;
 
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _prefs;
       final jsonStr = prefs.getString(_queueStorageKey);
       if (jsonStr != null && jsonStr.isNotEmpty) {
         final List<dynamic> jsonList = jsonDecode(jsonStr);
@@ -448,7 +454,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
   Future<void> _saveQueueToStorage() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _prefs;
 
       final pendingItems = state.items
           .where(
@@ -783,15 +789,15 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
   String _sanitizeFolderName(String name) {
     return name
-        .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
-        .replaceAll(RegExp(r'\.+$'), '') // Remove trailing dots
+        .replaceAll(_invalidFolderChars, '_')
+        .replaceAll(_trailingDotsRegex, '') // Remove trailing dots
         .trim();
   }
 
   /// Extract year from release date (format: "2005-06-13" or "2005")
   String? _extractYear(String? releaseDate) {
     if (releaseDate == null || releaseDate.isEmpty) return null;
-    final match = RegExp(r'^(\d{4})').firstMatch(releaseDate);
+    final match = _yearRegex.firstMatch(releaseDate);
     return match?.group(1);
   }
 
@@ -1216,7 +1222,13 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     }
   }
 
-  Future<void> _embedMetadataToMp3(String mp3Path, Track track) async {
+  Future<void> _embedMetadataToMp3(
+    String mp3Path, 
+    Track track, {
+    String? genre,
+    String? label,
+    String? copyright,
+  }) async {
     final settings = ref.read(settingsProvider);
     
     String? coverPath;
@@ -1281,6 +1293,19 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
       if (track.isrc != null) {
         metadata['ISRC'] = track.isrc!;
+      }
+
+      if (genre != null && genre.isNotEmpty) {
+        metadata['GENRE'] = genre;
+        _log.d('Adding GENRE to MP3: $genre');
+      }
+      if (label != null && label.isNotEmpty) {
+        metadata['ORGANIZATION'] = label;
+        _log.d('Adding ORGANIZATION (label) to MP3: $label');
+      }
+      if (copyright != null && copyright.isNotEmpty) {
+        metadata['COPYRIGHT'] = copyright;
+        _log.d('Adding COPYRIGHT to MP3: $copyright');
       }
 
       _log.d('MP3 Metadata map content: $metadata');
@@ -1447,29 +1472,17 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       }
 
       final currentItems = state.items;
-      final nextItem = currentItems.firstWhere(
+      final nextIndex = currentItems.indexWhere(
         (item) => item.status == DownloadStatus.queued,
-        orElse: () => DownloadItem(
-          id: '',
-          track: const Track(
-            id: '',
-            name: '',
-            artistName: '',
-            albumName: '',
-            duration: 0,
-          ),
-          service: '',
-          createdAt: DateTime.now(),
-        ),
       );
-
-      if (nextItem.id.isEmpty) {
+      if (nextIndex == -1) {
         _log.d(
           'No more items to process (checked ${currentItems.length} items)',
         );
         break;
       }
 
+      final nextItem = currentItems[nextIndex];
       _log.d(
         'Processing next item: ${nextItem.track.name} (id: ${nextItem.id})',
       );
@@ -1956,7 +1969,18 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                   DownloadStatus.downloading,
                   progress: 0.99,
                 );
-                await _embedMetadataToMp3(mp3Path, trackToDownload);
+                
+                final mp3BackendGenre = result['genre'] as String?;
+                final mp3BackendLabel = result['label'] as String?;
+                final mp3BackendCopyright = result['copyright'] as String?;
+                
+                await _embedMetadataToMp3(
+                  mp3Path, 
+                  trackToDownload,
+                  genre: mp3BackendGenre ?? genre,
+                  label: mp3BackendLabel ?? label,
+                  copyright: mp3BackendCopyright,
+                );
               } else {
                 _log.w('MP3 conversion failed, keeping FLAC file');
               }

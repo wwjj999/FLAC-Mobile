@@ -1,17 +1,8 @@
 # Changelog
 
-## [Unreleased]
-
 ## [3.1.3] - 2026-01-19
 
 ### Added
-
-- **Persistent Cover Image Cache**: Album/track cover images now cached to persistent storage instead of temporary directory
-  - Cover images no longer disappear when app is closed or device restarts
-  - Cache stored in `app_flutter/cover_cache/` directory (not cleared by system)
-  - Maximum 1000 images cached for up to 365 days
-  - Covers are cached when displayed in History, Home, Album, Artist, or any other screen
-  - New `CoverCacheManager` service with `clearCache()` and `getStats()` methods for future cache management
 
 - **External LRC Lyrics File Support**: Option to save lyrics as separate .lrc files for compatibility with external music players
   - New "Lyrics Mode" setting in Settings > Download > Lyrics section
@@ -27,6 +18,13 @@
   - Quality picker now appears before adding CSV tracks to download queue
   - Select between FLAC qualities (Lossless, Hi-Res, Hi-Res Max) or MP3
   - Respects "Ask quality before download" setting - uses default quality if disabled
+
+  - **Persistent Cover Image Cache**: Album/track cover images now cached to persistent storage instead of temporary directory
+  - Cover images no longer disappear when app is closed or device restarts
+  - Cache stored in `app_flutter/cover_cache/` directory (not cleared by system)
+  - Maximum 1000 images cached for up to 365 days
+  - Covers are cached when displayed in History, Home, Album, Artist, or any other screen
+  - New `CoverCacheManager` service with `clearCache()` and `getStats()` methods for future cache management
 
 - **Extended Metadata from Deezer Enrichment**: Track downloads now include label, copyright, and genre metadata from Deezer
   - New fields in `ExtTrackMetadata`: `label`, `copyright`, `genre`
