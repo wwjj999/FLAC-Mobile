@@ -12,6 +12,7 @@ import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/providers/recent_access_provider.dart';
+import 'package:spotiflac_android/providers/explore_provider.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/screens/album_screen.dart';
 import 'package:spotiflac_android/screens/artist_screen.dart';
@@ -57,6 +58,19 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     super.initState();
     _urlController.addListener(_onSearchChanged);
     _searchFocusNode.addListener(_onSearchFocusChanged);
+  }
+  
+  void _fetchExploreIfNeeded() {
+    final extState = ref.read(extensionProvider);
+    final exploreState = ref.read(exploreProvider);
+    // Check if any extension with homeFeed capability is enabled
+    final hasHomeFeedExtension = extState.extensions.any(
+      (e) => e.enabled && e.hasHomeFeed,
+    );
+    // Fetch if any homeFeed extension is enabled and we don't have content yet
+    if (hasHomeFeedExtension && !exploreState.hasContent && !exploreState.isLoading) {
+      ref.read(exploreProvider.notifier).fetchHomeFeed();
+    }
   }
   
   @override
@@ -420,6 +434,15 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       }
     });
     
+    // Listen for extension state changes to trigger explore fetch
+    ref.listen(extensionProvider.select((s) => s.isInitialized), (previous, next) {
+      if (next == true && previous != true) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _fetchExploreIfNeeded();
+        });
+      }
+    });
+    
     final tracks = ref.watch(trackProvider.select((s) => s.tracks));
     final searchArtists = ref.watch(trackProvider.select((s) => s.searchArtists));
     final isLoading = ref.watch(trackProvider.select((s) => s.isLoading));
@@ -428,6 +451,12 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     
     ref.watch(extensionProvider.select((s) => s.isInitialized));
     ref.watch(extensionProvider.select((s) => s.extensions));
+    
+    // Explore state
+    final exploreState = ref.watch(exploreProvider);
+    final hasHomeFeedExtension = ref.watch(extensionProvider.select((s) => 
+      s.extensions.any((e) => e.enabled && e.hasHomeFeed)
+    ));
     
     final colorScheme = Theme.of(context).colorScheme;
     final hasActualResults = tracks.isNotEmpty || (searchArtists != null && searchArtists.isNotEmpty);
@@ -440,6 +469,9 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     
     final hasRecentItems = recentAccessItems.isNotEmpty || historyItems.isNotEmpty;
     final showRecentAccess = isShowingRecentAccess && hasRecentItems && !hasActualResults && !isLoading;
+    
+    // Show explore only when no search results and not showing recent access
+    final showExplore = !hasActualResults && !isLoading && !showRecentAccess && hasHomeFeedExtension && exploreState.hasContent;
     
     if (hasActualResults && isShowingRecentAccess) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -455,9 +487,12 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       },
       behavior: HitTestBehavior.translucent,
       child: Scaffold(
-        body: CustomScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          slivers: [
+        body: RefreshIndicator(
+          onRefresh: () => ref.read(exploreProvider.notifier).refresh(),
+          notificationPredicate: (notification) => showExplore,
+          child: CustomScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            slivers: [
             SliverAppBar(
               expandedHeight: 120 + topPadding,
               collapsedHeight: kToolbarHeight,
@@ -492,7 +527,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
             child: AnimatedSize(
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeOut,
-              child: hasResults
+              child: (hasResults || showExplore)
                   ? const SizedBox.shrink()
                   : Column(
                       children: [
@@ -541,7 +576,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
           
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(16, hasResults ? 8 : 32, 16, hasResults ? 8 : 16),
+              padding: EdgeInsets.fromLTRB(16, (hasResults || showExplore) ? 8 : 32, 16, (hasResults || showExplore) ? 8 : 16),
               child: _buildSearchBar(colorScheme),
             ),
           ),
@@ -559,7 +594,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
             child: AnimatedSize(
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeOut,
-              child: (hasResults || showRecentAccess)
+              child: (hasResults || showRecentAccess || showExplore)
                   ? const SizedBox.shrink()
                   : Column(
                       children: [
@@ -584,6 +619,19 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
             ),
           ),
           
+          // Explore sections (Spotify Home Feed)
+          if (showExplore)
+            ..._buildExploreSections(exploreState, colorScheme),
+          
+          // Loading indicator for explore
+          if (hasHomeFeedExtension && !hasActualResults && !isLoading && exploreState.isLoading)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
+          
           ..._buildSearchResults(
             tracks: tracks,
             searchArtists: searchArtists,
@@ -594,6 +642,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
           ),
         ],
       ),
+    ),  // Close RefreshIndicator
     ),  // Close GestureDetector
   );
   }
@@ -668,6 +717,382 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
         ),
       ],
     );
+  }
+
+  List<Widget> _buildExploreSections(ExploreState exploreState, ColorScheme colorScheme) {
+    final slivers = <Widget>[];
+    
+    // Greeting (pull-to-refresh handles refresh)
+    if (exploreState.greeting != null && exploreState.greeting!.isNotEmpty) {
+      slivers.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Text(
+              exploreState.greeting!,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    
+    // Build each section
+    for (final section in exploreState.sections) {
+      slivers.add(
+        SliverToBoxAdapter(
+          child: _buildExploreSection(section, colorScheme),
+        ),
+      );
+    }
+    
+    // Add some bottom padding
+    slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 16)));
+    
+    return slivers;
+  }
+  
+  Widget _buildExploreSection(ExploreSection section, ColorScheme colorScheme) {
+    // Check if this is a YT Music "Quick picks" style section (vertical list)
+    final isYTMusicQuickPicks = section.items.isNotEmpty && 
+        section.items.first.providerId == 'ytmusic-spotiflac' &&
+        section.items.every((item) => item.type == 'track');
+    
+    if (isYTMusicQuickPicks) {
+      return _buildYTMusicQuickPicksSection(section, colorScheme);
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          child: Text(
+            section.title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 175,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: section.items.length,
+            itemBuilder: (context, index) {
+              final item = section.items[index];
+              return _buildExploreItem(item, colorScheme);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+  
+  /// Build YT Music "Quick picks" style swipeable pages section
+  Widget _buildYTMusicQuickPicksSection(ExploreSection section, ColorScheme colorScheme) {
+    const itemsPerPage = 5;
+    final totalPages = (section.items.length / itemsPerPage).ceil();
+    
+    return _QuickPicksPageView(
+      section: section,
+      colorScheme: colorScheme,
+      itemsPerPage: itemsPerPage,
+      totalPages: totalPages,
+      onItemTap: _navigateToExploreItem,
+      onItemMenu: _showTrackBottomSheet,
+    );
+  }
+  
+  Widget _buildExploreItem(ExploreItem item, ColorScheme colorScheme) {
+    final isArtist = item.type == 'artist';
+    
+    return GestureDetector(
+      onTap: () => _navigateToExploreItem(item),
+      child: SizedBox(
+        width: 120,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Column(
+            crossAxisAlignment: isArtist ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(isArtist ? 60 : 8),
+                child: item.coverUrl != null && item.coverUrl!.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: item.coverUrl!,
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                        memCacheWidth: 240,
+                        memCacheHeight: 240,
+                        cacheManager: CoverCacheManager.instance,
+                        errorWidget: (context, url, error) => Container(
+                          width: 120,
+                          height: 120,
+                          color: colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            _getIconForType(item.type),
+                            color: colorScheme.onSurfaceVariant,
+                            size: 36,
+                          ),
+                        ),
+                      )
+                    : Container(
+                        width: 120,
+                        height: 120,
+                        color: colorScheme.surfaceContainerHighest,
+                        child: Icon(
+                          _getIconForType(item.type),
+                          color: colorScheme.onSurfaceVariant,
+                          size: 36,
+                        ),
+                      ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                item.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: isArtist ? TextAlign.center : TextAlign.start,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              if (item.artists.isNotEmpty && !isArtist)
+                Text(
+                  item.artists,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  IconData _getIconForType(String type) {
+    switch (type) {
+      case 'track':
+        return Icons.music_note;
+      case 'album':
+        return Icons.album;
+      case 'playlist':
+        return Icons.playlist_play;
+      case 'artist':
+        return Icons.person;
+      case 'station':
+        return Icons.radio;
+      default:
+        return Icons.music_note;
+    }
+  }
+  
+  void _navigateToExploreItem(ExploreItem item) async {
+    final extensionId = item.providerId ?? 'spotify-web';
+    
+    switch (item.type) {
+      case 'track':
+        // Show bottom sheet with track info and download option
+        _showTrackBottomSheet(item);
+      case 'album':
+        Navigator.push(context, MaterialPageRoute(
+          builder: (context) => ExtensionAlbumScreen(
+            extensionId: extensionId,
+            albumId: item.id,
+            albumName: item.name,
+            coverUrl: item.coverUrl,
+          ),
+        ));
+      case 'playlist':
+        Navigator.push(context, MaterialPageRoute(
+          builder: (context) => ExtensionPlaylistScreen(
+            extensionId: extensionId,
+            playlistId: item.id,
+            playlistName: item.name,
+            coverUrl: item.coverUrl,
+          ),
+        ));
+      case 'artist':
+        Navigator.push(context, MaterialPageRoute(
+          builder: (context) => ExtensionArtistScreen(
+            extensionId: extensionId,
+            artistId: item.id,
+            artistName: item.name,
+            coverUrl: item.coverUrl,
+          ),
+        ));
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${item.type}: ${item.name}')),
+        );
+    }
+  }
+
+  void _showTrackBottomSheet(ExploreItem item) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Track info
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: item.coverUrl != null && item.coverUrl!.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: item.coverUrl!,
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 128,
+                            cacheManager: CoverCacheManager.instance,
+                          )
+                        : Container(
+                            width: 64,
+                            height: 64,
+                            color: colorScheme.surfaceContainerHighest,
+                            child: Icon(Icons.music_note, color: colorScheme.onSurfaceVariant),
+                          ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.artists,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // Actions
+            ListTile(
+              leading: Icon(Icons.download, color: colorScheme.primary),
+              title: Text(context.l10n.downloadTitle),
+              onTap: () {
+                Navigator.pop(context);
+                _downloadExploreTrack(item);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.album, color: colorScheme.onSurfaceVariant),
+              title: const Text('Go to Album'),
+              onTap: () {
+                Navigator.pop(context);
+                // Navigate to album - we'll use the track ID to search
+                _navigateToTrackAlbum(item);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _downloadExploreTrack(ExploreItem item) async {
+    final settings = ref.read(settingsProvider);
+    
+    // Create a Track object from ExploreItem
+    // Pass spotify ID as ISRC so enrichment can look it up via SongLink/Deezer
+    final track = Track(
+      id: item.id,
+      name: item.name,
+      artistName: item.artists,
+      albumName: item.albumName ?? '',
+      duration: 0,
+      trackNumber: 1,
+      discNumber: 1,
+      isrc: item.id, // Pass Spotify ID - enrichment will detect and lookup real ISRC
+      releaseDate: null,
+      coverUrl: item.coverUrl,
+      source: item.providerId ?? 'spotify-web',
+    );
+    
+    if (settings.askQualityBeforeDownload) {
+      DownloadServicePicker.show(
+        context,
+        trackName: track.name,
+        artistName: track.artistName,
+        coverUrl: track.coverUrl,
+        onSelect: (quality, service) {
+          ref.read(downloadQueueProvider.notifier).addToQueue(track, service, qualityOverride: quality);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.snackbarAddedToQueue(track.name))),
+          );
+        },
+      );
+    } else {
+      ref.read(downloadQueueProvider.notifier).addToQueue(track, settings.defaultService);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.snackbarAddedToQueue(track.name))),
+      );
+    }
+  }
+
+  Future<void> _navigateToTrackAlbum(ExploreItem item) async {
+    if (item.albumId != null && item.albumId!.isNotEmpty) {
+      Navigator.push(context, MaterialPageRoute(
+        builder: (context) => ExtensionAlbumScreen(
+          extensionId: item.providerId ?? 'spotify-web',
+          albumId: item.albumId!,
+          albumName: item.albumName ?? 'Album',
+          coverUrl: item.coverUrl,
+        ),
+      ));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Album info not available')),
+      );
+    }
   }
 
   Widget _buildRecentAccess(
@@ -2419,6 +2844,191 @@ class _ExtensionArtistScreenState extends ConsumerState<ExtensionArtistScreen> {
       albums: _albums,
       topTracks: _topTracks,
       extensionId: widget.extensionId, // Skip Spotify/Deezer fetch
+    );
+  }
+}
+
+/// Swipeable Quick Picks widget with page indicator
+class _QuickPicksPageView extends StatefulWidget {
+  final ExploreSection section;
+  final ColorScheme colorScheme;
+  final int itemsPerPage;
+  final int totalPages;
+  final void Function(ExploreItem) onItemTap;
+  final void Function(ExploreItem) onItemMenu;
+
+  const _QuickPicksPageView({
+    required this.section,
+    required this.colorScheme,
+    required this.itemsPerPage,
+    required this.totalPages,
+    required this.onItemTap,
+    required this.onItemMenu,
+  });
+
+  @override
+  State<_QuickPicksPageView> createState() => _QuickPicksPageViewState();
+}
+
+class _QuickPicksPageViewState extends State<_QuickPicksPageView> {
+  int _currentPage = 0;
+  late PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Text(
+            widget.section.title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        // Swipeable pages of tracks
+        SizedBox(
+          height: widget.itemsPerPage * 64.0,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: widget.totalPages,
+            onPageChanged: (page) {
+              setState(() => _currentPage = page);
+            },
+            itemBuilder: (context, pageIndex) {
+              final startIndex = pageIndex * widget.itemsPerPage;
+              final endIndex = (startIndex + widget.itemsPerPage).clamp(0, widget.section.items.length);
+              final pageItems = widget.section.items.sublist(startIndex, endIndex);
+              
+              return Column(
+                children: pageItems.map((item) => _buildQuickPickItem(item)).toList(),
+              );
+            },
+          ),
+        ),
+        // Page indicator dots
+        if (widget.totalPages > 1)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(widget.totalPages, (index) {
+                final isActive = index == _currentPage;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: isActive ? 8 : 6,
+                  height: isActive ? 8 : 6,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isActive 
+                        ? widget.colorScheme.primary 
+                        : widget.colorScheme.onSurfaceVariant.withOpacity(0.3),
+                  ),
+                );
+              }),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildQuickPickItem(ExploreItem item) {
+    return InkWell(
+      onTap: () => widget.onItemTap(item),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            // Album art thumbnail
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: item.coverUrl != null && item.coverUrl!.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: item.coverUrl!,
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 96,
+                      memCacheHeight: 96,
+                      cacheManager: CoverCacheManager.instance,
+                      errorWidget: (context, url, error) => Container(
+                        width: 48,
+                        height: 48,
+                        color: widget.colorScheme.surfaceContainerHighest,
+                        child: Icon(
+                          Icons.music_note,
+                          color: widget.colorScheme.onSurfaceVariant,
+                          size: 24,
+                        ),
+                      ),
+                    )
+                  : Container(
+                      width: 48,
+                      height: 48,
+                      color: widget.colorScheme.surfaceContainerHighest,
+                      child: Icon(
+                        Icons.music_note,
+                        color: widget.colorScheme.onSurfaceVariant,
+                        size: 24,
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 12),
+            // Title and artist
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: widget.colorScheme.onSurface,
+                    ),
+                  ),
+                  if (item.artists.isNotEmpty)
+                    Text(
+                      item.artists,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: widget.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            // Menu button
+            IconButton(
+              icon: Icon(
+                Icons.more_vert,
+                color: widget.colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+              onPressed: () => widget.onItemMenu(item),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

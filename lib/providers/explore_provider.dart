@@ -1,0 +1,220 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/services/platform_bridge.dart';
+import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/providers/extension_provider.dart';
+
+final _log = AppLogger('ExploreProvider');
+
+/// Represents an item in a Spotify home section
+class ExploreItem {
+  final String id;
+  final String uri;
+  final String type; // track, album, playlist, artist, station
+  final String name;
+  final String artists;
+  final String? description;
+  final String? coverUrl;
+  final String? providerId;
+  final String? albumId;
+  final String? albumName;
+
+  const ExploreItem({
+    required this.id,
+    required this.uri,
+    required this.type,
+    required this.name,
+    required this.artists,
+    this.description,
+    this.coverUrl,
+    this.providerId,
+    this.albumId,
+    this.albumName,
+  });
+
+  factory ExploreItem.fromJson(Map<String, dynamic> json) {
+    return ExploreItem(
+      id: json['id'] as String? ?? '',
+      uri: json['uri'] as String? ?? '',
+      type: json['type'] as String? ?? 'track',
+      name: json['name'] as String? ?? '',
+      artists: json['artists'] as String? ?? '',
+      description: json['description'] as String?,
+      coverUrl: json['cover_url'] as String?,
+      providerId: json['provider_id'] as String?,
+      albumId: json['album_id'] as String?,
+      albumName: json['album_name'] as String?,
+    );
+  }
+}
+
+/// Represents a section in Spotify home feed
+class ExploreSection {
+  final String uri;
+  final String title;
+  final List<ExploreItem> items;
+
+  const ExploreSection({
+    required this.uri,
+    required this.title,
+    required this.items,
+  });
+
+  factory ExploreSection.fromJson(Map<String, dynamic> json) {
+    final itemsList = json['items'] as List<dynamic>? ?? [];
+    return ExploreSection(
+      uri: json['uri'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      items: itemsList
+          .map((item) => ExploreItem.fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+/// State for explore/home feed
+class ExploreState {
+  final bool isLoading;
+  final String? error;
+  final String? greeting;
+  final List<ExploreSection> sections;
+  final DateTime? lastFetched;
+
+  const ExploreState({
+    this.isLoading = false,
+    this.error,
+    this.greeting,
+    this.sections = const [],
+    this.lastFetched,
+  });
+
+  bool get hasContent => sections.isNotEmpty;
+
+  ExploreState copyWith({
+    bool? isLoading,
+    String? error,
+    String? greeting,
+    List<ExploreSection>? sections,
+    DateTime? lastFetched,
+  }) {
+    return ExploreState(
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+      greeting: greeting ?? this.greeting,
+      sections: sections ?? this.sections,
+      lastFetched: lastFetched ?? this.lastFetched,
+    );
+  }
+}
+
+/// Provider for explore/home feed state
+class ExploreNotifier extends Notifier<ExploreState> {
+  @override
+  ExploreState build() {
+    return const ExploreState();
+  }
+
+  /// Fetch home feed from spotify-web extension
+  Future<void> fetchHomeFeed({bool forceRefresh = false}) async {
+    _log.i('fetchHomeFeed called, forceRefresh=$forceRefresh');
+    
+    // Don't refetch if we have data and it's less than 5 minutes old
+    if (!forceRefresh && 
+        state.hasContent && 
+        state.lastFetched != null &&
+        DateTime.now().difference(state.lastFetched!).inMinutes < 5) {
+      _log.d('Using cached home feed');
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      // Find any extension with homeFeed capability
+      final extState = ref.read(extensionProvider);
+      _log.d('Extensions count: ${extState.extensions.length}');
+      
+      // Look for extensions with homeFeed capability (prefer spotify-web, then ytmusic)
+      final homeFeedExtensions = extState.extensions.where(
+        (e) => e.enabled && e.hasHomeFeed,
+      ).toList();
+      
+      if (homeFeedExtensions.isEmpty) {
+        _log.w('No extension with homeFeed capability found');
+        state = state.copyWith(
+          isLoading: false,
+          error: 'No extension with home feed support enabled',
+        );
+        return;
+      }
+      
+      // Prefer spotify-web if available, otherwise use first available
+      var targetExt = homeFeedExtensions.firstWhere(
+        (e) => e.id == 'spotify-web',
+        orElse: () => homeFeedExtensions.first,
+      );
+
+      _log.i('Fetching home feed from ${targetExt.id}...');
+      final result = await PlatformBridge.getExtensionHomeFeed(targetExt.id);
+      
+      _log.d('getExtensionHomeFeed result: $result');
+
+      if (result == null) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Failed to fetch home feed',
+        );
+        return;
+      }
+
+      final success = result['success'] as bool? ?? false;
+      if (!success) {
+        final error = result['error'] as String? ?? 'Unknown error';
+        state = state.copyWith(
+          isLoading: false,
+          error: error,
+        );
+        return;
+      }
+
+      final greeting = result['greeting'] as String?;
+      final sectionsData = result['sections'] as List<dynamic>? ?? [];
+
+      final sections = sectionsData
+          .map((s) => ExploreSection.fromJson(s as Map<String, dynamic>))
+          .toList();
+
+      _log.i('Fetched ${sections.length} sections');
+      
+      // Debug: log first section items
+      if (sections.isNotEmpty && sections.first.items.isNotEmpty) {
+        final firstItem = sections.first.items.first;
+        _log.d('First item: name=${firstItem.name}, artists=${firstItem.artists}, type=${firstItem.type}');
+      }
+
+      state = ExploreState(
+        isLoading: false,
+        greeting: greeting,
+        sections: sections,
+        lastFetched: DateTime.now(),
+      );
+    } catch (e, stack) {
+      _log.e('Error fetching home feed: $e', e, stack);
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// Clear cached data
+  void clear() {
+    state = const ExploreState();
+  }
+
+  /// Refresh home feed
+  Future<void> refresh() => fetchHomeFeed(forceRefresh: true);
+}
+
+final exploreProvider = NotifierProvider<ExploreNotifier, ExploreState>(() {
+  return ExploreNotifier();
+});

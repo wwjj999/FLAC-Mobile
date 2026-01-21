@@ -2082,3 +2082,85 @@ func ClearStoreCacheJSON() error {
 	store.ClearCache()
 	return nil
 }
+
+// GetExtensionHomeFeedJSON calls getHomeFeed on any extension that supports it
+func GetExtensionHomeFeedJSON(extensionID string) (string, error) {
+	manager := GetExtensionManager()
+	ext, err := manager.GetExtension(extensionID)
+	if err != nil {
+		return "", err
+	}
+
+	if !ext.Enabled {
+		return "", fmt.Errorf("extension '%s' is disabled", extensionID)
+	}
+
+	provider := NewExtensionProviderWrapper(ext)
+
+	script := `
+		(function() {
+			if (typeof extension !== 'undefined' && typeof extension.getHomeFeed === 'function') {
+				return extension.getHomeFeed();
+			}
+			return null;
+		})()
+	`
+
+	result, err := RunWithTimeoutAndRecover(provider.vm, script, 60*time.Second)
+	if err != nil {
+		return "", fmt.Errorf("getHomeFeed failed: %w", err)
+	}
+
+	if result == nil || goja.IsUndefined(result) || goja.IsNull(result) {
+		return "", fmt.Errorf("getHomeFeed returned null")
+	}
+
+	exported := result.Export()
+	jsonBytes, err := json.Marshal(exported)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonBytes), nil
+}
+
+// GetExtensionBrowseCategoriesJSON calls getBrowseCategories on any extension that supports it
+func GetExtensionBrowseCategoriesJSON(extensionID string) (string, error) {
+	manager := GetExtensionManager()
+	ext, err := manager.GetExtension(extensionID)
+	if err != nil {
+		return "", err
+	}
+
+	if !ext.Enabled {
+		return "", fmt.Errorf("extension '%s' is disabled", extensionID)
+	}
+
+	provider := NewExtensionProviderWrapper(ext)
+
+	script := `
+		(function() {
+			if (typeof extension !== 'undefined' && typeof extension.getBrowseCategories === 'function') {
+				return extension.getBrowseCategories();
+			}
+			return null;
+		})()
+	`
+
+	result, err := RunWithTimeoutAndRecover(provider.vm, script, 30*time.Second)
+	if err != nil {
+		return "", fmt.Errorf("getBrowseCategories failed: %w", err)
+	}
+
+	if result == nil || goja.IsUndefined(result) || goja.IsNull(result) {
+		return "", fmt.Errorf("getBrowseCategories returned null")
+	}
+
+	exported := result.Export()
+	jsonBytes, err := json.Marshal(exported)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonBytes), nil
+}

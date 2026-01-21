@@ -605,6 +605,21 @@ import Gobackend  // Import Go framework
             if let error = error { throw error }
             return nil
             
+        // Extension Home Feed API
+        case "getExtensionHomeFeed":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            let response = GobackendGetExtensionHomeFeedJSON(extensionId, &error)
+            if let error = error { throw error }
+            return response
+            
+        case "getExtensionBrowseCategories":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            let response = GobackendGetExtensionBrowseCategoriesJSON(extensionId, &error)
+            if let error = error { throw error }
+            return response
+            
         default:
             throw NSError(
                 domain: "SpotiFLAC",

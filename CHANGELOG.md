@@ -1,5 +1,77 @@
 # Changelog
 
+## [3.2.0] - 2026-01-22
+
+### Added
+
+- **Home Feed / Explore Feature**: Personalized home feed sections on the home screen
+  - Works with any extension that has `homeFeed` capability
+  - Displays sections like "Trending Songs", "Quick Picks", "New Releases", etc.
+  - Each item shows thumbnail, name, artist, and supports navigation to album/artist/playlist
+  - Prefers spotify-web if available, otherwise uses first available homeFeed extension
+
+- **Extension Capabilities System**: Extensions can now declare capabilities in manifest
+  - New `capabilities` field in extension manifest (e.g., `{ "homeFeed": true, "browseCategories": true }`)
+  - `Extension` model now has `hasHomeFeed` and `hasBrowseCategories` getters
+  - Capabilities are parsed from Go backend and exposed to Flutter
+
+- **YT Music Quick Picks UI**: Special vertical swipeable format for YT Music track sections
+  - Detects YT Music track-only sections and renders them differently
+  - PageView with 5 tracks per page, swipeable left/right
+  - Animated page indicator dots (active = primary color, inactive = gray)
+  - Each item shows: 48x48 thumbnail, track name, artist, 3-dot menu button
+
+- **Pull-to-Refresh on Home Feed**: Swipe down to refresh explore sections
+  - Replaced refresh button next to greeting with pull-to-refresh gesture
+  - Only active when explore sections are displayed
+  - Cleaner UI with greeting text only (no refresh icon)
+
+- **`gobackend.getLocalTime()` API for Extensions**: New utility function to get accurate device local time
+  - Returns: `{ year, month, day, hour, minute, second, weekday, offsetMinutes, timezone, timestamp }`
+  - Uses Go's `time.Now()` for accurate device timezone detection
+  - Solves Goja JS engine's `getTimezoneOffset()` returning 0 issue
+
+### Fixed
+
+- **YT Music Greeting Time**: Fixed "Good night" showing in the morning
+  - Root cause: Goja JS engine returns `getTimezoneOffset() = 0` instead of actual offset
+  - Now uses `gobackend.getLocalTime().hour` for accurate local hour
+  - Greeting correctly shows "Good morning/afternoon/evening/night" based on device time
+
+- **Spotify Home Feed Timezone**: Fixed timezone detection for Spotify API calls
+  - Now uses `gobackend.getLocalTime().timezone` or offset mapping
+  - Ensures personalized content is based on correct user timezone
+
+### Extensions
+
+- **spotify-web Extension**: Updated to v1.8.0
+  - Added `capabilities: { homeFeed: true, browseCategories: true }` to manifest
+  - `fetchHomeFeed()` now uses `gobackend.getLocalTime()` for timezone detection
+  - Removed reliance on Goja's broken `getTimezoneOffset()` and `Intl.DateTimeFormat()`
+
+- **ytmusic-spotiflac Extension**: Updated to v1.6.0
+  - Added `capabilities: { homeFeed: true }` to manifest
+  - `getTimeBasedGreeting()` now uses `gobackend.getLocalTime().hour` directly
+  - Simplified greeting logic - no more manual UTC offset calculations
+
+### Technical
+
+- **Go Backend**: Added `getLocalTime` function to `RegisterGoBackendAPIs()`
+  - File: `go_backend/extension_runtime_utils.go`
+  - Returns device local time with timezone info via `time.Now()`
+  - Offset follows JS convention (negative for east of UTC)
+
+- **Flutter Explore Provider**: Updated extension selection logic
+  - File: `lib/providers/explore_provider.dart`
+  - Finds extensions with `hasHomeFeed` capability
+  - Prefers spotify-web if available, falls back to first available
+
+- **Flutter Home Tab**: Refactored explore sections rendering
+  - File: `lib/screens/home_tab.dart`
+  - Added `RefreshIndicator` wrapper with `notificationPredicate` for conditional refresh
+  - Added `_buildYTMusicQuickPicksSection()` for special YT Music format
+  - Added `_QuickPicksPageView` StatefulWidget for swipeable track pages
+
 ## [3.1.3] - 2026-01-19
 
 ### Added

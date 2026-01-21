@@ -678,6 +678,21 @@ class MainActivity: FlutterActivity() {
                             }
                             result.success(null)
                         }
+                        // Extension Home Feed (Explore)
+                        "getExtensionHomeFeed" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getExtensionHomeFeedJSON(extensionId)
+                            }
+                            result.success(response)
+                        }
+                        "getExtensionBrowseCategories" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getExtensionBrowseCategoriesJSON(extensionId)
+                            }
+                            result.success(response)
+                        }
                         else -> result.notImplemented()
                     }
                 } catch (e: Exception) {
