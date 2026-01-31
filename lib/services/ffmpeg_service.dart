@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:ffmpeg_kit_flutter_new_audio/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new_audio/ffmpeg_kit_config.dart';
 import 'package:ffmpeg_kit_flutter_new_audio/return_code.dart';
@@ -336,6 +338,8 @@ class FFmpegService {
     return null;
   }
 
+  /// Embed metadata to Opus file
+  /// Uses METADATA_BLOCK_PICTURE tag for cover art (OGG/Vorbis standard)
   static Future<String?> embedMetadataToOpus({
     required String opusPath,
     String? coverPath,
@@ -347,23 +351,10 @@ class FFmpegService {
     
     final StringBuffer cmdBuffer = StringBuffer();
     cmdBuffer.write('-i "$opusPath" ');
-    
-    if (coverPath != null) {
-      cmdBuffer.write('-i "$coverPath" ');
-    }
-    
     cmdBuffer.write('-map 0:a ');
-    
-    if (coverPath != null) {
-      cmdBuffer.write('-map 1:0 ');
-      cmdBuffer.write('-c:v copy ');
-      cmdBuffer.write('-disposition:v attached_pic ');
-      cmdBuffer.write('-metadata:s:v title="Album cover" ');
-      cmdBuffer.write('-metadata:s:v comment="Cover (front)" ');
-    }
-    
     cmdBuffer.write('-c:a copy ');
     
+    // Embed metadata tags (Vorbis comments)
     if (metadata != null) {
       metadata.forEach((key, value) {
         final sanitizedValue = value.replaceAll('"', '\\"');
@@ -371,10 +362,27 @@ class FFmpegService {
       });
     }
     
+    // Embed cover art using METADATA_BLOCK_PICTURE
+    if (coverPath != null) {
+      try {
+        final pictureBlock = await _createMetadataBlockPicture(coverPath);
+        if (pictureBlock != null) {
+          // Escape special characters for shell
+          final escapedBlock = pictureBlock.replaceAll('"', '\\"');
+          cmdBuffer.write('-metadata METADATA_BLOCK_PICTURE="$escapedBlock" ');
+          _log.d('Created METADATA_BLOCK_PICTURE for Opus (${pictureBlock.length} chars)');
+        } else {
+          _log.w('Failed to create METADATA_BLOCK_PICTURE, skipping cover');
+        }
+      } catch (e) {
+        _log.e('Error creating METADATA_BLOCK_PICTURE: $e');
+      }
+    }
+    
     cmdBuffer.write('"$tempOutput" -y');
     
     final command = cmdBuffer.toString();
-    _log.d('Executing FFmpeg Opus embed command: $command');
+    _log.d('Executing FFmpeg Opus embed command');
 
     final result = await _execute(command);
 
@@ -412,8 +420,126 @@ class FFmpegService {
       _log.w('Failed to cleanup temp Opus file: $e');
     }
 
-    _log.e('Opus Metadata/Cover embed failed: ${result.output}');
+    _log.e('Opus Metadata embed failed: ${result.output}');
     return null;
+  }
+
+  /// Create METADATA_BLOCK_PICTURE base64 string for OGG/Opus cover art
+  /// Format follows FLAC picture block specification:
+  /// - 4 bytes: picture type (3 = front cover)
+  /// - 4 bytes: MIME type length
+  /// - n bytes: MIME type string
+  /// - 4 bytes: description length
+  /// - n bytes: description string
+  /// - 4 bytes: width
+  /// - 4 bytes: height
+  /// - 4 bytes: color depth
+  /// - 4 bytes: colors used (0 for non-indexed)
+  /// - 4 bytes: picture data length
+  /// - n bytes: picture data
+  static Future<String?> _createMetadataBlockPicture(String imagePath) async {
+    try {
+      final file = File(imagePath);
+      if (!await file.exists()) {
+        _log.e('Cover image not found: $imagePath');
+        return null;
+      }
+      
+      final imageData = await file.readAsBytes();
+      
+      // Detect MIME type from file extension or magic bytes
+      String mimeType;
+      if (imagePath.toLowerCase().endsWith('.png')) {
+        mimeType = 'image/png';
+      } else if (imagePath.toLowerCase().endsWith('.jpg') || 
+                 imagePath.toLowerCase().endsWith('.jpeg')) {
+        mimeType = 'image/jpeg';
+      } else {
+        // Check magic bytes
+        if (imageData.length >= 8 && 
+            imageData[0] == 0x89 && imageData[1] == 0x50 && 
+            imageData[2] == 0x4E && imageData[3] == 0x47) {
+          mimeType = 'image/png';
+        } else if (imageData.length >= 2 && 
+                   imageData[0] == 0xFF && imageData[1] == 0xD8) {
+          mimeType = 'image/jpeg';
+        } else {
+          mimeType = 'image/jpeg'; // Default to JPEG
+        }
+      }
+      
+      final mimeBytes = utf8.encode(mimeType);
+      const description = ''; // Empty description
+      final descBytes = utf8.encode(description);
+      
+      // Build the FLAC picture block
+      // Total size: 4 + 4 + mimeLen + 4 + descLen + 4 + 4 + 4 + 4 + 4 + imageLen
+      final blockSize = 4 + 4 + mimeBytes.length + 4 + descBytes.length + 
+                        4 + 4 + 4 + 4 + 4 + imageData.length;
+      
+      final buffer = ByteData(blockSize);
+      var offset = 0;
+      
+      // Picture type: 3 = Front cover
+      buffer.setUint32(offset, 3, Endian.big);
+      offset += 4;
+      
+      // MIME type length
+      buffer.setUint32(offset, mimeBytes.length, Endian.big);
+      offset += 4;
+      
+      // MIME type string
+      final blockBytes = Uint8List(blockSize);
+      blockBytes.setRange(0, offset, buffer.buffer.asUint8List());
+      blockBytes.setRange(offset, offset + mimeBytes.length, mimeBytes);
+      offset += mimeBytes.length;
+      
+      // Description length
+      final tempBuffer = ByteData(4);
+      tempBuffer.setUint32(0, descBytes.length, Endian.big);
+      blockBytes.setRange(offset, offset + 4, tempBuffer.buffer.asUint8List());
+      offset += 4;
+      
+      // Description string
+      blockBytes.setRange(offset, offset + descBytes.length, descBytes);
+      offset += descBytes.length;
+      
+      // Width (0 = unknown)
+      tempBuffer.setUint32(0, 0, Endian.big);
+      blockBytes.setRange(offset, offset + 4, tempBuffer.buffer.asUint8List());
+      offset += 4;
+      
+      // Height (0 = unknown)
+      tempBuffer.setUint32(0, 0, Endian.big);
+      blockBytes.setRange(offset, offset + 4, tempBuffer.buffer.asUint8List());
+      offset += 4;
+      
+      // Color depth (0 = unknown)
+      tempBuffer.setUint32(0, 0, Endian.big);
+      blockBytes.setRange(offset, offset + 4, tempBuffer.buffer.asUint8List());
+      offset += 4;
+      
+      // Colors used (0 for non-indexed)
+      tempBuffer.setUint32(0, 0, Endian.big);
+      blockBytes.setRange(offset, offset + 4, tempBuffer.buffer.asUint8List());
+      offset += 4;
+      
+      // Picture data length
+      tempBuffer.setUint32(0, imageData.length, Endian.big);
+      blockBytes.setRange(offset, offset + 4, tempBuffer.buffer.asUint8List());
+      offset += 4;
+      
+      // Picture data
+      blockBytes.setRange(offset, offset + imageData.length, imageData);
+      
+      // Base64 encode the entire block
+      final base64String = base64Encode(blockBytes);
+      
+      return base64String;
+    } catch (e) {
+      _log.e('Error creating METADATA_BLOCK_PICTURE: $e');
+      return null;
+    }
   }
 
   static Map<String, String> _convertToId3Tags(Map<String, String> vorbisMetadata) {
