@@ -1376,6 +1376,143 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     }
   }
 
+  Future<void> _embedMetadataToOpus(
+    String opusPath, 
+    Track track, {
+    String? genre,
+    String? label,
+    String? copyright,
+  }) async {
+    final settings = ref.read(settingsProvider);
+    
+    String? coverPath;
+    var coverUrl = track.coverUrl;
+    if (coverUrl != null && coverUrl.isNotEmpty) {
+      try {
+        if (settings.maxQualityCover) {
+          coverUrl = _upgradeToMaxQualityCover(coverUrl);
+          _log.d('Cover URL upgraded to max quality for Opus: $coverUrl');
+        }
+        
+        final tempDir = await getTemporaryDirectory();
+        final uniqueId =
+            '${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(10000)}';
+        coverPath = '${tempDir.path}/cover_opus_$uniqueId.jpg';
+
+        final httpClient = HttpClient();
+        final request = await httpClient.getUrl(Uri.parse(coverUrl));
+        final response = await request.close();
+        if (response.statusCode == 200) {
+          final file = File(coverPath);
+          final sink = file.openWrite();
+          await response.pipe(sink);
+          await sink.close();
+          _log.d('Cover downloaded for Opus: $coverPath');
+        } else {
+          _log.w('Failed to download cover for Opus: HTTP ${response.statusCode}');
+          coverPath = null;
+        }
+        httpClient.close();
+      } catch (e) {
+        _log.e('Failed to download cover for Opus: $e');
+        coverPath = null;
+      }
+    }
+
+    try {
+      final metadata = <String, String>{
+        'TITLE': track.name,
+        'ARTIST': track.artistName,
+        'ALBUM': track.albumName,
+      };
+
+      final albumArtist = _normalizeOptionalString(track.albumArtist) ??
+          track.artistName;
+      metadata['ALBUMARTIST'] = albumArtist;
+
+      if (track.trackNumber != null) {
+        metadata['TRACKNUMBER'] = track.trackNumber.toString();
+      }
+
+      if (track.discNumber != null) {
+        metadata['DISCNUMBER'] = track.discNumber.toString();
+      }
+
+      if (track.releaseDate != null) {
+        metadata['DATE'] = track.releaseDate!;
+      }
+
+      if (track.isrc != null) {
+        metadata['ISRC'] = track.isrc!;
+      }
+
+      if (genre != null && genre.isNotEmpty) {
+        metadata['GENRE'] = genre;
+        _log.d('Adding GENRE to Opus: $genre');
+      }
+      if (label != null && label.isNotEmpty) {
+        metadata['ORGANIZATION'] = label;
+        _log.d('Adding ORGANIZATION (label) to Opus: $label');
+      }
+      if (copyright != null && copyright.isNotEmpty) {
+        metadata['COPYRIGHT'] = copyright;
+        _log.d('Adding COPYRIGHT to Opus: $copyright');
+      }
+
+      _log.d('Opus Metadata map content: $metadata');
+
+      if (settings.embedLyrics) {
+        try {
+          final durationMs = track.duration * 1000;
+          
+          final lrcContent = await PlatformBridge.getLyricsLRC(
+            track.id,
+            track.name,
+            track.artistName,
+            filePath: '',
+            durationMs: durationMs,
+          );
+
+          if (lrcContent.isNotEmpty) {
+            metadata['LYRICS'] = lrcContent;
+            _log.d('Lyrics fetched for Opus embedding (${lrcContent.length} chars)');
+          }
+        } catch (e) {
+          _log.w('Failed to fetch lyrics for Opus embedding: $e');
+        }
+      }
+
+      _log.d('Embedding tags to Opus: $metadata');
+
+      final result = await FFmpegService.embedMetadataToOpus(
+        opusPath: opusPath,
+        coverPath: coverPath != null && await File(coverPath).exists()
+            ? coverPath
+            : null,
+        metadata: metadata,
+      );
+
+      if (result != null) {
+        _log.d('Metadata, lyrics, and cover embedded to Opus via FFmpeg');
+      } else {
+        _log.w('FFmpeg Opus metadata/cover embed failed');
+      }
+
+      if (coverPath != null) {
+        try {
+          final coverFile = File(coverPath);
+          if (await coverFile.exists()) {
+            await coverFile.delete();
+          }
+        } catch (e) {
+          _log.w('Failed to cleanup Opus cover file: $e');
+        }
+      }
+    } catch (e) {
+      _log.e('Failed to embed metadata to Opus: $e');
+    }
+  }
+
   Future<void> _processQueue() async {
     if (state.isProcessing) return;
 
@@ -1993,25 +2130,33 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 actualQuality = lossyFormat == 'opus' ? 'Opus 128kbps' : 'MP3 320kbps';
                 _log.i('Successfully converted to $lossyFormat: $convertedPath');
                 
-                // Only embed metadata for MP3 (Opus uses Vorbis comments which are preserved)
+                // Embed metadata and cover for both MP3 and Opus
+                _log.i('Embedding metadata to $lossyFormat...');
+                updateItemStatus(
+                  item.id,
+                  DownloadStatus.downloading,
+                  progress: 0.99,
+                );
+                
+                final lossyBackendGenre = result['genre'] as String?;
+                final lossyBackendLabel = result['label'] as String?;
+                final lossyBackendCopyright = result['copyright'] as String?;
+                
                 if (lossyFormat == 'mp3') {
-                  _log.i('Embedding metadata to MP3...');
-                  updateItemStatus(
-                    item.id,
-                    DownloadStatus.downloading,
-                    progress: 0.99,
-                  );
-                  
-                  final mp3BackendGenre = result['genre'] as String?;
-                  final mp3BackendLabel = result['label'] as String?;
-                  final mp3BackendCopyright = result['copyright'] as String?;
-                  
                   await _embedMetadataToMp3(
                     convertedPath, 
                     trackToDownload,
-                    genre: mp3BackendGenre ?? genre,
-                    label: mp3BackendLabel ?? label,
-                    copyright: mp3BackendCopyright,
+                    genre: lossyBackendGenre ?? genre,
+                    label: lossyBackendLabel ?? label,
+                    copyright: lossyBackendCopyright,
+                  );
+                } else if (lossyFormat == 'opus') {
+                  await _embedMetadataToOpus(
+                    convertedPath, 
+                    trackToDownload,
+                    genre: lossyBackendGenre ?? genre,
+                    label: lossyBackendLabel ?? label,
+                    copyright: lossyBackendCopyright,
                   );
                 }
               } else {

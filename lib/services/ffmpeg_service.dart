@@ -323,6 +323,86 @@ class FFmpegService {
     return null;
   }
 
+  static Future<String?> embedMetadataToOpus({
+    required String opusPath,
+    String? coverPath,
+    Map<String, String>? metadata,
+  }) async {
+    final tempDir = await getTemporaryDirectory();
+    final uniqueId = DateTime.now().millisecondsSinceEpoch;
+    final tempOutput = '${tempDir.path}/temp_embed_$uniqueId.opus';
+    
+    final StringBuffer cmdBuffer = StringBuffer();
+    cmdBuffer.write('-i "$opusPath" ');
+    
+    if (coverPath != null) {
+      cmdBuffer.write('-i "$coverPath" ');
+    }
+    
+    cmdBuffer.write('-map 0:a ');
+    
+    if (coverPath != null) {
+      cmdBuffer.write('-map 1:0 ');
+      cmdBuffer.write('-c:v copy ');
+      cmdBuffer.write('-disposition:v attached_pic ');
+      cmdBuffer.write('-metadata:s:v title="Album cover" ');
+      cmdBuffer.write('-metadata:s:v comment="Cover (front)" ');
+    }
+    
+    cmdBuffer.write('-c:a copy ');
+    
+    if (metadata != null) {
+      metadata.forEach((key, value) {
+        final sanitizedValue = value.replaceAll('"', '\\"');
+        cmdBuffer.write('-metadata $key="$sanitizedValue" ');
+      });
+    }
+    
+    cmdBuffer.write('"$tempOutput" -y');
+    
+    final command = cmdBuffer.toString();
+    _log.d('Executing FFmpeg Opus embed command: $command');
+
+    final result = await _execute(command);
+
+    if (result.success) {
+      try {
+        final tempFile = File(tempOutput);
+        final originalFile = File(opusPath);
+        
+        if (await tempFile.exists()) {
+             if (await originalFile.exists()) {
+               await originalFile.delete();
+             }
+             await tempFile.copy(opusPath);
+             await tempFile.delete();
+             
+             _log.d('Opus metadata embedded successfully');
+             return opusPath;
+        } else {
+             _log.e('Temp Opus output file not found: $tempOutput');
+             return null;
+        }
+
+      } catch (e) {
+        _log.e('Failed to replace Opus file after metadata embed: $e');
+        return null;
+      }
+    }
+
+    try {
+      final tempFile = File(tempOutput);
+      if (await tempFile.exists()) {
+        await tempFile.delete();
+      }
+    } catch (e) {
+      _log.w('Failed to cleanup temp Opus file: $e');
+    }
+
+    _log.e('Opus Metadata/Cover embed failed: ${result.output}');
+    return null;
+  }
+
   static Map<String, String> _convertToId3Tags(Map<String, String> vorbisMetadata) {
     final id3Map = <String, String>{};
     
