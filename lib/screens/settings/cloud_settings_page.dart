@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/providers/upload_queue_provider.dart';
+import 'package:spotiflac_android/services/cloud_upload_service.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
 class CloudSettingsPage extends ConsumerStatefulWidget {
@@ -290,6 +292,11 @@ class _CloudSettingsPageState extends ConsumerState<CloudSettingsPage> {
                   ),
                 ),
               ),
+
+              // Upload Queue Section
+              SliverToBoxAdapter(
+                child: _buildUploadQueueSection(context),
+              ),
             ],
 
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
@@ -304,9 +311,7 @@ class _CloudSettingsPageState extends ConsumerState<CloudSettingsPage> {
       case 'webdav':
         return 'WebDAV (Synology, Nextcloud, QNAP)';
       case 'sftp':
-        return 'SFTP';
-      case 'gdrive':
-        return 'Google Drive (Coming Soon)';
+        return 'SFTP (SSH File Transfer)';
       default:
         return 'Not Configured';
     }
@@ -363,18 +368,6 @@ class _CloudSettingsPageState extends ConsumerState<CloudSettingsPage> {
                 Navigator.pop(context);
               },
             ),
-            ListTile(
-              leading: Icon(Icons.cloud, color: colorScheme.onSurfaceVariant),
-              title: Text(
-                'Google Drive',
-                style: TextStyle(color: colorScheme.onSurfaceVariant),
-              ),
-              subtitle: Text(
-                'Coming Soon',
-                style: TextStyle(color: colorScheme.onSurfaceVariant),
-              ),
-              enabled: false,
-            ),
             const SizedBox(height: 16),
           ],
         ),
@@ -388,10 +381,8 @@ class _CloudSettingsPageState extends ConsumerState<CloudSettingsPage> {
       _connectionTestResult = null;
     });
 
-    // TODO: Implement actual connection test
-    await Future.delayed(const Duration(seconds: 2));
-
     final settings = ref.read(settingsProvider);
+    
     if (settings.cloudServerUrl.isEmpty) {
       setState(() {
         _isTestingConnection = false;
@@ -400,10 +391,231 @@ class _CloudSettingsPageState extends ConsumerState<CloudSettingsPage> {
       return;
     }
 
-    // Placeholder - actual implementation will use webdav_client
-    setState(() {
-      _isTestingConnection = false;
-      _connectionTestResult = 'Success: Connection test will be implemented in next version';
-    });
+    if (settings.cloudUsername.isEmpty || settings.cloudPassword.isEmpty) {
+      setState(() {
+        _isTestingConnection = false;
+        _connectionTestResult = 'Error: Username and password are required';
+      });
+      return;
+    }
+
+    if (settings.cloudProvider == 'webdav') {
+      final result = await CloudUploadService.instance.testWebDAVConnection(
+        serverUrl: settings.cloudServerUrl,
+        username: settings.cloudUsername,
+        password: settings.cloudPassword,
+      );
+
+      setState(() {
+        _isTestingConnection = false;
+        _connectionTestResult = result.success
+            ? 'Success: Connected to WebDAV server'
+            : 'Error: ${result.error}';
+      });
+    } else if (settings.cloudProvider == 'sftp') {
+      final result = await CloudUploadService.instance.testSFTPConnection(
+        serverUrl: settings.cloudServerUrl,
+        username: settings.cloudUsername,
+        password: settings.cloudPassword,
+      );
+
+      setState(() {
+        _isTestingConnection = false;
+        _connectionTestResult = result.success
+            ? 'Success: Connected to SFTP server'
+            : 'Error: ${result.error}';
+      });
+    } else {
+      setState(() {
+        _isTestingConnection = false;
+        _connectionTestResult = 'Error: No provider selected';
+      });
+    }
+  }
+
+  Widget _buildUploadQueueSection(BuildContext context) {
+    final uploadState = ref.watch(uploadQueueProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SettingsSectionHeader(title: context.l10n.cloudSettingsUploadQueue),
+        SettingsGroup(
+          children: [
+            // Stats row
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStatItem(
+                    context,
+                    Icons.hourglass_empty,
+                    uploadState.pendingCount.toString(),
+                    'Pending',
+                    colorScheme.tertiary,
+                  ),
+                  _buildStatItem(
+                    context,
+                    Icons.cloud_upload,
+                    uploadState.uploadingCount.toString(),
+                    'Uploading',
+                    colorScheme.primary,
+                  ),
+                  _buildStatItem(
+                    context,
+                    Icons.check_circle,
+                    uploadState.completedCount.toString(),
+                    'Done',
+                    Colors.green,
+                  ),
+                  _buildStatItem(
+                    context,
+                    Icons.error,
+                    uploadState.failedCount.toString(),
+                    'Failed',
+                    colorScheme.error,
+                  ),
+                ],
+              ),
+            ),
+            
+            // Action buttons
+            if (uploadState.failedCount > 0 || uploadState.completedCount > 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Row(
+                  children: [
+                    if (uploadState.failedCount > 0)
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            ref.read(uploadQueueProvider.notifier).retryAllFailed();
+                          },
+                          icon: const Icon(Icons.refresh, size: 18),
+                          label: Text(context.l10n.cloudSettingsRetryFailed),
+                        ),
+                      ),
+                    if (uploadState.failedCount > 0 && uploadState.completedCount > 0)
+                      const SizedBox(width: 12),
+                    if (uploadState.completedCount > 0)
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            ref.read(uploadQueueProvider.notifier).clearCompleted();
+                          },
+                          icon: const Icon(Icons.clear_all, size: 18),
+                          label: Text(context.l10n.cloudSettingsClearDone),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+
+        // Recent uploads list (show last 5)
+        if (uploadState.items.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              context.l10n.cloudSettingsRecentUploads,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          ...uploadState.items.reversed.take(5).map((item) => _buildUploadItem(context, item)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStatItem(
+    BuildContext context,
+    IconData icon,
+    String value,
+    String label,
+    Color color,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUploadItem(BuildContext context, UploadQueueItem item) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    IconData icon;
+    Color iconColor;
+    Widget? trailing;
+
+    switch (item.status) {
+      case UploadStatus.pending:
+        icon = Icons.hourglass_empty;
+        iconColor = colorScheme.tertiary;
+        break;
+      case UploadStatus.uploading:
+        icon = Icons.cloud_upload;
+        iconColor = colorScheme.primary;
+        trailing = SizedBox(
+          width: 40,
+          child: Text(
+            '${(item.progress * 100).toInt()}%',
+            style: TextStyle(color: colorScheme.primary),
+          ),
+        );
+        break;
+      case UploadStatus.completed:
+        icon = Icons.check_circle;
+        iconColor = Colors.green;
+        break;
+      case UploadStatus.failed:
+        icon = Icons.error;
+        iconColor = colorScheme.error;
+        trailing = IconButton(
+          icon: Icon(Icons.refresh, color: colorScheme.primary),
+          onPressed: () {
+            ref.read(uploadQueueProvider.notifier).retryFailed(item.id);
+          },
+          tooltip: 'Retry',
+        );
+        break;
+    }
+
+    return ListTile(
+      leading: Icon(icon, color: iconColor),
+      title: Text(
+        item.trackName,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text(
+        item.artistName,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: colorScheme.onSurfaceVariant),
+      ),
+      trailing: trailing,
+      dense: true,
+    );
   }
 }

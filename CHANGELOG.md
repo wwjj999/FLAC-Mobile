@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.4.0] - 2026-02-03
+
+### Added
+
+- **Cloud Upload with WebDAV & SFTP**: Automatically upload downloaded files to your NAS or cloud storage
+  - Full WebDAV support (Synology DSM, Nextcloud, QNAP, ownCloud)
+  - Full SFTP support (any SSH server with SFTP enabled)
+  - Connection test with detailed error messages
+  - Upload queue with progress tracking
+  - Retry failed uploads and clear completed items
+  - Recent uploads list in Cloud Save settings
+
+### Dependencies
+
+- Added `webdav_client: ^1.2.2` for WebDAV protocol support
+- Added `dartssh2: ^2.13.0` for SFTP protocol support
+
+---
+
 ## [3.3.6] - 2026-02-02
 
 ### Added
