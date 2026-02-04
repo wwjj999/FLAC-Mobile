@@ -1,9 +1,14 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 
 final _log = AppLogger('ExtensionProvider');
+
+const _metadataProviderPriorityKey = 'metadata_provider_priority';
+const _providerPriorityKey = 'provider_priority';
 
 class Extension {
   final String id;
@@ -622,7 +627,23 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   Future<void> loadProviderPriority() async {
     try {
-      final priority = await PlatformBridge.getProviderPriority();
+      // Load from SharedPreferences first (persisted)
+      final prefs = await SharedPreferences.getInstance();
+      final savedJson = prefs.getString(_providerPriorityKey);
+      
+      List<String> priority;
+      if (savedJson != null) {
+        final saved = jsonDecode(savedJson) as List<dynamic>;
+        priority = saved.map((e) => e as String).toList();
+        _log.d('Loaded provider priority from prefs: $priority');
+        // Sync to Go backend
+        await PlatformBridge.setProviderPriority(priority);
+      } else {
+        // Fallback to Go backend default
+        priority = await PlatformBridge.getProviderPriority();
+        _log.d('Using default provider priority: $priority');
+      }
+      
       state = state.copyWith(providerPriority: priority);
     } catch (e) {
       _log.e('Failed to load provider priority: $e');
@@ -632,9 +653,14 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   Future<void> setProviderPriority(List<String> priority) async {
     try {
+      // Save to SharedPreferences for persistence
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_providerPriorityKey, jsonEncode(priority));
+      
+      // Sync to Go backend
       await PlatformBridge.setProviderPriority(priority);
       state = state.copyWith(providerPriority: priority);
-      _log.d('Updated provider priority: $priority');
+      _log.d('Saved provider priority: $priority');
     } catch (e) {
       _log.e('Failed to set provider priority: $e');
       state = state.copyWith(error: e.toString());
@@ -643,7 +669,23 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   Future<void> loadMetadataProviderPriority() async {
     try {
-      final priority = await PlatformBridge.getMetadataProviderPriority();
+      // Load from SharedPreferences first (persisted)
+      final prefs = await SharedPreferences.getInstance();
+      final savedJson = prefs.getString(_metadataProviderPriorityKey);
+      
+      List<String> priority;
+      if (savedJson != null) {
+        final saved = jsonDecode(savedJson) as List<dynamic>;
+        priority = saved.map((e) => e as String).toList();
+        _log.d('Loaded metadata provider priority from prefs: $priority');
+        // Sync to Go backend
+        await PlatformBridge.setMetadataProviderPriority(priority);
+      } else {
+        // Fallback to Go backend default
+        priority = await PlatformBridge.getMetadataProviderPriority();
+        _log.d('Using default metadata provider priority: $priority');
+      }
+      
       state = state.copyWith(metadataProviderPriority: priority);
     } catch (e) {
       _log.e('Failed to load metadata provider priority: $e');
@@ -652,9 +694,14 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   Future<void> setMetadataProviderPriority(List<String> priority) async {
     try {
+      // Save to SharedPreferences for persistence
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_metadataProviderPriorityKey, jsonEncode(priority));
+      
+      // Sync to Go backend
       await PlatformBridge.setMetadataProviderPriority(priority);
       state = state.copyWith(metadataProviderPriority: priority);
-      _log.d('Updated metadata provider priority: $priority');
+      _log.d('Saved metadata provider priority: $priority');
     } catch (e) {
       _log.e('Failed to set metadata provider priority: $e');
       state = state.copyWith(error: e.toString());

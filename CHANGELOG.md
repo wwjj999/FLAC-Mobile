@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.4.1] - 2026-02-04
+
+### Fixed
+
+- Metadata Priority order now persists after app restart
+- Download Provider Priority order now persists after app restart
+
+---
+
 ## [3.4.0] - 2026-02-03
 
 ### Highlights
