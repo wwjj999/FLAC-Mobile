@@ -65,21 +65,23 @@ class _LogScreenState extends State<LogScreen> {
     );
   }
 
-  void _copyLogs() {
-    final logs = LogBuffer().export();
+  void _copyLogs() async {
+    final logs = await LogBuffer().exportWithDeviceInfo();
     Clipboard.setData(ClipboardData(text: logs));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(context.l10n.logCopied),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.logCopied),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
-  void _shareLogs() {
-    final logs = LogBuffer().export();
+  void _shareLogs() async {
+    final logs = await LogBuffer().exportWithDeviceInfo();
     SharePlus.instance.share(ShareParams(text: logs, subject: 'SpotiFLAC Logs'));
   }
 

@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 
 class LogEntry {
@@ -148,6 +151,97 @@ class LogBuffer extends ChangeNotifier {
     for (final entry in _entries) {
       buffer.writeln(entry.toString());
     }
+    return buffer.toString();
+  }
+
+  /// Export logs with device information for debugging
+  Future<String> exportWithDeviceInfo() async {
+    final buffer = StringBuffer();
+    
+    buffer.writeln('=' * 60);
+    buffer.writeln('SPOTIFLAC LOG EXPORT');
+    buffer.writeln('=' * 60);
+    buffer.writeln();
+    
+    buffer.writeln('--- App Information ---');
+    buffer.writeln('App Version: ${AppInfo.version} (Build ${AppInfo.buildNumber})');
+    buffer.writeln('Generated: ${DateTime.now().toIso8601String()}');
+    buffer.writeln();
+    
+    buffer.writeln('--- Device Information ---');
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      
+      if (Platform.isAndroid) {
+        final android = await deviceInfo.androidInfo;
+        buffer.writeln('Platform: Android');
+        buffer.writeln('Device: ${android.manufacturer} ${android.model}');
+        buffer.writeln('Brand: ${android.brand}');
+        buffer.writeln('Android Version: ${android.version.release} (SDK ${android.version.sdkInt})');
+        buffer.writeln('Device ID: ${android.id}');
+        buffer.writeln('Hardware: ${android.hardware}');
+        buffer.writeln('Product: ${android.product}');
+        buffer.writeln('Supported ABIs: ${android.supportedAbis.join(', ')}');
+        buffer.writeln('Is Physical Device: ${android.isPhysicalDevice}');
+      } else if (Platform.isIOS) {
+        final ios = await deviceInfo.iosInfo;
+        buffer.writeln('Platform: iOS');
+        buffer.writeln('Device: ${ios.utsname.machine}');
+        buffer.writeln('Model: ${ios.model}');
+        buffer.writeln('System Name: ${ios.systemName}');
+        buffer.writeln('System Version: ${ios.systemVersion}');
+        buffer.writeln('Device Name: ${ios.name}');
+        buffer.writeln('Is Physical Device: ${ios.isPhysicalDevice}');
+      }
+    } catch (e) {
+      buffer.writeln('Failed to get device info: $e');
+    }
+    buffer.writeln();
+    
+    buffer.writeln('--- Log Summary ---');
+    buffer.writeln('Total Entries: ${_entries.length}');
+    
+    int errorCount = 0;
+    int warnCount = 0;
+    int infoCount = 0;
+    int debugCount = 0;
+    int goCount = 0;
+    
+    for (final entry in _entries) {
+      switch (entry.level) {
+        case 'ERROR':
+        case 'FATAL':
+          errorCount++;
+          break;
+        case 'WARN':
+          warnCount++;
+          break;
+        case 'INFO':
+          infoCount++;
+          break;
+        case 'DEBUG':
+          debugCount++;
+          break;
+      }
+      if (entry.isFromGo) goCount++;
+    }
+    
+    buffer.writeln('Errors: $errorCount');
+    buffer.writeln('Warnings: $warnCount');
+    buffer.writeln('Info: $infoCount');
+    buffer.writeln('Debug: $debugCount');
+    buffer.writeln('From Go Backend: $goCount');
+    buffer.writeln();
+    
+    buffer.writeln('=' * 60);
+    buffer.writeln('LOG ENTRIES');
+    buffer.writeln('=' * 60);
+    buffer.writeln();
+    
+    for (final entry in _entries) {
+      buffer.writeln(entry.toString());
+    }
+    
     return buffer.toString();
   }
 
