@@ -567,7 +567,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     });
   }
 
-  /// Exit selection mode
   void _exitSelectionMode() {
     setState(() {
       _isSelectionMode = false;
@@ -588,25 +587,20 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     });
   }
 
-  /// Select all visible items
   void _selectAll(List<UnifiedLibraryItem> items) {
     setState(() {
       _selectedIds.addAll(items.map((e) => e.id));
     });
   }
 
-  /// Get short badge text for quality display
   String _getQualityBadgeText(String quality) {
-    // For lossless: "24-bit/96kHz" -> "24-bit"
     if (quality.contains('bit')) {
       return quality.split('/').first;
     }
-    // For lossy: "OPUS 128kbps" -> "128k", "MP3 320kbps" -> "320k"
     final bitrateMatch = RegExp(r'(\d+)kbps').firstMatch(quality);
     if (bitrateMatch != null) {
       return '${bitrateMatch.group(1)}k';
     }
-    // Fallback: return format name
     return quality.split(' ').first;
   }
 
@@ -725,7 +719,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     });
   }
 
-  /// Count of active advanced filters
   int get _activeFilterCount {
     int count = 0;
     if (_filterSource != null) count++;
@@ -735,7 +728,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     return count;
   }
 
-  /// Reset all advanced filters
   void _resetFilters() {
     setState(() {
       _filterSource = null;
@@ -746,12 +738,10 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     });
   }
 
-  /// Apply advanced filters to unified items
   List<UnifiedLibraryItem> _applyAdvancedFilters(List<UnifiedLibraryItem> items) {
     if (_activeFilterCount == 0) return items;
 
     return items.where((item) {
-      // Source filter
       if (_filterSource != null) {
         if (_filterSource == 'downloaded' && item.source != LibraryItemSource.downloaded) {
           return false;
@@ -761,7 +751,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         }
       }
 
-      // Quality filter
       if (_filterQuality != null && item.quality != null) {
         final quality = item.quality!.toLowerCase();
         switch (_filterQuality) {
@@ -770,21 +759,17 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           case 'cd':
             if (!quality.startsWith('16')) return false;
           case 'lossy':
-            // Lossy formats typically don't have bit depth or are labeled differently
             if (quality.startsWith('24') || quality.startsWith('16')) return false;
         }
       } else if (_filterQuality != null && item.quality == null) {
-        // If quality filter is set but item has no quality info, include only for 'lossy'
         if (_filterQuality != 'lossy') return false;
       }
 
-      // Format filter
       if (_filterFormat != null) {
         final ext = item.filePath.split('.').last.toLowerCase();
         if (ext != _filterFormat) return false;
       }
 
-      // Date filter
       if (_filterDateRange != null) {
         final now = DateTime.now();
         final itemDate = item.addedAt;
@@ -808,7 +793,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     }).toList(growable: false);
   }
 
-  /// Get available formats from current items
   Set<String> _getAvailableFormats(List<UnifiedLibraryItem> items) {
     final formats = <String>{};
     for (final item in items) {
@@ -820,12 +804,10 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     return formats;
   }
 
-  /// Show filter bottom sheet
   void _showFilterSheet(BuildContext context, List<UnifiedLibraryItem> allItems) {
     final colorScheme = Theme.of(context).colorScheme;
     final availableFormats = _getAvailableFormats(allItems);
     
-    // Temporary filter state for the sheet
     String? tempSource = _filterSource;
     String? tempQuality = _filterQuality;
     String? tempFormat = _filterFormat;
@@ -847,7 +829,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Handle bar
                   Center(
                     child: Container(
                       width: 32,
@@ -860,7 +841,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                     ),
                   ),
                   
-                  // Title row
                   Row(
                     children: [
                       Text(
@@ -885,7 +865,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Source filter
                   Text(
                     context.l10n.libraryFilterSource,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -915,7 +894,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Quality filter
                   Text(
                     context.l10n.libraryFilterQuality,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -950,7 +928,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Format filter
                   Text(
                     context.l10n.libraryFilterFormat,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -976,7 +953,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Date filter
                   Text(
                     context.l10n.libraryFilterDate,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -1016,7 +992,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Apply button
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(

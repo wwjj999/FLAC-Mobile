@@ -1019,10 +1019,6 @@ void removeItem(String id) {
     _saveQueueToStorage();
   }
 
-  /// Export failed downloads to a TXT file
-  /// Returns the file path if successful, null otherwise
-  /// Uses daily files: same day = append to existing file, new day = new file
-  /// Saves to 'failed_downloads' subfolder to keep organized
   Future<String?> exportFailedDownloads() async {
     final failedItems = state.items
         .where((item) => item.status == DownloadStatus.failed)
@@ -1091,7 +1087,6 @@ void removeItem(String id) {
     }
   }
 
-  /// Clear all failed downloads from queue
   void clearFailedDownloads() {
     final items = state.items
         .where((item) => item.status != DownloadStatus.failed)

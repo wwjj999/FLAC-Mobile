@@ -25,7 +25,7 @@ type ExtTrackMetadata struct {
 	AlbumArtist string `json:"album_artist,omitempty"`
 	DurationMS  int    `json:"duration_ms"`
 	CoverURL    string `json:"cover_url,omitempty"`
-	Images      string `json:"images,omitempty"` // Alternative field for cover URL (used by some extensions)
+	Images      string `json:"images,omitempty"`
 	ReleaseDate string `json:"release_date,omitempty"`
 	TrackNumber int    `json:"track_number,omitempty"`
 	DiscNumber  int    `json:"disc_number,omitempty"`
@@ -33,19 +33,18 @@ type ExtTrackMetadata struct {
 	ProviderID  string `json:"provider_id"`
 	ItemType    string `json:"item_type,omitempty"`
 	AlbumType   string `json:"album_type,omitempty"`
-	// Enrichment fields from Odesli/song.link
+
 	TidalID       string            `json:"tidal_id,omitempty"`
 	QobuzID       string            `json:"qobuz_id,omitempty"`
 	DeezerID      string            `json:"deezer_id,omitempty"`
 	SpotifyID     string            `json:"spotify_id,omitempty"`
-	ExternalLinks map[string]string `json:"external_links,omitempty"` // service -> URL mapping
-	// Extended metadata from enrichment (can come from Deezer, Spotify, etc.)
-	Label     string `json:"label,omitempty"`     // Record label
-	Copyright string `json:"copyright,omitempty"` // Copyright information
-	Genre     string `json:"genre,omitempty"`     // Music genre(s)
+	ExternalLinks map[string]string `json:"external_links,omitempty"`
+
+	Label     string `json:"label,omitempty"`
+	Copyright string `json:"copyright,omitempty"`
+	Genre     string `json:"genre,omitempty"`
 }
 
-// ResolvedCoverURL returns the cover URL, checking both CoverURL and Images fields
 func (t *ExtTrackMetadata) ResolvedCoverURL() string {
 	if t.CoverURL != "" {
 		return t.CoverURL
@@ -53,7 +52,6 @@ func (t *ExtTrackMetadata) ResolvedCoverURL() string {
 	return t.Images
 }
 
-// ExtAlbumMetadata represents album metadata from an extension
 type ExtAlbumMetadata struct {
 	ID          string             `json:"id"`
 	Name        string             `json:"name"`
@@ -67,34 +65,28 @@ type ExtAlbumMetadata struct {
 	ProviderID  string             `json:"provider_id"`
 }
 
-// ExtArtistMetadata represents artist metadata from an extension
 type ExtArtistMetadata struct {
 	ID          string             `json:"id"`
 	Name        string             `json:"name"`
 	ImageURL    string             `json:"image_url,omitempty"`
-	HeaderImage string             `json:"header_image,omitempty"` // Header image for artist page background
-	Listeners   int                `json:"listeners,omitempty"`    // Monthly listeners
+	HeaderImage string             `json:"header_image,omitempty"`
+	Listeners   int                `json:"listeners,omitempty"`
 	Albums      []ExtAlbumMetadata `json:"albums,omitempty"`
-	TopTracks   []ExtTrackMetadata `json:"top_tracks,omitempty"` // Popular tracks
+	TopTracks   []ExtTrackMetadata `json:"top_tracks,omitempty"`
 	ProviderID  string             `json:"provider_id"`
 }
 
-// ExtSearchResult represents search results from an extension
 type ExtSearchResult struct {
 	Tracks []ExtTrackMetadata `json:"tracks"`
 	Total  int                `json:"total"`
 }
 
-// ==================== Download Types ====================
-
-// ExtAvailabilityResult represents availability check result
 type ExtAvailabilityResult struct {
 	Available bool   `json:"available"`
 	Reason    string `json:"reason,omitempty"`
 	TrackID   string `json:"track_id,omitempty"`
 }
 
-// ExtDownloadURLResult represents download URL info
 type ExtDownloadURLResult struct {
 	URL        string `json:"url"`
 	Format     string `json:"format"`
@@ -102,7 +94,6 @@ type ExtDownloadURLResult struct {
 	SampleRate int    `json:"sample_rate,omitempty"`
 }
 
-// ExtDownloadResult represents download result from an extension
 type ExtDownloadResult struct {
 	Success      bool   `json:"success"`
 	FilePath     string `json:"file_path,omitempty"`
@@ -110,7 +101,7 @@ type ExtDownloadResult struct {
 	SampleRate   int    `json:"sample_rate,omitempty"`
 	ErrorMessage string `json:"error_message,omitempty"`
 	ErrorType    string `json:"error_type,omitempty"`
-	// Metadata returned by extension (optional - if provided, can skip enrichment)
+
 	Title       string `json:"title,omitempty"`
 	Artist      string `json:"artist,omitempty"`
 	Album       string `json:"album,omitempty"`
@@ -122,15 +113,11 @@ type ExtDownloadResult struct {
 	ISRC        string `json:"isrc,omitempty"`
 }
 
-// ==================== Provider Wrapper ====================
-
-// ExtensionProviderWrapper wraps an extension to call its provider methods
 type ExtensionProviderWrapper struct {
 	extension *LoadedExtension
 	vm        *goja.Runtime
 }
 
-// NewExtensionProviderWrapper creates a new provider wrapper
 func NewExtensionProviderWrapper(ext *LoadedExtension) *ExtensionProviderWrapper {
 	return &ExtensionProviderWrapper{
 		extension: ext,
@@ -138,9 +125,6 @@ func NewExtensionProviderWrapper(ext *LoadedExtension) *ExtensionProviderWrapper
 	}
 }
 
-// ==================== Metadata Provider Methods ====================
-
-// SearchTracks searches for tracks using the extension
 func (p *ExtensionProviderWrapper) SearchTracks(query string, limit int) (*ExtSearchResult, error) {
 	if !p.extension.Manifest.IsMetadataProvider() {
 		return nil, fmt.Errorf("extension '%s' is not a metadata provider", p.extension.ID)
@@ -150,11 +134,9 @@ func (p *ExtensionProviderWrapper) SearchTracks(query string, limit int) (*ExtSe
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
-	// Lock VM to prevent concurrent access
 	p.extension.VMMu.Lock()
 	defer p.extension.VMMu.Unlock()
 
-	// Call extension's searchTracks function
 	script := fmt.Sprintf(`
 		(function() {
 			if (typeof extension !== 'undefined' && typeof extension.searchTracks === 'function') {
@@ -184,14 +166,11 @@ func (p *ExtensionProviderWrapper) SearchTracks(query string, limit int) (*ExtSe
 
 	var searchResult ExtSearchResult
 
-	// Try to parse as ExtSearchResult object first
 	if err := json.Unmarshal(jsonBytes, &searchResult); err != nil {
-		// If that fails, try parsing as array of tracks directly
 		var tracks []ExtTrackMetadata
 		if arrErr := json.Unmarshal(jsonBytes, &tracks); arrErr != nil {
 			return nil, fmt.Errorf("failed to parse search result: %w (also tried array: %v)", err, arrErr)
 		}
-		// Wrap array in ExtSearchResult
 		searchResult = ExtSearchResult{
 			Tracks: tracks,
 			Total:  len(tracks),
@@ -205,7 +184,6 @@ func (p *ExtensionProviderWrapper) SearchTracks(query string, limit int) (*ExtSe
 	return &searchResult, nil
 }
 
-// GetTrack gets track details by ID
 func (p *ExtensionProviderWrapper) GetTrack(trackID string) (*ExtTrackMetadata, error) {
 	if !p.extension.Manifest.IsMetadataProvider() {
 		return nil, fmt.Errorf("extension '%s' is not a metadata provider", p.extension.ID)
@@ -215,7 +193,6 @@ func (p *ExtensionProviderWrapper) GetTrack(trackID string) (*ExtTrackMetadata, 
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
-	// Lock VM to prevent concurrent access
 	p.extension.VMMu.Lock()
 	defer p.extension.VMMu.Unlock()
 
@@ -255,7 +232,6 @@ func (p *ExtensionProviderWrapper) GetTrack(trackID string) (*ExtTrackMetadata, 
 	return &track, nil
 }
 
-// GetAlbum gets album details by ID
 func (p *ExtensionProviderWrapper) GetAlbum(albumID string) (*ExtAlbumMetadata, error) {
 	if !p.extension.Manifest.IsMetadataProvider() {
 		return nil, fmt.Errorf("extension '%s' is not a metadata provider", p.extension.ID)
@@ -265,7 +241,6 @@ func (p *ExtensionProviderWrapper) GetAlbum(albumID string) (*ExtAlbumMetadata, 
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
-	// Lock VM to prevent concurrent access
 	p.extension.VMMu.Lock()
 	defer p.extension.VMMu.Unlock()
 
@@ -308,7 +283,6 @@ func (p *ExtensionProviderWrapper) GetAlbum(albumID string) (*ExtAlbumMetadata, 
 	return &album, nil
 }
 
-// GetArtist gets artist details by ID
 func (p *ExtensionProviderWrapper) GetArtist(artistID string) (*ExtArtistMetadata, error) {
 	if !p.extension.Manifest.IsMetadataProvider() {
 		return nil, fmt.Errorf("extension '%s' is not a metadata provider", p.extension.ID)
@@ -318,7 +292,6 @@ func (p *ExtensionProviderWrapper) GetArtist(artistID string) (*ExtArtistMetadat
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
-	// Lock VM to prevent concurrent access
 	p.extension.VMMu.Lock()
 	defer p.extension.VMMu.Unlock()
 
@@ -358,23 +331,18 @@ func (p *ExtensionProviderWrapper) GetArtist(artistID string) (*ExtArtistMetadat
 	return &artist, nil
 }
 
-// EnrichTrack enriches track metadata before download (e.g., fetch real ISRC)
-// This is called lazily when download starts, not when playlist/album is loaded
-// Extension should implement enrichTrack(track) function that returns enriched track
 func (p *ExtensionProviderWrapper) EnrichTrack(track *ExtTrackMetadata) (*ExtTrackMetadata, error) {
 	if !p.extension.Manifest.IsMetadataProvider() {
-		return track, nil // Not a metadata provider, return as-is
+		return track, nil
 	}
 
 	if !p.extension.Enabled {
-		return track, nil // Extension disabled, return as-is
+		return track, nil
 	}
 
-	// Lock VM to prevent concurrent access
 	p.extension.VMMu.Lock()
 	defer p.extension.VMMu.Unlock()
 
-	// Convert track to JSON for passing to JS
 	trackJSON, err := json.Marshal(track)
 	if err != nil {
 		GoLog("[Extension] EnrichTrack: failed to marshal track: %v\n", err)
@@ -401,7 +369,6 @@ func (p *ExtensionProviderWrapper) EnrichTrack(track *ExtTrackMetadata) (*ExtTra
 		return track, nil
 	}
 
-	// If extension doesn't implement enrichTrack or returns null, return original
 	if result == nil || goja.IsUndefined(result) || goja.IsNull(result) {
 		return track, nil
 	}
@@ -419,18 +386,11 @@ func (p *ExtensionProviderWrapper) EnrichTrack(track *ExtTrackMetadata) (*ExtTra
 		return track, nil
 	}
 
-	// Preserve provider ID
 	enrichedTrack.ProviderID = track.ProviderID
-
-	GoLog("[Extension] EnrichTrack: enriched track from %s (ISRC: %s -> %s)\n",
-		p.extension.ID, track.ISRC, enrichedTrack.ISRC)
 
 	return &enrichedTrack, nil
 }
 
-// ==================== Download Provider Methods ====================
-
-// CheckAvailability checks if a track is available for download
 func (p *ExtensionProviderWrapper) CheckAvailability(isrc, trackName, artistName string) (*ExtAvailabilityResult, error) {
 	if !p.extension.Manifest.IsDownloadProvider() {
 		return nil, fmt.Errorf("extension '%s' is not a download provider", p.extension.ID)
@@ -440,7 +400,6 @@ func (p *ExtensionProviderWrapper) CheckAvailability(isrc, trackName, artistName
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
-	// Lock VM to prevent concurrent access
 	p.extension.VMMu.Lock()
 	defer p.extension.VMMu.Unlock()
 
@@ -479,7 +438,6 @@ func (p *ExtensionProviderWrapper) CheckAvailability(isrc, trackName, artistName
 	return &availability, nil
 }
 
-// GetDownloadURL gets the download URL for a track
 func (p *ExtensionProviderWrapper) GetDownloadURL(trackID, quality string) (*ExtDownloadURLResult, error) {
 	if !p.extension.Manifest.IsDownloadProvider() {
 		return nil, fmt.Errorf("extension '%s' is not a download provider", p.extension.ID)
@@ -489,7 +447,6 @@ func (p *ExtensionProviderWrapper) GetDownloadURL(trackID, quality string) (*Ext
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
-	// Lock VM to prevent concurrent access
 	p.extension.VMMu.Lock()
 	defer p.extension.VMMu.Unlock()
 
@@ -528,10 +485,8 @@ func (p *ExtensionProviderWrapper) GetDownloadURL(trackID, quality string) (*Ext
 	return &urlResult, nil
 }
 
-// ExtDownloadTimeout is longer for extension download operations (5 minutes)
 const ExtDownloadTimeout = 5 * time.Minute
 
-// Download downloads a track with progress reporting
 func (p *ExtensionProviderWrapper) Download(trackID, quality, outputPath string, onProgress func(percent int)) (*ExtDownloadResult, error) {
 	if !p.extension.Manifest.IsDownloadProvider() {
 		return nil, fmt.Errorf("extension '%s' is not a download provider", p.extension.ID)
@@ -541,15 +496,12 @@ func (p *ExtensionProviderWrapper) Download(trackID, quality, outputPath string,
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
-	// Lock VM to prevent concurrent access
 	p.extension.VMMu.Lock()
 	defer p.extension.VMMu.Unlock()
 
-	// Set up progress callback in VM
 	p.vm.Set("__onProgress", func(call goja.FunctionCall) goja.Value {
 		if len(call.Arguments) > 0 {
 			percent := int(call.Arguments[0].ToInteger())
-			// Clamp to 0-100
 			if percent < 0 {
 				percent = 0
 			}
@@ -572,7 +524,6 @@ func (p *ExtensionProviderWrapper) Download(trackID, quality, outputPath string,
 		})()
 	`, trackID, quality, outputPath)
 
-	// Use longer timeout for downloads (5 minutes)
 	result, err := RunWithTimeoutAndRecover(p.vm, script, ExtDownloadTimeout)
 	if err != nil {
 		errMsg := err.Error()
@@ -618,9 +569,6 @@ func (p *ExtensionProviderWrapper) Download(trackID, quality, outputPath string,
 	return &downloadResult, nil
 }
 
-// ==================== Extension Manager Provider Methods ====================
-
-// GetMetadataProviders returns all enabled metadata provider extensions
 func (m *ExtensionManager) GetMetadataProviders() []*ExtensionProviderWrapper {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -634,7 +582,6 @@ func (m *ExtensionManager) GetMetadataProviders() []*ExtensionProviderWrapper {
 	return providers
 }
 
-// GetDownloadProviders returns all enabled download provider extensions
 func (m *ExtensionManager) GetDownloadProviders() []*ExtensionProviderWrapper {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -648,7 +595,6 @@ func (m *ExtensionManager) GetDownloadProviders() []*ExtensionProviderWrapper {
 	return providers
 }
 
-// SearchTracksWithExtensions searches all metadata providers
 func (m *ExtensionManager) SearchTracksWithExtensions(query string, limit int) ([]ExtTrackMetadata, error) {
 	providers := m.GetMetadataProviders()
 	if len(providers) == 0 {
@@ -670,18 +616,12 @@ func (m *ExtensionManager) SearchTracksWithExtensions(query string, limit int) (
 	return allTracks, nil
 }
 
-// ==================== Provider Priority ====================
-
-// providerPriority stores the order of download providers
 var providerPriority []string
 var providerPriorityMu sync.RWMutex
 
-// metadataProviderPriority stores the order of metadata providers
 var metadataProviderPriority []string
 var metadataProviderPriorityMu sync.RWMutex
 
-// SetProviderPriority sets the order of download providers
-// providerIDs should include both built-in ("tidal", "qobuz", "amazon") and extension IDs
 func SetProviderPriority(providerIDs []string) {
 	providerPriorityMu.Lock()
 	defer providerPriorityMu.Unlock()
@@ -689,13 +629,11 @@ func SetProviderPriority(providerIDs []string) {
 	GoLog("[Extension] Download provider priority set: %v\n", providerIDs)
 }
 
-// GetProviderPriority returns the current provider priority order
 func GetProviderPriority() []string {
 	providerPriorityMu.RLock()
 	defer providerPriorityMu.RUnlock()
 
 	if len(providerPriority) == 0 {
-		// Default order: built-in providers first
 		return []string{"tidal", "qobuz", "amazon"}
 	}
 
@@ -704,8 +642,6 @@ func GetProviderPriority() []string {
 	return result
 }
 
-// SetMetadataProviderPriority sets the order of metadata providers
-// providerIDs should include both built-in ("spotify", "deezer") and extension IDs
 func SetMetadataProviderPriority(providerIDs []string) {
 	metadataProviderPriorityMu.Lock()
 	defer metadataProviderPriorityMu.Unlock()
@@ -713,13 +649,11 @@ func SetMetadataProviderPriority(providerIDs []string) {
 	GoLog("[Extension] Metadata provider priority set: %v\n", providerIDs)
 }
 
-// GetMetadataProviderPriority returns the current metadata provider priority order
 func GetMetadataProviderPriority() []string {
 	metadataProviderPriorityMu.RLock()
 	defer metadataProviderPriorityMu.RUnlock()
 
 	if len(metadataProviderPriority) == 0 {
-		// Default order: built-in providers first
 		return []string{"deezer", "spotify"}
 	}
 
@@ -728,7 +662,6 @@ func GetMetadataProviderPriority() []string {
 	return result
 }
 
-// isBuiltInProvider checks if a provider ID is a built-in provider
 func isBuiltInProvider(providerID string) bool {
 	switch providerID {
 	case "tidal", "qobuz", "amazon", "deezer":
@@ -738,20 +671,12 @@ func isBuiltInProvider(providerID string) bool {
 	}
 }
 
-// ==================== Download with Fallback ====================
-
-// DownloadWithExtensionFallback tries to download from providers in priority order
-// Includes both built-in providers and extension providers
-// If req.Source is set (extension ID), that extension is tried first
 func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, error) {
 	priority := GetProviderPriority()
 	extManager := GetExtensionManager()
 
-	// If req.Service is a built-in provider, prioritize it first
-	// This handles user's explicit selection from the service picker
 	if req.Service != "" && isBuiltInProvider(req.Service) {
 		GoLog("[DownloadWithExtensionFallback] User selected service: %s, prioritizing it first\n", req.Service)
-		// Reorder priority to put req.Service first
 		newPriority := []string{req.Service}
 		for _, p := range priority {
 			if p != req.Service {
@@ -763,10 +688,8 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 	}
 
 	var lastErr error
-	var skipBuiltIn bool // If source extension has skipBuiltInFallback, don't try built-in providers
+	var skipBuiltIn bool
 
-	// LAZY ENRICHMENT: If track came from an extension, try to enrich metadata (e.g., get real ISRC)
-	// This is done lazily at download time, not when playlist/album is loaded
 	if req.Source != "" && !isBuiltInProvider(req.Source) {
 		ext, err := extManager.GetExtension(req.Source)
 		if err == nil && ext.Enabled && ext.Error == "" && ext.Manifest.IsMetadataProvider() {
@@ -810,7 +733,6 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 				if enrichedTrack.Artists != "" {
 					req.ArtistName = enrichedTrack.Artists
 				}
-				// Copy extended metadata from enrichment (label, copyright, genre, release_date)
 				if enrichedTrack.Label != "" && req.Label == "" {
 					GoLog("[DownloadWithExtensionFallback] Label from enrichment: %s\n", enrichedTrack.Label)
 					req.Label = enrichedTrack.Label
@@ -831,7 +753,6 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 		}
 	}
 
-	// If source extension is specified, try it first before the priority list
 	if req.Source != "" && !isBuiltInProvider(req.Source) {
 		GoLog("[DownloadWithExtensionFallback] Track source is extension '%s', trying it first\n", req.Source)
 
@@ -841,7 +762,6 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 
 			provider := NewExtensionProviderWrapper(ext)
 
-			// For tracks from extension search, use the track ID directly (e.g., "youtube:VIDEO_ID")
 			trackID := req.SpotifyID
 
 			GoLog("[DownloadWithExtensionFallback] Downloading from source extension with trackID: %s (skipBuiltInFallback: %v)\n", trackID, skipBuiltIn)
@@ -867,7 +787,6 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 					Copyright:        req.Copyright,
 				}
 
-				// Embed genre and label if provided (from Deezer metadata)
 				if req.Genre != "" || req.Label != "" {
 					if err := EmbedGenreLabel(result.FilePath, req.Genre, req.Label); err != nil {
 						GoLog("[DownloadWithExtensionFallback] Warning: failed to embed genre/label: %v\n", err)
@@ -925,12 +844,11 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 			}
 			GoLog("[DownloadWithExtensionFallback] Source extension %s failed: %v\n", req.Source, lastErr)
 
-			// If skipBuiltInFallback is true, don't continue to other providers
 			if skipBuiltIn {
 				GoLog("[DownloadWithExtensionFallback] skipBuiltInFallback is true, not trying other providers\n")
 				return &DownloadResponse{
 					Success:   false,
-					Error:     fmt.Sprintf("Download failed: %v", lastErr),
+					Error:     "Download failed: " + lastErr.Error(),
 					ErrorType: "extension_error",
 					Service:   req.Source,
 				}, nil
@@ -940,7 +858,6 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 		}
 	}
 
-	// Continue with priority list
 	for _, providerID := range priority {
 		if providerID == req.Source {
 			continue
@@ -954,7 +871,6 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 		GoLog("[DownloadWithExtensionFallback] Trying provider: %s\n", providerID)
 
 		if isBuiltInProvider(providerID) {
-			// For built-in providers, enrich with Deezer metadata if not already present
 			if (req.Genre == "" || req.Label == "") && req.ISRC != "" {
 				GoLog("[DownloadWithExtensionFallback] Enriching extended metadata from Deezer for ISRC: %s\n", req.ISRC)
 				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -975,11 +891,9 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 				}
 			}
 
-			// Use built-in provider
 			result, err := tryBuiltInProvider(providerID, req)
 			if err == nil && result.Success {
 				result.Service = providerID
-				// Copy enriched metadata to response for Flutter (needed for M4A->FLAC conversion)
 				if req.Label != "" {
 					result.Label = req.Label
 				}
@@ -1007,7 +921,6 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 				GoLog("[DownloadWithExtensionFallback] %s failed: %v\n", providerID, err)
 			}
 		} else {
-			// Try extension provider
 			ext, err := extManager.GetExtension(providerID)
 			if err != nil || !ext.Enabled || ext.Error != "" {
 				GoLog("[DownloadWithExtensionFallback] Extension %s not available\n", providerID)
@@ -1050,7 +963,6 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 					Copyright:        req.Copyright,
 				}
 
-				// Embed genre and label if provided (from Deezer metadata)
 				if req.Genre != "" || req.Label != "" {
 					if err := EmbedGenreLabel(result.FilePath, req.Genre, req.Label); err != nil {
 						GoLog("[DownloadWithExtensionFallback] Warning: failed to embed genre/label: %v\n", err)
@@ -1061,7 +973,6 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 
 				if ext.Manifest.SkipMetadataEnrichment {
 					resp.SkipMetadataEnrichment = true
-					// Copy metadata from extension result if provided
 					if result.Title != "" {
 						resp.Title = result.Title
 					}
@@ -1114,7 +1025,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 	if lastErr != nil {
 		return &DownloadResponse{
 			Success:   false,
-			Error:     fmt.Sprintf("All providers failed. Last error: %v", lastErr),
+			Error:     "All providers failed. Last error: " + lastErr.Error(),
 			ErrorType: "not_found",
 		}, nil
 	}
@@ -1126,7 +1037,6 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 	}, nil
 }
 
-// tryBuiltInProvider attempts download from a built-in provider
 func tryBuiltInProvider(providerID string, req DownloadRequest) (*DownloadResponse, error) {
 	req.Service = providerID
 
@@ -1212,7 +1122,6 @@ func tryBuiltInProvider(providerID string, req DownloadRequest) (*DownloadRespon
 	}, nil
 }
 
-// buildOutputPath builds the output file path from request
 func buildOutputPath(req DownloadRequest) string {
 	metadata := map[string]interface{}{
 		"title":        req.TrackName,
@@ -1232,9 +1141,6 @@ func buildOutputPath(req DownloadRequest) string {
 	return fmt.Sprintf("%s/%s.flac", req.OutputDir, filename)
 }
 
-// ==================== Custom Search ====================
-
-// CustomSearch performs a custom search using an extension's search function
 func (p *ExtensionProviderWrapper) CustomSearch(query string, options map[string]interface{}) ([]ExtTrackMetadata, error) {
 	if !p.extension.Manifest.HasCustomSearch() {
 		return nil, fmt.Errorf("extension '%s' does not support custom search", p.extension.ID)
@@ -1244,11 +1150,9 @@ func (p *ExtensionProviderWrapper) CustomSearch(query string, options map[string
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
-	// Lock VM to prevent concurrent access
 	p.extension.VMMu.Lock()
 	defer p.extension.VMMu.Unlock()
 
-	// Convert options to JSON
 	optionsJSON, _ := json.Marshal(options)
 
 	script := fmt.Sprintf(`
@@ -1294,20 +1198,16 @@ func (p *ExtensionProviderWrapper) CustomSearch(query string, options map[string
 	return tracks, nil
 }
 
-// ==================== Custom URL Handler ====================
-
-// ExtURLHandleResult represents the result of URL handling
 type ExtURLHandleResult struct {
-	Type     string             `json:"type"`                // "track", "album", "playlist", "artist"
-	Track    *ExtTrackMetadata  `json:"track,omitempty"`     // For single track
-	Tracks   []ExtTrackMetadata `json:"tracks,omitempty"`    // For album/playlist
-	Album    *ExtAlbumMetadata  `json:"album,omitempty"`     // Album info
-	Artist   *ExtArtistMetadata `json:"artist,omitempty"`    // Artist info
-	Name     string             `json:"name,omitempty"`      // Playlist/album name
-	CoverURL string             `json:"cover_url,omitempty"` // Cover image
+	Type     string             `json:"type"`
+	Track    *ExtTrackMetadata  `json:"track,omitempty"`
+	Tracks   []ExtTrackMetadata `json:"tracks,omitempty"`
+	Album    *ExtAlbumMetadata  `json:"album,omitempty"`
+	Artist   *ExtArtistMetadata `json:"artist,omitempty"`
+	Name     string             `json:"name,omitempty"`
+	CoverURL string             `json:"cover_url,omitempty"`
 }
 
-// HandleURL processes a URL using the extension's URL handler
 func (p *ExtensionProviderWrapper) HandleURL(url string) (*ExtURLHandleResult, error) {
 	if !p.extension.Manifest.HasURLHandler() {
 		return nil, fmt.Errorf("extension '%s' does not support URL handling", p.extension.ID)
@@ -1317,7 +1217,6 @@ func (p *ExtensionProviderWrapper) HandleURL(url string) (*ExtURLHandleResult, e
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
-	// Lock VM to prevent concurrent access
 	p.extension.VMMu.Lock()
 	defer p.extension.VMMu.Unlock()
 
@@ -1381,9 +1280,6 @@ func (p *ExtensionProviderWrapper) HandleURL(url string) (*ExtURLHandleResult, e
 	return &handleResult, nil
 }
 
-// ==================== Custom Track Matching ====================
-
-// MatchTrackResult represents the result of custom track matching
 type MatchTrackResult struct {
 	Matched    bool    `json:"matched"`
 	TrackID    string  `json:"track_id,omitempty"`
@@ -1391,7 +1287,6 @@ type MatchTrackResult struct {
 	Reason     string  `json:"reason,omitempty"`
 }
 
-// MatchTrack uses extension's custom matching algorithm
 func (p *ExtensionProviderWrapper) MatchTrack(sourceTrack map[string]interface{}, candidates []map[string]interface{}) (*MatchTrackResult, error) {
 	if !p.extension.Manifest.HasCustomMatching() {
 		return nil, fmt.Errorf("extension '%s' does not support custom matching", p.extension.ID)
@@ -1401,7 +1296,6 @@ func (p *ExtensionProviderWrapper) MatchTrack(sourceTrack map[string]interface{}
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
-	// Lock VM to prevent concurrent access
 	p.extension.VMMu.Lock()
 	defer p.extension.VMMu.Unlock()
 
@@ -1443,22 +1337,16 @@ func (p *ExtensionProviderWrapper) MatchTrack(sourceTrack map[string]interface{}
 	return &matchResult, nil
 }
 
-// ==================== Post-Processing ====================
-
-// PostProcessResult represents the result of post-processing
 type PostProcessResult struct {
 	Success     bool   `json:"success"`
 	NewFilePath string `json:"new_file_path,omitempty"`
 	Error       string `json:"error,omitempty"`
-	// Additional metadata that may have changed
-	BitDepth   int `json:"bit_depth,omitempty"`
-	SampleRate int `json:"sample_rate,omitempty"`
+	BitDepth    int    `json:"bit_depth,omitempty"`
+	SampleRate  int    `json:"sample_rate,omitempty"`
 }
 
-// PostProcessTimeout is longer for post-processing (2 minutes)
 const PostProcessTimeout = 2 * time.Minute
 
-// PostProcess runs post-processing hooks on a downloaded file
 func (p *ExtensionProviderWrapper) PostProcess(filePath string, metadata map[string]interface{}, hookID string) (*PostProcessResult, error) {
 	if !p.extension.Manifest.HasPostProcessing() {
 		return nil, fmt.Errorf("extension '%s' does not support post-processing", p.extension.ID)
@@ -1468,7 +1356,6 @@ func (p *ExtensionProviderWrapper) PostProcess(filePath string, metadata map[str
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
-	// Lock VM to prevent concurrent access
 	p.extension.VMMu.Lock()
 	defer p.extension.VMMu.Unlock()
 
@@ -1522,9 +1409,6 @@ func (p *ExtensionProviderWrapper) PostProcess(filePath string, metadata map[str
 	return &postResult, nil
 }
 
-// ==================== Extension Manager Advanced Methods ====================
-
-// GetSearchProviders returns all extensions that provide custom search
 func (m *ExtensionManager) GetSearchProviders() []*ExtensionProviderWrapper {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -1538,7 +1422,6 @@ func (m *ExtensionManager) GetSearchProviders() []*ExtensionProviderWrapper {
 	return providers
 }
 
-// GetURLHandlers returns all extensions that handle custom URLs
 func (m *ExtensionManager) GetURLHandlers() []*ExtensionProviderWrapper {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -1552,7 +1435,6 @@ func (m *ExtensionManager) GetURLHandlers() []*ExtensionProviderWrapper {
 	return providers
 }
 
-// FindURLHandler finds an extension that can handle the given URL
 func (m *ExtensionManager) FindURLHandler(url string) *ExtensionProviderWrapper {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -1565,14 +1447,11 @@ func (m *ExtensionManager) FindURLHandler(url string) *ExtensionProviderWrapper 
 	return nil
 }
 
-// ExtURLHandleResultWithExtID wraps ExtURLHandleResult with extension ID for gomobile compatibility
 type ExtURLHandleResultWithExtID struct {
 	Result      *ExtURLHandleResult
 	ExtensionID string
 }
 
-// HandleURLWithExtension tries to handle a URL with any matching extension
-// Returns result with extension ID, or error if no handler found
 func (m *ExtensionManager) HandleURLWithExtension(url string) (*ExtURLHandleResultWithExtID, error) {
 	handler := m.FindURLHandler(url)
 	if handler == nil {

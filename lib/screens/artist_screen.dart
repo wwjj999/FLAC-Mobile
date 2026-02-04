@@ -74,7 +74,7 @@ class ArtistScreen extends ConsumerStatefulWidget {
   final int? monthlyListeners;
   final List<ArtistAlbum>? albums;
   final List<Track>? topTracks;
-  final String? extensionId; // If set, skip fetching from Spotify/Deezer
+  final String? extensionId;
 
   const ArtistScreen({
     super.key,

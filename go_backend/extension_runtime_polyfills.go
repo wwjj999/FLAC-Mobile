@@ -40,7 +40,6 @@ func (r *ExtensionRuntime) fetchPolyfill(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) > 1 && !goja.IsUndefined(call.Arguments[1]) && !goja.IsNull(call.Arguments[1]) {
 		optionsObj := call.Arguments[1].Export()
 		if opts, ok := optionsObj.(map[string]interface{}); ok {
-			// Method
 			if m, ok := opts["method"].(string); ok {
 				method = strings.ToUpper(m)
 			}
@@ -61,7 +60,6 @@ func (r *ExtensionRuntime) fetchPolyfill(call goja.FunctionCall) goja.Value {
 				}
 			}
 
-			// Headers
 			if h, ok := opts["headers"]; ok && h != nil {
 				switch hv := h.(type) {
 				case map[string]interface{}:
@@ -73,7 +71,6 @@ func (r *ExtensionRuntime) fetchPolyfill(call goja.FunctionCall) goja.Value {
 		}
 	}
 
-	// Create HTTP request
 	var reqBody io.Reader
 	if bodyStr != "" {
 		reqBody = strings.NewReader(bodyStr)
@@ -84,7 +81,6 @@ func (r *ExtensionRuntime) fetchPolyfill(call goja.FunctionCall) goja.Value {
 		return r.createFetchError(err.Error())
 	}
 
-	// Set headers - user headers first
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
@@ -96,20 +92,17 @@ func (r *ExtensionRuntime) fetchPolyfill(call goja.FunctionCall) goja.Value {
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	// Execute request
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return r.createFetchError(err.Error())
 	}
 	defer resp.Body.Close()
 
-	// Read body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return r.createFetchError(err.Error())
 	}
 
-	// Extract response headers
 	respHeaders := make(map[string]interface{})
 	for k, v := range resp.Header {
 		if len(v) == 1 {
@@ -127,15 +120,12 @@ func (r *ExtensionRuntime) fetchPolyfill(call goja.FunctionCall) goja.Value {
 	responseObj.Set("headers", respHeaders)
 	responseObj.Set("url", urlStr)
 
-	// Store body for methods
 	bodyString := string(body)
 
-	// text() method - returns body as string
 	responseObj.Set("text", func(call goja.FunctionCall) goja.Value {
 		return r.vm.ToValue(bodyString)
 	})
 
-	// json() method - parses body as JSON
 	responseObj.Set("json", func(call goja.FunctionCall) goja.Value {
 		var result interface{}
 		if err := json.Unmarshal(body, &result); err != nil {
@@ -145,7 +135,6 @@ func (r *ExtensionRuntime) fetchPolyfill(call goja.FunctionCall) goja.Value {
 		return r.vm.ToValue(result)
 	})
 
-	// arrayBuffer() method - returns body as array (simplified)
 	responseObj.Set("arrayBuffer", func(call goja.FunctionCall) goja.Value {
 		// Return as array of bytes
 		byteArray := make([]interface{}, len(body))
@@ -208,7 +197,6 @@ func (r *ExtensionRuntime) registerTextEncoderDecoder(vm *goja.Runtime) {
 		encoder := call.This
 		encoder.Set("encoding", "utf-8")
 
-		// encode() method - string to Uint8Array
 		encoder.Set("encode", func(call goja.FunctionCall) goja.Value {
 			if len(call.Arguments) < 1 {
 				return vm.ToValue([]byte{})
@@ -224,7 +212,6 @@ func (r *ExtensionRuntime) registerTextEncoderDecoder(vm *goja.Runtime) {
 			return vm.ToValue(result)
 		})
 
-		// encodeInto() method
 		encoder.Set("encodeInto", func(call goja.FunctionCall) goja.Value {
 			// Simplified implementation
 			if len(call.Arguments) < 2 {
@@ -253,7 +240,6 @@ func (r *ExtensionRuntime) registerTextEncoderDecoder(vm *goja.Runtime) {
 		decoder.Set("fatal", false)
 		decoder.Set("ignoreBOM", false)
 
-		// decode() method - Uint8Array to string
 		decoder.Set("decode", func(call goja.FunctionCall) goja.Value {
 			if len(call.Arguments) < 1 {
 				return vm.ToValue("")
@@ -292,7 +278,6 @@ func (r *ExtensionRuntime) registerTextEncoderDecoder(vm *goja.Runtime) {
 	})
 }
 
-// registerURLClass registers the URL class for URL parsing
 func (r *ExtensionRuntime) registerURLClass(vm *goja.Runtime) {
 	vm.Set("URL", func(call goja.ConstructorCall) *goja.Object {
 		urlObj := call.This
@@ -322,7 +307,6 @@ func (r *ExtensionRuntime) registerURLClass(vm *goja.Runtime) {
 			return nil
 		}
 
-		// Set URL properties
 		urlObj.Set("href", parsed.String())
 		urlObj.Set("protocol", parsed.Scheme+":")
 		urlObj.Set("host", parsed.Host)
@@ -342,10 +326,9 @@ func (r *ExtensionRuntime) registerURLClass(vm *goja.Runtime) {
 		password, _ := parsed.User.Password()
 		urlObj.Set("password", password)
 
-		// searchParams object
-		searchParams := vm.NewObject()
 		queryValues := parsed.Query()
 
+		searchParams := vm.NewObject()
 		searchParams.Set("get", func(call goja.FunctionCall) goja.Value {
 			if len(call.Arguments) < 1 {
 				return goja.Null()
@@ -379,12 +362,10 @@ func (r *ExtensionRuntime) registerURLClass(vm *goja.Runtime) {
 
 		urlObj.Set("searchParams", searchParams)
 
-		// toString method
 		urlObj.Set("toString", func(call goja.FunctionCall) goja.Value {
 			return vm.ToValue(parsed.String())
 		})
 
-		// toJSON method
 		urlObj.Set("toJSON", func(call goja.FunctionCall) goja.Value {
 			return vm.ToValue(parsed.String())
 		})
@@ -392,17 +373,14 @@ func (r *ExtensionRuntime) registerURLClass(vm *goja.Runtime) {
 		return nil
 	})
 
-	// URLSearchParams constructor
 	vm.Set("URLSearchParams", func(call goja.ConstructorCall) *goja.Object {
 		paramsObj := call.This
 		values := url.Values{}
 
-		// Parse initial value if provided
 		if len(call.Arguments) > 0 && !goja.IsUndefined(call.Arguments[0]) {
 			init := call.Arguments[0].Export()
 			switch v := init.(type) {
 			case string:
-				// Parse query string
 				parsed, _ := url.ParseQuery(strings.TrimPrefix(v, "?"))
 				values = parsed
 			case map[string]interface{}:

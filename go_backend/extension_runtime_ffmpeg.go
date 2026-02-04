@@ -64,7 +64,6 @@ func (r *ExtensionRuntime) ffmpegExecute(call goja.FunctionCall) goja.Value {
 
 	command := call.Arguments[0].String()
 
-	// Generate unique command ID
 	ffmpegCommandsMu.Lock()
 	ffmpegCommandID++
 	cmdID := fmt.Sprintf("%s_%d", r.extensionID, ffmpegCommandID)
@@ -77,7 +76,6 @@ func (r *ExtensionRuntime) ffmpegExecute(call goja.FunctionCall) goja.Value {
 
 	GoLog("[Extension:%s] FFmpeg command queued: %s\n", r.extensionID, cmdID)
 
-	// Wait for completion (with timeout)
 	timeout := 5 * time.Minute
 	start := time.Now()
 	for {
@@ -97,7 +95,6 @@ func (r *ExtensionRuntime) ffmpegExecute(call goja.FunctionCall) goja.Value {
 			}
 			ffmpegCommandsMu.RUnlock()
 
-			// Cleanup
 			ClearFFmpegCommand(cmdID)
 			return r.vm.ToValue(result)
 		}
@@ -124,7 +121,6 @@ func (r *ExtensionRuntime) ffmpegGetInfo(call goja.FunctionCall) goja.Value {
 
 	filePath := call.Arguments[0].String()
 
-	// Use Go's built-in audio quality function
 	quality, err := GetAudioQuality(filePath)
 	if err != nil {
 		return r.vm.ToValue(map[string]interface{}{
@@ -153,7 +149,6 @@ func (r *ExtensionRuntime) ffmpegConvert(call goja.FunctionCall) goja.Value {
 	inputPath := call.Arguments[0].String()
 	outputPath := call.Arguments[1].String()
 
-	// Get options if provided
 	options := map[string]interface{}{}
 	if len(call.Arguments) > 2 && !goja.IsUndefined(call.Arguments[2]) && !goja.IsNull(call.Arguments[2]) {
 		if opts, ok := call.Arguments[2].Export().(map[string]interface{}); ok {
@@ -161,36 +156,29 @@ func (r *ExtensionRuntime) ffmpegConvert(call goja.FunctionCall) goja.Value {
 		}
 	}
 
-	// Build FFmpeg command
 	var cmdParts []string
 	cmdParts = append(cmdParts, "-i", fmt.Sprintf("%q", inputPath))
 
-	// Audio codec
 	if codec, ok := options["codec"].(string); ok {
 		cmdParts = append(cmdParts, "-c:a", codec)
 	}
 
-	// Bitrate
 	if bitrate, ok := options["bitrate"].(string); ok {
 		cmdParts = append(cmdParts, "-b:a", bitrate)
 	}
 
-	// Sample rate
 	if sampleRate, ok := options["sample_rate"].(float64); ok {
 		cmdParts = append(cmdParts, "-ar", fmt.Sprintf("%d", int(sampleRate)))
 	}
 
-	// Channels
 	if channels, ok := options["channels"].(float64); ok {
 		cmdParts = append(cmdParts, "-ac", fmt.Sprintf("%d", int(channels)))
 	}
 
-	// Overwrite output
 	cmdParts = append(cmdParts, "-y", fmt.Sprintf("%q", outputPath))
 
 	command := strings.Join(cmdParts, " ")
 
-	// Execute via ffmpegExecute
 	execCall := goja.FunctionCall{
 		Arguments: []goja.Value{r.vm.ToValue(command)},
 	}

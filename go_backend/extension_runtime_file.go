@@ -349,7 +349,6 @@ func (r *ExtensionRuntime) fileWrite(call goja.FunctionCall) goja.Value {
 		})
 	}
 
-	// Create directory if needed
 	dir := filepath.Dir(fullPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return r.vm.ToValue(map[string]interface{}{

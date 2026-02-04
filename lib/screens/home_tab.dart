@@ -50,19 +50,10 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
   late final ProviderSubscription<TrackState> _trackStateSub;
   late final ProviderSubscription<bool> _extensionInitSub;
   
-  /// Debounce timer for live search (extension-only feature)
   Timer? _liveSearchDebounce;
-  
-  /// Flag to prevent concurrent live search calls (prevents race conditions in extensions)
   bool _isLiveSearchInProgress = false;
-  
-  /// Pending query to execute after current search completes
   String? _pendingLiveSearchQuery;
-  
-  /// Minimum characters required to trigger live search
   static const int _minLiveSearchChars = 3;
-  
-  /// Debounce duration for live search
   static const Duration _liveSearchDelay = Duration(milliseconds: 800);
 
   List<DownloadHistoryItem>? _recentAccessHistoryCache;

@@ -17,7 +17,7 @@ class PlaylistScreen extends ConsumerStatefulWidget {
   final String playlistName;
   final String? coverUrl;
   final List<Track> tracks;
-  final String? playlistId; // Deezer playlist ID for fetching tracks
+  final String? playlistId;
 
   const PlaylistScreen({
     super.key,

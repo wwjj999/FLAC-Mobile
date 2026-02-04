@@ -41,25 +41,20 @@ class LocalLibraryState {
               .map((item) => MapEntry(item.isrc!, item)),
         );
 
-  /// Check if ISRC exists in library
   bool hasIsrc(String isrc) => _isrcSet.contains(isrc);
 
-  /// Check if track exists by name and artist
   bool hasTrack(String trackName, String artistName) {
     final key = '${trackName.toLowerCase()}|${artistName.toLowerCase()}';
     return _trackKeySet.contains(key);
   }
 
-  /// Find library item by ISRC
   LocalLibraryItem? getByIsrc(String isrc) => _byIsrc[isrc];
 
-  /// Find library item by track name and artist
   LocalLibraryItem? findByTrackAndArtist(String trackName, String artistName) {
     final key = '${trackName.toLowerCase()}|${artistName.toLowerCase()}';
     return items.where((item) => item.matchKey == key).firstOrNull;
   }
 
-  /// Check if a track exists in library (by ISRC or name matching)
   bool existsInLibrary({String? isrc, String? trackName, String? artistName}) {
     if (isrc != null && isrc.isNotEmpty && hasIsrc(isrc)) {
       return true;
@@ -136,13 +131,11 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     }
   }
 
-  /// Reload library from database
   Future<void> reloadFromStorage() async {
     _isLoaded = false;
     await _loadFromDatabase();
   }
 
-  /// Start scanning a folder for audio files
   Future<void> startScan(String folderPath) async {
     if (state.isScanning) {
       _log.w('Scan already in progress');
@@ -230,7 +223,6 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     _progressTimer = null;
   }
 
-  /// Cancel ongoing scan
   Future<void> cancelScan() async {
     if (!state.isScanning) return;
     
@@ -240,7 +232,6 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     _stopProgressPolling();
   }
 
-  /// Clean up missing files from library
   Future<int> cleanupMissingFiles() async {
     final removed = await _db.cleanupMissingFiles();
     if (removed > 0) {
@@ -249,7 +240,6 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     return removed;
   }
 
-  /// Clear all library data
   Future<void> clearLibrary() async {
     await _db.clearAll();
     
@@ -264,7 +254,6 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     _log.i('Library cleared');
   }
 
-  /// Remove a single item from library by ID
   Future<void> removeItem(String id) async {
     await _db.delete(id);
     state = state.copyWith(
@@ -272,7 +261,6 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     );
   }
 
-  /// Check if a track exists in library
   bool existsInLibrary({String? isrc, String? trackName, String? artistName}) {
     return state.existsInLibrary(
       isrc: isrc,
@@ -281,12 +269,10 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     );
   }
 
-  /// Get library item by ISRC
   LocalLibraryItem? getByIsrc(String isrc) {
     return state.getByIsrc(isrc);
   }
 
-  /// Find library item for a track
   LocalLibraryItem? findExisting({String? isrc, String? trackName, String? artistName}) {
     if (isrc != null && isrc.isNotEmpty) {
       final byIsrc = state.getByIsrc(isrc);
@@ -298,7 +284,6 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     return null;
   }
 
-  /// Search library
   Future<List<LocalLibraryItem>> search(String query) async {
     if (query.isEmpty) return [];
     
@@ -306,7 +291,6 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     return results.map((e) => LocalLibraryItem.fromJson(e)).toList();
   }
 
-  /// Get library count
   Future<int> getCount() async {
     return await _db.getCount();
   }

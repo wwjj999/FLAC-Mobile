@@ -27,7 +27,6 @@ class CoverCacheManager {
     return _instance!;
   }
 
-  /// Check if cache manager is initialized
   static bool get isInitialized => _initialized && _instance != null;
 
   static Future<void> initialize() async {
@@ -62,8 +61,6 @@ class CoverCacheManager {
     }
   }
 
-  /// Clear all cached cover images.
-  /// Returns the number of files deleted.
   static Future<void> clearCache() async {
     if (!_initialized || _instance == null) return;
     await _instance!.emptyCache();
@@ -98,7 +95,6 @@ class CoverCacheManager {
   }
 }
 
-/// Statistics about the cover image cache
 class CacheStats {
   final int fileCount;
   final int totalSizeBytes;

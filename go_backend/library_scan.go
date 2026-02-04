@@ -174,7 +174,6 @@ func ScanLibraryFolder(folderPath string) (string, error) {
 	return string(jsonBytes), nil
 }
 
-// scanAudioFile reads metadata from a single audio file
 func scanAudioFile(filePath, scanTime string) (*LibraryScanResult, error) {
 	ext := strings.ToLower(filepath.Ext(filePath))
 
@@ -209,7 +208,6 @@ func scanAudioFile(filePath, scanTime string) (*LibraryScanResult, error) {
 	}
 }
 
-// scanFLACFile reads metadata from FLAC file
 func scanFLACFile(filePath string, result *LibraryScanResult) (*LibraryScanResult, error) {
 	metadata, err := ReadMetadata(filePath)
 	if err != nil {
@@ -248,7 +246,6 @@ func scanFLACFile(filePath string, result *LibraryScanResult) (*LibraryScanResul
 	return result, nil
 }
 
-// scanM4AFile reads metadata from M4A/AAC file
 func scanM4AFile(filePath string, result *LibraryScanResult) (*LibraryScanResult, error) {
 	quality, err := GetM4AQuality(filePath)
 	if err == nil {
@@ -259,7 +256,6 @@ func scanM4AFile(filePath string, result *LibraryScanResult) (*LibraryScanResult
 	return scanFromFilename(filePath, result)
 }
 
-// scanMP3File reads metadata from MP3 file (ID3 tags)
 func scanMP3File(filePath string, result *LibraryScanResult) (*LibraryScanResult, error) {
 	metadata, err := ReadID3Tags(filePath)
 	if err != nil {
@@ -301,7 +297,6 @@ func scanMP3File(filePath string, result *LibraryScanResult) (*LibraryScanResult
 	return result, nil
 }
 
-// scanOggFile reads metadata from Ogg Vorbis/Opus file (Vorbis comments)
 func scanOggFile(filePath string, result *LibraryScanResult) (*LibraryScanResult, error) {
 	metadata, err := ReadOggVorbisComments(filePath)
 	if err != nil {
@@ -339,7 +334,6 @@ func scanOggFile(filePath string, result *LibraryScanResult) (*LibraryScanResult
 	return result, nil
 }
 
-// scanFromFilename extracts title/artist from filename pattern
 func scanFromFilename(filePath string, result *LibraryScanResult) (*LibraryScanResult, error) {
 	filename := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
 
@@ -371,7 +365,6 @@ func scanFromFilename(filePath string, result *LibraryScanResult) (*LibraryScanR
 	return result, nil
 }
 
-// isNumeric checks if string contains only digits
 func isNumeric(s string) bool {
 	for _, c := range s {
 		if c < '0' || c > '9' {
@@ -381,12 +374,10 @@ func isNumeric(s string) bool {
 	return len(s) > 0
 }
 
-// generateLibraryID creates a unique ID for a library item
 func generateLibraryID(filePath string) string {
 	return fmt.Sprintf("lib_%x", hashString(filePath))
 }
 
-// hashString creates a simple hash of a string
 func hashString(s string) uint32 {
 	var hash uint32 = 5381
 	for _, c := range s {
@@ -395,7 +386,6 @@ func hashString(s string) uint32 {
 	return hash
 }
 
-// GetLibraryScanProgress returns current scan progress
 func GetLibraryScanProgress() string {
 	libraryScanProgressMu.RLock()
 	defer libraryScanProgressMu.RUnlock()
@@ -404,7 +394,6 @@ func GetLibraryScanProgress() string {
 	return string(jsonBytes)
 }
 
-// CancelLibraryScan cancels ongoing library scan
 func CancelLibraryScan() {
 	libraryScanCancelMu.Lock()
 	defer libraryScanCancelMu.Unlock()
@@ -415,8 +404,6 @@ func CancelLibraryScan() {
 	}
 }
 
-// ReadAudioMetadata reads metadata from any supported audio file
-// Returns JSON with track info
 func ReadAudioMetadata(filePath string) (string, error) {
 	scanTime := time.Now().UTC().Format(time.RFC3339)
 	result, err := scanAudioFile(filePath, scanTime)

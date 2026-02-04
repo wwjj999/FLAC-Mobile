@@ -154,7 +154,6 @@ class LogBuffer extends ChangeNotifier {
     return buffer.toString();
   }
 
-  /// Export logs with device information for debugging
   Future<String> exportWithDeviceInfo() async {
     final buffer = StringBuffer();
     

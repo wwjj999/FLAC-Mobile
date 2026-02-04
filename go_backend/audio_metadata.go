@@ -180,7 +180,6 @@ func parseID3v22Frames(data []byte, metadata *AudioMetadata, tagUnsync bool) {
 	}
 }
 
-// parseID3v23Frames parses ID3v2.3 and ID3v2.4 frames (4-char frame IDs)
 func parseID3v23Frames(data []byte, metadata *AudioMetadata, version byte, tagUnsync bool) {
 	pos := 0
 	for pos+10 < len(data) {
@@ -191,10 +190,8 @@ func parseID3v23Frames(data []byte, metadata *AudioMetadata, version byte, tagUn
 
 		var frameSize int
 		if version == 4 {
-			// ID3v2.4 uses syncsafe integers
 			frameSize = int(data[pos+4])<<21 | int(data[pos+5])<<14 | int(data[pos+6])<<7 | int(data[pos+7])
 		} else {
-			// ID3v2.3 uses regular integers
 			frameSize = int(data[pos+4])<<24 | int(data[pos+5])<<16 | int(data[pos+6])<<8 | int(data[pos+7])
 		}
 
@@ -208,9 +205,7 @@ func parseID3v23Frames(data []byte, metadata *AudioMetadata, version byte, tagUn
 		_ = statusFlags
 		formatFlags := data[pos+9]
 
-		// Handle frame-specific flags
 		if version == 3 {
-			// ID3v2.3 format flags: compression/encryption/grouping not supported
 			const (
 				id3v23FlagCompression = 0x80
 				id3v23FlagEncryption  = 0x40
@@ -231,7 +226,6 @@ func parseID3v23Frames(data []byte, metadata *AudioMetadata, version byte, tagUn
 				frameData = removeUnsync(frameData)
 			}
 		} else if version == 4 {
-			// ID3v2.4 format flags: grouping, compression, encryption, unsync, data length indicator
 			const (
 				id3v24FlagGrouping    = 0x40
 				id3v24FlagCompression = 0x08
@@ -527,27 +521,24 @@ func GetMP3Quality(filePath string) (*MP3Quality, error) {
 			sampleRateIdx := (frameHeader[2] >> 2) & 0x03
 
 			sampleRates := [][]int{
-				{11025, 12000, 8000},  // MPEG 2.5
-				{0, 0, 0},             // Reserved
-				{22050, 24000, 16000}, // MPEG 2
-				{44100, 48000, 32000}, // MPEG 1
+				{11025, 12000, 8000},
+				{0, 0, 0},
+				{22050, 24000, 16000},
+				{44100, 48000, 32000},
 			}
 			if version < 4 && sampleRateIdx < 3 {
 				quality.SampleRate = sampleRates[version][sampleRateIdx]
 			}
 
-			// Get bitrate (for MPEG 1 Layer 3)
-			if version == 3 && layer == 1 { // MPEG 1, Layer 3
+			if version == 3 && layer == 1 {
 				bitrates := []int{0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0}
 				if bitrateIdx < 16 {
 					quality.Bitrate = bitrates[bitrateIdx] * 1000
 				}
 			}
 
-			// MP3 is always 16-bit PCM when decoded
 			quality.BitDepth = 16
 
-			// Estimate duration from file size and bitrate
 			if quality.Bitrate > 0 {
 				audioSize := fileSize - audioStart - 128
 				if audioSize > 0 {
@@ -564,11 +555,6 @@ func GetMP3Quality(filePath string) (*MP3Quality, error) {
 	return quality, nil
 }
 
-// =============================================================================
-// Ogg/Opus Vorbis Comment Reading
-// =============================================================================
-
-// ReadOggVorbisComments reads Vorbis comments from Ogg/Opus files
 func ReadOggVorbisComments(filePath string) (*AudioMetadata, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -598,7 +584,6 @@ func ReadOggVorbisComments(filePath string) (*AudioMetadata, error) {
 				break
 			}
 		}
-		// Fallback: if unknown, still try OpusTags
 		if streamType == oggStreamUnknown {
 			if len(pkt) > 8 && string(pkt[0:8]) == "OpusTags" {
 				parseVorbisComments(pkt[8:], metadata)
@@ -620,7 +605,6 @@ type oggPage struct {
 	data         []byte
 }
 
-// readOggPageWithHeader reads a single Ogg page including header info
 func readOggPageWithHeader(file *os.File) (*oggPage, error) {
 	header := make([]byte, 27)
 	if _, err := io.ReadFull(file, header); err != nil {
@@ -656,7 +640,6 @@ func readOggPageWithHeader(file *os.File) (*oggPage, error) {
 	}, nil
 }
 
-// readOggPage reads a single Ogg page (data only)
 func readOggPage(file *os.File) ([]byte, error) {
 	page, err := readOggPageWithHeader(file)
 	if err != nil {
@@ -665,7 +648,6 @@ func readOggPage(file *os.File) ([]byte, error) {
 	return page.data, nil
 }
 
-// collectOggPackets reads Ogg pages and returns reassembled packets
 func collectOggPackets(file *os.File, maxPackets, maxPages int) ([][]byte, error) {
 	const maxPacketSize = 10 * 1024 * 1024
 	var packets [][]byte
@@ -681,7 +663,6 @@ func collectOggPackets(file *os.File, maxPackets, maxPages int) ([][]byte, error
 			return nil, err
 		}
 
-		// If this page is not a continuation but we have partial packet, drop it
 		if page.headerType&0x01 == 0 && len(cur) > 0 {
 			cur = nil
 			skipPacket = false
@@ -1197,7 +1178,7 @@ func parseFLACPictureBlock(data []byte) ([]byte, string) {
 
 	var dataLen uint32
 	binary.Read(reader, binary.BigEndian, &dataLen)
-	if dataLen > 10000000 { // 10MB
+	if dataLen > 10000000 {
 		return nil, ""
 	}
 
@@ -1207,12 +1188,10 @@ func parseFLACPictureBlock(data []byte) ([]byte, string) {
 	return imageData, mimeType
 }
 
-// base64StdDecodeLen returns decoded length
 func base64StdDecodeLen(n int) int {
 	return n * 6 / 8
 }
 
-// base64StdDecode decodes base64 data (simplified)
 func base64StdDecode(dst, src []byte) (int, error) {
 	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
@@ -1270,7 +1249,6 @@ func base64StdDecode(dst, src []byte) (int, error) {
 	return di, nil
 }
 
-// extractAnyCoverArt extracts cover art from any supported audio file
 func extractAnyCoverArt(filePath string) ([]byte, string, error) {
 	ext := strings.ToLower(filepath.Ext(filePath))
 
@@ -1280,7 +1258,6 @@ func extractAnyCoverArt(filePath string) ([]byte, string, error) {
 		if err != nil {
 			return nil, "", err
 		}
-		// Detect MIME type from magic bytes
 		mimeType := "image/jpeg"
 		if len(data) > 8 && string(data[1:4]) == "PNG" {
 			mimeType = "image/png"
@@ -1294,8 +1271,6 @@ func extractAnyCoverArt(filePath string) ([]byte, string, error) {
 		return extractOggCoverArt(filePath)
 
 	case ".m4a":
-		// M4A cover extraction would need more complex MP4 atom parsing
-		// For now, return error
 		return nil, "", fmt.Errorf("M4A cover extraction not yet supported")
 
 	default:
@@ -1303,10 +1278,7 @@ func extractAnyCoverArt(filePath string) ([]byte, string, error) {
 	}
 }
 
-// SaveCoverToCache extracts and saves cover art to cache directory
-// Returns the path to the saved cover image, or empty string if no cover found
 func SaveCoverToCache(filePath, cacheDir string) (string, error) {
-	// Generate cache filename from file path + size + mtime to reduce stale cache
 	cacheKey := filePath
 	if stat, err := os.Stat(filePath); err == nil {
 		cacheKey = fmt.Sprintf("%s|%d|%d", filePath, stat.Size(), stat.ModTime().UnixNano())

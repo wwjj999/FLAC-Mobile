@@ -45,10 +45,10 @@ class AlbumScreen extends ConsumerStatefulWidget {
   final String albumId;
   final String albumName;
   final String? coverUrl;
-  final List<Track>? tracks; // Optional - will fetch if null
-  final String? extensionId; // If from extension
-  final String? artistId; // Artist ID for navigation
-  final String? artistName; // Artist name for navigation
+  final List<Track>? tracks;
+  final String? extensionId;
+  final String? artistId;
+  final String? artistName;
 
   const AlbumScreen({
     super.key,
@@ -93,13 +93,12 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
 );
     });
     
-    // Use provided tracks if not empty, otherwise try cache
     if (widget.tracks != null && widget.tracks!.isNotEmpty) {
       _tracks = widget.tracks;
     } else {
       _tracks = _AlbumCache.get(widget.albumId);
     }
-    _artistId = widget.artistId; // Use provided artist ID if available
+    _artistId = widget.artistId;
     
     if (_tracks == null || _tracks!.isEmpty) {
       _fetchTracks();
@@ -122,7 +121,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     }
   }
 
-Future<void> _extractDominantColor() async {
+  Future<void> _extractDominantColor() async {
     if (widget.coverUrl == null) return;
     final color = await PaletteService.instance.extractDominantColor(widget.coverUrl);
     if (mounted && color != null) {
@@ -131,21 +130,18 @@ Future<void> _extractDominantColor() async {
   }
 
   String _formatReleaseDate(String date) {
-    // Handle formats: "2024-01-15", "2024-01", "2024"
     if (date.length >= 10) {
-      // Full date: 2024-01-15
       final parts = date.substring(0, 10).split('-');
       if (parts.length == 3) {
-        return '${parts[2]}/${parts[1]}/${parts[0]}'; // DD/MM/YYYY
+        return '${parts[2]}/${parts[1]}/${parts[0]}';
       }
     } else if (date.length >= 7) {
-      // Month: 2024-01
       final parts = date.split('-');
       if (parts.length >= 2) {
-        return '${parts[1]}/${parts[0]}'; // MM/YYYY
+        return '${parts[1]}/${parts[0]}';
       }
     }
-    return date; // Year only or unknown format
+    return date;
   }
 
 Future<void> _fetchTracks() async {
@@ -164,7 +160,6 @@ Future<void> _fetchTracks() async {
       final trackList = metadata['track_list'] as List<dynamic>;
       final tracks = trackList.map((t) => _parseTrack(t as Map<String, dynamic>)).toList();
       
-      // Extract artist ID from album_info if available
       final albumInfo = metadata['album_info'] as Map<String, dynamic>?;
       final artistId = albumInfo?['artist_id'] as String?;
       
@@ -236,7 +231,7 @@ Future<void> _fetchTracks() async {
 
   Widget _buildAppBar(BuildContext context, ColorScheme colorScheme) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final coverSize = screenWidth * 0.5; // 50% of screen width
+    final coverSize = screenWidth * 0.5;
     final bgColor = _dominantColor ?? colorScheme.surface;
     
     return SliverAppBar(
@@ -269,7 +264,6 @@ Future<void> _fetchTracks() async {
             background: Stack(
               fit: StackFit.expand,
               children: [
-                // Background with dominant color
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 500),
                   decoration: BoxDecoration(
@@ -501,11 +495,9 @@ ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.s
   }
 
   void _navigateToArtist(BuildContext context, String artistName) {
-    // Use stored artist ID if available, otherwise use a placeholder
     final artistId = _artistId ?? 
         (widget.albumId.startsWith('deezer:') ? 'deezer:unknown' : 'unknown');
     
-    // Don't navigate if artist ID is unknown
     if (artistId == 'unknown' || artistId == 'deezer:unknown' || artistId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Artist information not available')),
@@ -513,7 +505,6 @@ ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.s
       return;
     }
     
-    // If from extension, use ExtensionArtistScreen
     if (widget.extensionId != null) {
       Navigator.push(
         context,
@@ -621,7 +612,6 @@ class _AlbumTrackItem extends ConsumerWidget {
       return state.isDownloaded(track.id);
     }));
     
-    // Check local library for duplicate detection
     final settings = ref.watch(settingsProvider);
     final showLocalLibraryIndicator = settings.localLibraryEnabled && settings.localLibraryShowDuplicates;
     final isInLocalLibrary = showLocalLibraryIndicator 
