@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.ParcelFileDescriptor
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.documentfile.provider.DocumentFile
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode
@@ -498,10 +499,20 @@ class MainActivity: FlutterFragmentActivity() {
 
         val pfd = contentResolver.openFileDescriptor(document.uri, "rw")
             ?: return errorJson("Failed to open SAF file")
-        var detachedFd: Int? = null
+        var fdHandedOffToGo = false
 
         try {
-            detachedFd = pfd.detachFd()
+            // Keep the original PFD open so the document provider receives close signaling.
+            // Pass a duplicated FD to Go and detach only the duplicate.
+            val writerPfd = ParcelFileDescriptor.dup(pfd.fileDescriptor)
+            val detachedFd = writerPfd.detachFd()
+            try {
+                writerPfd.close()
+            } catch (_: Exception) {}
+
+            // After detach, ownership is intended for Go. Kotlin must never close this FD,
+            // otherwise Android fdsan may abort on double-close during cancellation races.
+            fdHandedOffToGo = true
             req.put("output_path", "/proc/self/fd/$detachedFd")
             req.put("output_fd", detachedFd)
             req.put("output_ext", outputExt)
@@ -518,11 +529,12 @@ class MainActivity: FlutterFragmentActivity() {
             document.delete()
             return errorJson("SAF download failed: ${e.message}")
         } finally {
-            if (detachedFd == null) {
-                try {
-                    pfd.close()
-                } catch (_: Exception) {}
+            if (!fdHandedOffToGo) {
+                android.util.Log.w("SpotiFLAC", "SAF writer FD was not handed off to Go")
             }
+            try {
+                pfd.close()
+            } catch (_: Exception) {}
         }
     }
 
