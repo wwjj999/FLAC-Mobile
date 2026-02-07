@@ -2195,6 +2195,13 @@ func ScanLibraryFolderJSON(folderPath string) (string, error) {
 	return ScanLibraryFolder(folderPath)
 }
 
+// ScanLibraryFolderIncrementalJSON performs an incremental library scan
+// existingFilesJSON: JSON object mapping filePath -> modTime (unix millis)
+// Returns IncrementalScanResult as JSON
+func ScanLibraryFolderIncrementalJSON(folderPath, existingFilesJSON string) (string, error) {
+	return ScanLibraryFolderIncremental(folderPath, existingFilesJSON)
+}
+
 func GetLibraryScanProgressJSON() string {
 	return GetLibraryScanProgress()
 }

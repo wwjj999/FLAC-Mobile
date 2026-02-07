@@ -723,6 +723,14 @@ import Gobackend  // Import Go framework
             if let error = error { throw error }
             return response
             
+        case "scanLibraryFolderIncremental":
+            let args = call.arguments as! [String: Any]
+            let folderPath = args["folder_path"] as! String
+            let existingFiles = args["existing_files"] as? String ?? "{}"
+            let response = GobackendScanLibraryFolderIncrementalJSON(folderPath, existingFiles, &error)
+            if let error = error { throw error }
+            return response
+            
         case "getLibraryScanProgress":
             let response = GobackendGetLibraryScanProgressJSON()
             return response

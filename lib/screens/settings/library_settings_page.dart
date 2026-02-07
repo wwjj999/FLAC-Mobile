@@ -135,7 +135,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
     }
   }
 
-  Future<void> _startScan() async {
+  Future<void> _startScan({bool forceFullScan = false}) async {
     final settings = ref.read(settingsProvider);
     final libraryPath = settings.localLibraryPath;
 
@@ -156,7 +156,10 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
       return;
     }
 
-    await ref.read(localLibraryProvider.notifier).startScan(libraryPath);
+    await ref.read(localLibraryProvider.notifier).startScan(
+      libraryPath,
+      forceFullScan: forceFullScan,
+    );
   }
 
   Future<void> _cancelScan() async {
@@ -378,7 +381,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
                       totalFiles: libraryState.scanTotalFiles,
                       onCancel: _cancelScan,
                     )
-                  else
+                  else ...[
                     Opacity(
                       opacity: settings.localLibraryPath.isNotEmpty ? 1.0 : 0.5,
                       child: SettingsItem(
@@ -392,6 +395,18 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
                             : null,
                       ),
                     ),
+                    Opacity(
+                      opacity: settings.localLibraryPath.isNotEmpty ? 1.0 : 0.5,
+                      child: SettingsItem(
+                        icon: Icons.sync,
+                        title: context.l10n.libraryForceFullScan,
+                        subtitle: context.l10n.libraryForceFullScanSubtitle,
+                        onTap: settings.localLibraryPath.isNotEmpty
+                            ? () => _startScan(forceFullScan: true)
+                            : null,
+                      ),
+                    ),
+                  ],
                   Opacity(
                     opacity: libraryState.items.isNotEmpty ? 1.0 : 0.5,
                     child: SettingsItem(
