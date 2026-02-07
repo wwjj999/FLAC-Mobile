@@ -92,6 +92,26 @@ _If this software is useful and brings you value, consider supporting the projec
 [![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/zarzet) <a href="https://www.buymeacoffee.com/zarzet" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px !important;width: 150px !important;" ></a>
 
 
+## API Credits
+
+SpotiFLAC wouldn't be possible without these amazing services and APIs. Huge thanks to the developers and maintainers behind them:
+
+| Service | Author | Used For |
+|---------|--------|----------|
+| [Squid.wtf](https://squid.wtf) | [@binimum](https://github.com/binimum) | Tidal & Qobuz download proxies |
+| [DabMusic](https://dabmusic.xyz) | — | Qobuz streaming proxy |
+| [Jumo DL](https://jumo-dl.pages.dev) | — | Qobuz download API fallback |
+| [AfkarXYZ](https://github.com/afkarxyz) | AfkarXYZ | Amazon Music conversion API |
+| [SongLink / Odesli](https://odesli.co) | Kurt Weiberth | Cross-platform track linking |
+| [LRCLib](https://lrclib.net) | [@tranxuanthang](https://github.com/tranxuanthang) | Synchronized lyrics database |
+| [IDHS](https://github.com/sjdonado/idonthavespotify) | [@sjdonado](https://github.com/sjdonado) | Track availability checking |
+| [Binimum](https://music.binimum.org) | [@binimum](https://github.com/binimum) | Tidal API proxy |
+| [QQDL](https://qqdl.site) | [@binimum](https://github.com/binimum) | Tidal API proxy endpoints |
+| [HiFi](https://github.com/sachinsenal0x64) | [@sachinsenal0x64](https://github.com/sachinsenal0x64) | Original HiFi project, foundation of Tidal integration |
+| [SpotiSaver](https://spotisaver.net) | — | Tidal Hi-Res FLAC streaming endpoints |
+
+And to all the contributors who maintain the proxy infrastructure that makes lossless music accessible.
+
 ## Disclaimer
 
 This project is for **educational and private use only**. The developer does not condone or encourage copyright infringement.
