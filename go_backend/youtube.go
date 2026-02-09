@@ -110,26 +110,29 @@ func (y *YouTubeDownloader) GetDownloadURL(youtubeURL string, quality YouTubeQua
 		audioBitrate = "320"
 	}
 
-	// Try primary Cobalt API first (music.youtube.com URL bypasses login)
+	// Try SpotubeDL first (primary)
+	videoID, extractErr := ExtractYouTubeVideoID(youtubeURL)
+	if extractErr == nil {
+		GoLog("[YouTube] Requesting from SpotubeDL: videoID=%s (format: %s, bitrate: %s)\n",
+			videoID, audioFormat, audioBitrate)
+
+		resp, err := y.requestSpotubeDL(videoID, audioFormat, audioBitrate)
+		if err == nil {
+			return resp, nil
+		}
+		GoLog("[YouTube] SpotubeDL failed: %v, trying Cobalt fallback...\n", err)
+	} else {
+		GoLog("[YouTube] Could not extract video ID: %v, skipping SpotubeDL\n", extractErr)
+	}
+
+	// Fallback: direct Cobalt API (api.qwkuns.me)
 	cobaltURL := toYouTubeMusicURL(youtubeURL)
 	GoLog("[YouTube] Requesting from Cobalt API: %s (format: %s, bitrate: %s)\n",
 		cobaltURL, audioFormat, audioBitrate)
 
 	resp, err := y.requestCobaltDirect(cobaltURL, audioFormat, audioBitrate)
-	if err == nil {
-		return resp, nil
-	}
-	GoLog("[YouTube] Primary Cobalt failed: %v, trying SpotubeDL fallback...\n", err)
-
-	// Fallback: SpotubeDL proxy (has its own Cobalt auth)
-	videoID, extractErr := ExtractYouTubeVideoID(youtubeURL)
-	if extractErr != nil {
-		return nil, fmt.Errorf("primary cobalt failed: %w (and could not extract video ID for fallback)", err)
-	}
-
-	resp, fallbackErr := y.requestSpotubeDL(videoID, audioFormat, audioBitrate)
-	if fallbackErr != nil {
-		return nil, fmt.Errorf("all download methods failed: primary: %v, fallback: %v", err, fallbackErr)
+	if err != nil {
+		return nil, fmt.Errorf("all download methods failed: spotubedl: extractErr=%v, cobalt: %v", extractErr, err)
 	}
 
 	return resp, nil
