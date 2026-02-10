@@ -100,6 +100,17 @@
 - Removed duplicate `_downloadedSpotifyIds` Set and `_isrcSet` (both now use existing map lookups), removed unused `_isTyping` state in home tab
 - Track cache pre-warming is now capped at 80 tracks per request to avoid excessive backend calls on large playlists
 - About page contributor avatars now use `memCacheWidth`/`memCacheHeight` to decode at display size instead of full resolution
+- Orphaned download cleanup now checks file existence in parallel (chunk 16) instead of sequentially
+- Local library `findByTrackAndArtist` now uses O(1) map lookup (`_byTrackKey`) instead of O(n) linear scan
+- Local library database load and SharedPreferences fetch now run in parallel
+- Legacy mod-time backfill now uses chunked parallel `File.stat` (chunk 24) with per-chunk cancel check
+- Downloaded album screen now caches disc grouping, sorted disc numbers, common quality, and embedded cover path with reference-identity invalidation
+- Local album screen common quality is now computed once during cache rebuild instead of per-build
+- Batch delete in album screens now uses O(1) map lookup (`tracksById`) instead of `.where().firstOrNull`
+- Cache management page now fires all async init calls in parallel and uses chunked async directory deletion (chunk 24)
+- Cover resolver preview file existence check is now throttled (2.2s interval) to reduce synchronous I/O in build path
+- History and library database DELETE operations are now chunked (500 per batch) to stay within SQLite variable limits
+- Library database `cleanupMissingFiles` now checks file existence in parallel (chunk 16) and deletes in batched SQL
 
 ### Security
 
@@ -110,7 +121,7 @@
 - Extension storage files changed from `0644` to `0600` (owner-only read/write)
 - All SAF relative directory paths are now sanitized per-segment with `.`/`..` filtering; all user-provided file names pass through `sanitizeFilename()` before use
 - Extension ID is sanitized before building download destination path
-- Device ID in exported log reports is now masked (first 2 + last 2 chars only)
+- Log export device info now shows Build ID and Security Patch level instead of masked Device ID
 
 ### Technical
 
