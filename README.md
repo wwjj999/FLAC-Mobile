@@ -71,7 +71,7 @@ A: Some countries have restricted access to certain streaming service APIs. If d
 
 ### Want to support SpotiFLAC-Mobile?
 
-_If this software is useful and brings you value, consider supporting the project by buying me a coffee. Your support helps keep development going._
+_If this software is useful and brings you value, consider supporting the project. Your support helps keep development going._
 
 [![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/zarzet)
 
