@@ -94,6 +94,19 @@ import Gobackend  // Import Go framework
             let response = GobackendDownloadWithFallback(requestJson, &error)
             if let error = error { throw error }
             return response
+
+        case "downloadByStrategy":
+            let requestJson = call.arguments as! String
+            let response = GobackendDownloadByStrategy(requestJson, &error)
+            if let error = error { throw error }
+            return response
+
+        // Backward compatibility for older Flutter download routing
+        case "downloadFromYouTube":
+            let requestJson = call.arguments as! String
+            let response = GobackendDownloadFromYouTube(requestJson, &error)
+            if let error = error { throw error }
+            return response
             
         case "getDownloadProgress":
             let response = GobackendGetDownloadProgress()
@@ -209,6 +222,41 @@ import Gobackend  // Import Go framework
         case "cleanupConnections":
             GobackendCleanupConnections()
             return nil
+
+        case "downloadCoverToFile":
+            let args = call.arguments as! [String: Any]
+            let coverURL = args["cover_url"] as! String
+            let outputPath = args["output_path"] as! String
+            let maxQuality = args["max_quality"] as? Bool ?? true
+            GobackendDownloadCoverToFile(coverURL, outputPath, maxQuality, &error)
+            if let error = error { throw error }
+            return "{\"success\":true}"
+
+        case "extractCoverToFile":
+            let args = call.arguments as! [String: Any]
+            let audioPath = args["audio_path"] as! String
+            let outputPath = args["output_path"] as! String
+            GobackendExtractCoverToFile(audioPath, outputPath, &error)
+            if let error = error { throw error }
+            return "{\"success\":true}"
+
+        case "fetchAndSaveLyrics":
+            let args = call.arguments as! [String: Any]
+            let trackName = args["track_name"] as! String
+            let artistName = args["artist_name"] as! String
+            let spotifyId = args["spotify_id"] as! String
+            let durationMs = args["duration_ms"] as? Int64 ?? 0
+            let outputPath = args["output_path"] as! String
+            GobackendFetchAndSaveLyrics(trackName, artistName, spotifyId, durationMs, outputPath, &error)
+            if let error = error { throw error }
+            return "{\"success\":true}"
+
+        case "reEnrichFile":
+            let args = call.arguments as! [String: Any]
+            let requestJson = args["request_json"] as? String ?? "{}"
+            let response = GobackendReEnrichFile(requestJson, &error)
+            if let error = error { throw error }
+            return response
             
         case "readFileMetadata":
             let args = call.arguments as! [String: Any]

@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.6.6] - 2026-02-12
+
+### Fixed
+
+- Fixed downloads not working on iOS - missing `downloadByStrategy` and `downloadFromYouTube` method channel handlers in AppDelegate.swift (added in v3.6.5 for Android but not iOS)
+- Fixed extended metadata (genre, label, copyright) lost during service fallback (e.g. Tidal unavailable, falls back to Qobuz) - Go backend now enriches metadata from Deezer by ISRC before download and preserves it through the fallback chain
+- Fixed local library showing incorrect "16-bit" quality label for lossy formats (MP3, Opus) - now displays actual bitrate (e.g. "MP3 320kbps")
+- Fixed inaccurate Opus/Vorbis duration calculation (e.g. 4:11 showing as 8:44) - now reads granule position from last Ogg page for precise duration
+- Fixed MP3 duration/bitrate inaccuracy for VBR files - added Xing/Info and VBRI header parsing with MPEG2/2.5 bitrate table support
+- Fixed Track Metadata screen showing scan date instead of file date for local library items
+- Fixed SAF content URI paths displayed as raw `content://` strings in Track Metadata - now shows human-readable paths
+- Added legacy download method fallback in PlatformBridge for platforms that haven't implemented `downloadByStrategy` yet
+
+---
+
 ## [3.6.5] - 2026-02-10
 
 ### Highlights

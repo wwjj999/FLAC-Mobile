@@ -436,11 +436,56 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     }
     return _downloadItem!.downloadedAt;
   }
+
   String? get _quality => _isLocalItem ? null : _downloadItem!.quality;
 
   String get cleanFilePath {
     final path = _filePath;
     return path.startsWith('EXISTS:') ? path.substring(7) : path;
+  }
+
+  String _formatPathForDisplay(String pathOrUri) {
+    if (pathOrUri.isEmpty || !pathOrUri.startsWith('content://')) {
+      return pathOrUri;
+    }
+
+    try {
+      final uri = Uri.parse(pathOrUri);
+      final segments = uri.pathSegments;
+      String? documentId;
+
+      final documentIndex = segments.indexOf('document');
+      if (documentIndex != -1 && documentIndex + 1 < segments.length) {
+        documentId = Uri.decodeComponent(segments[documentIndex + 1]);
+      }
+
+      if (documentId == null || documentId.isEmpty) {
+        final treeIndex = segments.indexOf('tree');
+        if (treeIndex != -1 && treeIndex + 1 < segments.length) {
+          documentId = Uri.decodeComponent(segments[treeIndex + 1]);
+        }
+      }
+
+      if (documentId == null || documentId.isEmpty) return pathOrUri;
+
+      final separatorIndex = documentId.indexOf(':');
+      if (separatorIndex <= 0) return documentId;
+
+      final volumeId = documentId.substring(0, separatorIndex);
+      final relativePath = documentId
+          .substring(separatorIndex + 1)
+          .replaceAll('\\', '/');
+
+      if (volumeId.toLowerCase() == 'primary') {
+        if (relativePath.isEmpty) return '/storage/emulated/0';
+        return '/storage/emulated/0/$relativePath';
+      }
+
+      if (relativePath.isEmpty) return volumeId;
+      return 'SD Card/$relativePath';
+    } catch (_) {
+      return pathOrUri;
+    }
   }
 
   void _markMetadataChanged() {
@@ -923,7 +968,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   Widget _buildMetadataGrid(BuildContext context, ColorScheme colorScheme) {
     // Determine audio quality string - prefer stored quality from download
     String? audioQualityStr;
-    final fileName = _filePath.split('/').last;
+    final fileName = _extractFileNameFromPathOrUri(cleanFilePath);
     final fileExt = fileName.contains('.')
         ? fileName.split('.').last.toUpperCase()
         : '';
@@ -1045,7 +1090,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     bool fileExists,
     int? fileSize,
   ) {
-    final fileName = cleanFilePath.split(Platform.pathSeparator).last;
+    final displayFilePath = _formatPathForDisplay(cleanFilePath);
+    final fileName = _extractFileNameFromPathOrUri(cleanFilePath);
     final fileExtension = fileName.contains('.')
         ? fileName.split('.').last.toUpperCase()
         : 'Unknown';
@@ -1166,7 +1212,9 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                       ),
                     ),
                   )
-                else if (bitDepth != null && bitDepth! > 0 && sampleRate != null)
+                else if (bitDepth != null &&
+                    bitDepth! > 0 &&
+                    sampleRate != null)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -1232,7 +1280,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        cleanFilePath,
+                        displayFilePath,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontFamily: 'monospace',
                           color: colorScheme.onSurfaceVariant,
