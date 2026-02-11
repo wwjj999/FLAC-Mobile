@@ -19,18 +19,13 @@ class _EmbeddedCoverCacheEntry {
 /// It keeps a bounded in-memory cache and only refreshes extraction
 /// when the source file changed.
 class DownloadedEmbeddedCoverResolver {
-  static const int _maxCacheEntries = 160;
-  static const int _minModCheckIntervalMs = 1200;
-  static const int _minPreviewExistsCheckIntervalMs = 2200;
+  static const int _maxCacheEntries = 180;
 
   static final LinkedHashMap<String, _EmbeddedCoverCacheEntry> _cache =
       LinkedHashMap<String, _EmbeddedCoverCacheEntry>();
   static final Set<String> _pendingExtract = <String>{};
-  static final Set<String> _pendingModCheck = <String>{};
+  static final Set<String> _pendingRefresh = <String>{};
   static final Set<String> _failedExtract = <String>{};
-  static final Map<String, int> _lastModCheckMillis = <String, int>{};
-  static final Map<String, int> _lastPreviewExistsCheckMillis =
-      <String, int>{};
 
   static String cleanFilePath(String? filePath) {
     if (filePath == null) return '';
@@ -65,27 +60,20 @@ class DownloadedEmbeddedCoverResolver {
     final cleanPath = cleanFilePath(filePath);
     if (cleanPath.isEmpty) return null;
 
+    if (_pendingRefresh.remove(cleanPath)) {
+      _ensureCover(cleanPath, forceRefresh: true, onChanged: onChanged);
+    }
+
     final cached = _cache[cleanPath];
     if (cached != null) {
-      final now = DateTime.now().millisecondsSinceEpoch;
-      final lastPreviewCheck = _lastPreviewExistsCheckMillis[cleanPath] ?? 0;
-      final shouldVerifyExists =
-          now - lastPreviewCheck >= _minPreviewExistsCheckIntervalMs;
-
-      if (!shouldVerifyExists || File(cached.previewPath).existsSync()) {
-        if (shouldVerifyExists) {
-          _lastPreviewExistsCheckMillis[cleanPath] = now;
-        }
+      if (File(cached.previewPath).existsSync()) {
         _touch(cleanPath, cached);
-        _scheduleModCheck(cleanPath, onChanged: onChanged);
         return cached.previewPath;
       }
       _cache.remove(cleanPath);
-      _lastPreviewExistsCheckMillis.remove(cleanPath);
       _cleanupTempCoverPathSync(cached.previewPath);
     }
 
-    _ensureCover(cleanPath, onChanged: onChanged);
     return null;
   }
 
@@ -106,8 +94,9 @@ class DownloadedEmbeddedCoverResolver {
       }
     }
 
+    _pendingRefresh.add(cleanPath);
     _failedExtract.remove(cleanPath);
-    _ensureCover(cleanPath, forceRefresh: true, onChanged: onChanged);
+    onChanged?.call();
   }
 
   static void invalidate(String? filePath) {
@@ -116,12 +105,27 @@ class DownloadedEmbeddedCoverResolver {
 
     final cached = _cache.remove(cleanPath);
     _pendingExtract.remove(cleanPath);
-    _pendingModCheck.remove(cleanPath);
+    _pendingRefresh.remove(cleanPath);
     _failedExtract.remove(cleanPath);
-    _lastModCheckMillis.remove(cleanPath);
-    _lastPreviewExistsCheckMillis.remove(cleanPath);
     if (cached != null) {
       _cleanupTempCoverPathSync(cached.previewPath);
+    }
+  }
+
+  static void invalidatePathsNotIn(Set<String> validCleanPaths) {
+    if (validCleanPaths.isEmpty) {
+      final keys = _cache.keys.toList(growable: false);
+      for (final key in keys) {
+        invalidate(key);
+      }
+      return;
+    }
+
+    final staleKeys = _cache.keys
+        .where((path) => !validCleanPaths.contains(path))
+        .toList(growable: false);
+    for (final key in staleKeys) {
+      invalidate(key);
     }
   }
 
@@ -139,42 +143,9 @@ class DownloadedEmbeddedCoverResolver {
         _cleanupTempCoverPathSync(removed.previewPath);
       }
       _pendingExtract.remove(oldestKey);
-      _pendingModCheck.remove(oldestKey);
+      _pendingRefresh.remove(oldestKey);
       _failedExtract.remove(oldestKey);
-      _lastModCheckMillis.remove(oldestKey);
-      _lastPreviewExistsCheckMillis.remove(oldestKey);
     }
-  }
-
-  static void _scheduleModCheck(String cleanPath, {VoidCallback? onChanged}) {
-    if (_pendingModCheck.contains(cleanPath)) return;
-
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final lastCheck = _lastModCheckMillis[cleanPath] ?? 0;
-    if (now - lastCheck < _minModCheckIntervalMs) return;
-    _lastModCheckMillis[cleanPath] = now;
-
-    _pendingModCheck.add(cleanPath);
-    Future.microtask(() async {
-      try {
-        final cached = _cache[cleanPath];
-        if (cached == null) return;
-
-        final currentModTime = await readFileModTimeMillis(cleanPath);
-        if (currentModTime != null &&
-            cached.sourceModTimeMillis != null &&
-            currentModTime != cached.sourceModTimeMillis) {
-          _ensureCover(
-            cleanPath,
-            forceRefresh: true,
-            knownModTime: currentModTime,
-            onChanged: onChanged,
-          );
-        }
-      } finally {
-        _pendingModCheck.remove(cleanPath);
-      }
-    });
   }
 
   static void _ensureCover(
@@ -218,8 +189,6 @@ class DownloadedEmbeddedCoverResolver {
         );
         _touch(cleanPath, next);
         _failedExtract.remove(cleanPath);
-        _lastPreviewExistsCheckMillis[cleanPath] =
-            DateTime.now().millisecondsSinceEpoch;
         _trimCacheIfNeeded();
 
         if (previous != null && previous.previewPath != outputPath) {
