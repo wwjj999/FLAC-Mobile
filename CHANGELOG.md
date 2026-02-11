@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- Fixed downloads not working on iOS - missing `downloadByStrategy` and `downloadFromYouTube` method channel handlers in AppDelegate.swift (added in v3.6.5 for Android but not iOS)
+- Fixed downloads not working on iOS - missing `downloadByStrategy` and `downloadFromYouTube` method channel handlers in AppDelegate.swift
 - Fixed extended metadata (genre, label, copyright) lost during service fallback (e.g. Tidal unavailable, falls back to Qobuz) - Go backend now enriches metadata from Deezer by ISRC before download and preserves it through the fallback chain
 - Fixed local library showing incorrect "16-bit" quality label for lossy formats (MP3, Opus) - now displays actual bitrate (e.g. "MP3 320kbps")
 - Fixed inaccurate Opus/Vorbis duration calculation (e.g. 4:11 showing as 8:44) - now reads granule position from last Ogg page for precise duration
