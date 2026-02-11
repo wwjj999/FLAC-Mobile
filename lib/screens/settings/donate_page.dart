@@ -204,8 +204,9 @@ class _RecentDonorsCard extends StatelessWidget {
             _DonorTile(name: 'Julian', colorScheme: colorScheme),
             _DonorTile(name: 'matt_3050', colorScheme: colorScheme),
             _DonorTile(name: 'Daniel', colorScheme: colorScheme),
+            _DonorTile(name: '283Fabio', colorScheme: colorScheme),
             _DonorTile(
-              name: '283Fabio',
+              name: 'Elias el Autentico',
               colorScheme: colorScheme,
               showDivider: false,
             ),

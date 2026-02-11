@@ -14,7 +14,7 @@ import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/services/library_database.dart';
-import 'package:spotiflac_android/services/platform_bridge.dart';
+import 'package:spotiflac_android/services/downloaded_embedded_cover_resolver.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/screens/downloaded_album_screen.dart';
 import 'package:spotiflac_android/screens/local_album_screen.dart';
@@ -279,7 +279,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   final Set<String> _pendingChecks = {};
   static const int _maxCacheSize = 500;
   static const int _maxSearchIndexCacheSize = 4000;
-  static const int _maxDownloadedEmbeddedCoverCacheSize = 180;
+  bool _embeddedCoverRefreshScheduled = false;
 
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
@@ -311,10 +311,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   _HistoryStats? _historyStatsCache;
   final Map<String, String> _searchIndexCache = {};
   final Map<String, String> _localSearchIndexCache = {};
-  final Map<String, String> _downloadedEmbeddedCoverCache = {};
-  final Set<String> _pendingDownloadedCoverExtract = {};
-  final Set<String> _pendingDownloadedCoverRefresh = {};
-  final Set<String> _failedDownloadedCoverExtract = {};
   Map<String, List<DownloadHistoryItem>> _filteredHistoryCache = const {};
   List<DownloadHistoryItem>? _filterItemsCache;
   String _filterQueryCache = '';
@@ -361,13 +357,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
   @override
   void dispose() {
-    for (final coverPath in _downloadedEmbeddedCoverCache.values) {
-      _cleanupTempCoverPathSync(coverPath);
-    }
-    _downloadedEmbeddedCoverCache.clear();
-    _pendingDownloadedCoverExtract.clear();
-    _pendingDownloadedCoverRefresh.clear();
-    _failedDownloadedCoverExtract.clear();
     for (final notifier in _fileExistsNotifiers.values) {
       notifier.dispose();
     }
@@ -425,12 +414,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           .map((item) => _cleanFilePath(item.filePath))
           .where((path) => path.isNotEmpty)
           .toSet();
-      final staleKeys = _downloadedEmbeddedCoverCache.keys
-          .where((path) => !validPaths.contains(path))
-          .toList(growable: false);
-      for (final key in staleKeys) {
-        _invalidateDownloadedEmbeddedCover(key);
-      }
+      DownloadedEmbeddedCoverResolver.invalidatePathsNotIn(validPaths);
     }
     _requestFilterRefresh();
   }
@@ -794,69 +778,22 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
   /// Strip EXISTS: prefix from file path (legacy history items)
   String _cleanFilePath(String? filePath) {
-    if (filePath == null) return '';
-    if (filePath.startsWith('EXISTS:')) {
-      return filePath.substring(7);
-    }
-    return filePath;
-  }
-
-  void _cleanupTempCoverPathSync(String? coverPath) {
-    if (coverPath == null || coverPath.isEmpty) return;
-    try {
-      final file = File(coverPath);
-      if (file.existsSync()) {
-        file.deleteSync();
-      }
-      final parent = file.parent;
-      if (parent.existsSync()) {
-        parent.deleteSync(recursive: true);
-      }
-    } catch (_) {}
-  }
-
-  void _invalidateDownloadedEmbeddedCover(String? filePath) {
-    final cleanPath = _cleanFilePath(filePath);
-    if (cleanPath.isEmpty) return;
-
-    final cachedPath = _downloadedEmbeddedCoverCache.remove(cleanPath);
-    _pendingDownloadedCoverExtract.remove(cleanPath);
-    _pendingDownloadedCoverRefresh.remove(cleanPath);
-    _failedDownloadedCoverExtract.remove(cleanPath);
-    _cleanupTempCoverPathSync(cachedPath);
-  }
-
-  void _trimDownloadedEmbeddedCoverCache() {
-    while (_downloadedEmbeddedCoverCache.length >
-        _maxDownloadedEmbeddedCoverCacheSize) {
-      final oldestKey = _downloadedEmbeddedCoverCache.keys.first;
-      final removedPath = _downloadedEmbeddedCoverCache.remove(oldestKey);
-      _pendingDownloadedCoverExtract.remove(oldestKey);
-      _pendingDownloadedCoverRefresh.remove(oldestKey);
-      _failedDownloadedCoverExtract.remove(oldestKey);
-      _cleanupTempCoverPathSync(removedPath);
-    }
+    return DownloadedEmbeddedCoverResolver.cleanFilePath(filePath);
   }
 
   Future<int?> _readFileModTimeMillis(String? filePath) async {
-    final cleanPath = _cleanFilePath(filePath);
-    if (cleanPath.isEmpty) return null;
+    return DownloadedEmbeddedCoverResolver.readFileModTimeMillis(filePath);
+  }
 
-    if (cleanPath.startsWith('content://')) {
-      try {
-        final modTimes = await PlatformBridge.getSafFileModTimes([cleanPath]);
-        return modTimes[cleanPath];
-      } catch (_) {
-        return null;
+  void _onEmbeddedCoverChanged() {
+    if (!mounted || _embeddedCoverRefreshScheduled) return;
+    _embeddedCoverRefreshScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _embeddedCoverRefreshScheduled = false;
+      if (mounted) {
+        setState(() {});
       }
-    }
-
-    try {
-      final stat = await File(cleanPath).stat();
-      return stat.modified.millisecondsSinceEpoch;
-    } catch (_) {
-      return null;
-    }
+    });
   }
 
   Future<void> _scheduleDownloadedEmbeddedCoverRefreshForPath(
@@ -864,98 +801,19 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     int? beforeModTime,
     bool force = false,
   }) async {
-    final cleanPath = _cleanFilePath(filePath);
-    if (cleanPath.isEmpty) return;
-
-    if (!force) {
-      if (beforeModTime == null) {
-        return;
-      }
-      final afterModTime = await _readFileModTimeMillis(cleanPath);
-      if (afterModTime != null && afterModTime == beforeModTime) {
-        return;
-      }
-    }
-
-    _pendingDownloadedCoverRefresh.add(cleanPath);
-    _failedDownloadedCoverExtract.remove(cleanPath);
-    if (mounted) {
-      setState(() {});
-    }
+    await DownloadedEmbeddedCoverResolver.scheduleRefreshForPath(
+      filePath,
+      beforeModTime: beforeModTime,
+      force: force,
+      onChanged: _onEmbeddedCoverChanged,
+    );
   }
 
   String? _resolveDownloadedEmbeddedCoverPath(String? filePath) {
-    final cleanPath = _cleanFilePath(filePath);
-    if (cleanPath.isEmpty) return null;
-
-    if (_pendingDownloadedCoverRefresh.remove(cleanPath)) {
-      _ensureDownloadedEmbeddedCover(cleanPath, forceRefresh: true);
-    }
-
-    final cachedPath = _downloadedEmbeddedCoverCache[cleanPath];
-    if (cachedPath != null) {
-      if (File(cachedPath).existsSync()) {
-        return cachedPath;
-      }
-      _downloadedEmbeddedCoverCache.remove(cleanPath);
-      _cleanupTempCoverPathSync(cachedPath);
-    }
-
-    return null;
-  }
-
-  void _ensureDownloadedEmbeddedCover(
-    String cleanPath, {
-    bool forceRefresh = false,
-  }) {
-    if (cleanPath.isEmpty) return;
-    if (_pendingDownloadedCoverExtract.contains(cleanPath)) return;
-    if (!forceRefresh && _downloadedEmbeddedCoverCache.containsKey(cleanPath)) {
-      return;
-    }
-    if (!forceRefresh && _failedDownloadedCoverExtract.contains(cleanPath)) {
-      return;
-    }
-
-    _pendingDownloadedCoverExtract.add(cleanPath);
-    Future.microtask(() async {
-      String? outputPath;
-      try {
-        final tempDir = await Directory.systemTemp.createTemp('library_cover_');
-        outputPath = '${tempDir.path}${Platform.pathSeparator}cover.jpg';
-        final result = await PlatformBridge.extractCoverToFile(
-          cleanPath,
-          outputPath,
-        );
-
-        final hasCover =
-            result['error'] == null && await File(outputPath).exists();
-        if (!hasCover) {
-          _failedDownloadedCoverExtract.add(cleanPath);
-          _cleanupTempCoverPathSync(outputPath);
-          return;
-        }
-
-        if (!mounted) {
-          _cleanupTempCoverPathSync(outputPath);
-          return;
-        }
-
-        final previous = _downloadedEmbeddedCoverCache[cleanPath];
-        _downloadedEmbeddedCoverCache[cleanPath] = outputPath;
-        _failedDownloadedCoverExtract.remove(cleanPath);
-        _trimDownloadedEmbeddedCoverCache();
-        if (previous != null && previous != outputPath) {
-          _cleanupTempCoverPathSync(previous);
-        }
-        setState(() {});
-      } catch (_) {
-        _failedDownloadedCoverExtract.add(cleanPath);
-        _cleanupTempCoverPathSync(outputPath);
-      } finally {
-        _pendingDownloadedCoverExtract.remove(cleanPath);
-      }
-    });
+    return DownloadedEmbeddedCoverResolver.resolve(
+      filePath,
+      onChanged: _onEmbeddedCoverChanged,
+    );
   }
 
   ValueListenable<bool> _fileExistsListenable(String? filePath) {
