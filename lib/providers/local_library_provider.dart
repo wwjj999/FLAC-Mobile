@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/services/history_database.dart';
 import 'package:spotiflac_android/services/library_database.dart';
+import 'package:spotiflac_android/services/notification_service.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
@@ -117,6 +118,7 @@ class LocalLibraryState {
 class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   final LibraryDatabase _db = LibraryDatabase.instance;
   final HistoryDatabase _historyDb = HistoryDatabase.instance;
+  final NotificationService _notificationService = NotificationService();
   static const _progressPollingInterval = Duration(milliseconds: 800);
   Timer? _progressTimer;
   bool _isLoaded = false;
@@ -255,6 +257,12 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       scanErrorCount: 0,
       scanWasCancelled: false,
     );
+    await _showScanProgressNotification(
+      progress: 0,
+      scannedFiles: 0,
+      totalFiles: 0,
+      currentFile: null,
+    );
 
     try {
       final appSupportDir = await getApplicationSupportDirectory();
@@ -299,6 +307,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
             : await PlatformBridge.scanLibraryFolder(folderPath);
         if (_scanCancelRequested) {
           state = state.copyWith(isScanning: false, scanWasCancelled: true);
+          await _showScanCancelledNotification();
           return;
         }
 
@@ -344,6 +353,11 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
           'Full scan complete: ${items.length} tracks found, '
           '$skippedDownloads already in downloads',
         );
+        await _showScanCompleteNotification(
+          totalTracks: items.length,
+          excludedDownloadedCount: skippedDownloads,
+          errorCount: state.scanErrorCount,
+        );
       } else {
         // Incremental scan path - only scans new/modified files
         final existingFiles = await _db.getFileModTimes();
@@ -377,6 +391,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
 
         if (_scanCancelRequested) {
           state = state.copyWith(isScanning: false, scanWasCancelled: true);
+          await _showScanCancelledNotification();
           return;
         }
 
@@ -468,10 +483,16 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
           '(${scannedList.length} new/updated, $skippedCount unchanged, '
           '${deletedPaths.length} removed, $skippedDownloads already in downloads)',
         );
+        await _showScanCompleteNotification(
+          totalTracks: items.length,
+          excludedDownloadedCount: skippedDownloads,
+          errorCount: state.scanErrorCount,
+        );
       }
     } catch (e, stack) {
       _log.e('Library scan failed: $e', e, stack);
       state = state.copyWith(isScanning: false, scanWasCancelled: false);
+      await _showScanFailedNotification(e.toString());
     } finally {
       _stopProgressPolling();
     }
@@ -510,6 +531,12 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
             scannedFiles: scannedFiles,
             scanErrorCount: errorCount,
           );
+          await _showScanProgressNotification(
+            progress: normalizedProgress,
+            scannedFiles: scannedFiles,
+            totalFiles: totalFiles,
+            currentFile: currentFile,
+          );
         }
 
         if (progress['is_complete'] == true) {
@@ -542,6 +569,79 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     await PlatformBridge.cancelLibraryScan();
     state = state.copyWith(isScanning: false, scanWasCancelled: true);
     _stopProgressPolling();
+    await _showScanCancelledNotification();
+  }
+
+  Future<void> _showScanProgressNotification({
+    required double progress,
+    required int scannedFiles,
+    required int totalFiles,
+    required String? currentFile,
+  }) async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _notificationService.showLibraryScanProgress(
+        progress: progress,
+        scannedFiles: scannedFiles,
+        totalFiles: totalFiles,
+        currentFile: _shortenFileForNotification(currentFile),
+      );
+    } catch (e) {
+      _log.w('Failed to show scan progress notification: $e');
+    }
+  }
+
+  Future<void> _showScanCompleteNotification({
+    required int totalTracks,
+    required int excludedDownloadedCount,
+    required int errorCount,
+  }) async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _notificationService.showLibraryScanComplete(
+        totalTracks: totalTracks,
+        excludedDownloadedCount: excludedDownloadedCount,
+        errorCount: errorCount,
+      );
+    } catch (e) {
+      _log.w('Failed to show scan complete notification: $e');
+    }
+  }
+
+  Future<void> _showScanFailedNotification(String message) async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _notificationService.showLibraryScanFailed(message);
+    } catch (e) {
+      _log.w('Failed to show scan failure notification: $e');
+    }
+  }
+
+  Future<void> _showScanCancelledNotification() async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _notificationService.showLibraryScanCancelled();
+    } catch (e) {
+      _log.w('Failed to show scan cancelled notification: $e');
+    }
+  }
+
+  String? _shortenFileForNotification(String? path) {
+    final raw = path?.trim() ?? '';
+    if (raw.isEmpty) return null;
+
+    var decoded = raw;
+    try {
+      decoded = Uri.decodeFull(raw);
+    } catch (_) {}
+
+    final slashIdx = decoded.lastIndexOf('/');
+    final backslashIdx = decoded.lastIndexOf('\\');
+    final cut = slashIdx > backslashIdx ? slashIdx : backslashIdx;
+    if (cut >= 0 && cut < decoded.length - 1) {
+      return decoded.substring(cut + 1);
+    }
+    return decoded;
   }
 
   Future<int> cleanupMissingFiles() async {
