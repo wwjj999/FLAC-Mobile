@@ -416,6 +416,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       _isLocalItem ? _localLibraryItem!.bitDepth : _downloadItem!.bitDepth;
   int? get sampleRate =>
       _isLocalItem ? _localLibraryItem!.sampleRate : _downloadItem!.sampleRate;
+  int? get _localBitrate => _isLocalItem ? _localLibraryItem!.bitrate : null;
 
   String get _filePath =>
       _isLocalItem ? _localLibraryItem!.filePath : _downloadItem!.filePath;
@@ -424,13 +425,67 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       _isLocalItem ? _localLibraryItem!.coverPath : null;
   String? get _spotifyId => _isLocalItem ? null : _downloadItem!.spotifyId;
   String get _service => _isLocalItem ? 'local' : _downloadItem!.service;
-  DateTime get _addedAt =>
-      _isLocalItem ? _localLibraryItem!.scannedAt : _downloadItem!.downloadedAt;
+  DateTime get _addedAt {
+    if (_isLocalItem) {
+      // Use file modification time if available, otherwise fall back to scannedAt
+      final modTime = _localLibraryItem!.fileModTime;
+      if (modTime != null && modTime > 0) {
+        return DateTime.fromMillisecondsSinceEpoch(modTime);
+      }
+      return _localLibraryItem!.scannedAt;
+    }
+    return _downloadItem!.downloadedAt;
+  }
+
   String? get _quality => _isLocalItem ? null : _downloadItem!.quality;
 
   String get cleanFilePath {
     final path = _filePath;
     return path.startsWith('EXISTS:') ? path.substring(7) : path;
+  }
+
+  String _formatPathForDisplay(String pathOrUri) {
+    if (pathOrUri.isEmpty || !pathOrUri.startsWith('content://')) {
+      return pathOrUri;
+    }
+
+    try {
+      final uri = Uri.parse(pathOrUri);
+      final segments = uri.pathSegments;
+      String? documentId;
+
+      final documentIndex = segments.indexOf('document');
+      if (documentIndex != -1 && documentIndex + 1 < segments.length) {
+        documentId = Uri.decodeComponent(segments[documentIndex + 1]);
+      }
+
+      if (documentId == null || documentId.isEmpty) {
+        final treeIndex = segments.indexOf('tree');
+        if (treeIndex != -1 && treeIndex + 1 < segments.length) {
+          documentId = Uri.decodeComponent(segments[treeIndex + 1]);
+        }
+      }
+
+      if (documentId == null || documentId.isEmpty) return pathOrUri;
+
+      final separatorIndex = documentId.indexOf(':');
+      if (separatorIndex <= 0) return documentId;
+
+      final volumeId = documentId.substring(0, separatorIndex);
+      final relativePath = documentId
+          .substring(separatorIndex + 1)
+          .replaceAll('\\', '/');
+
+      if (volumeId.toLowerCase() == 'primary') {
+        if (relativePath.isEmpty) return '/storage/emulated/0';
+        return '/storage/emulated/0/$relativePath';
+      }
+
+      if (relativePath.isEmpty) return volumeId;
+      return 'SD Card/$relativePath';
+    } catch (_) {
+      return pathOrUri;
+    }
   }
 
   void _markMetadataChanged() {
@@ -913,7 +968,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   Widget _buildMetadataGrid(BuildContext context, ColorScheme colorScheme) {
     // Determine audio quality string - prefer stored quality from download
     String? audioQualityStr;
-    final fileName = _filePath.split('/').last;
+    final fileName = _extractFileNameFromPathOrUri(cleanFilePath);
     final fileExt = fileName.contains('.')
         ? fileName.split('.').last.toUpperCase()
         : '';
@@ -921,8 +976,12 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     // Use stored quality from download history if available
     if (_quality != null && _quality!.isNotEmpty) {
       audioQualityStr = _quality;
-    } else if (bitDepth != null && sampleRate != null) {
-      // Fallback for FLAC files without stored quality
+    } else if (_isLocalItem && _localBitrate != null && _localBitrate! > 0) {
+      // Lossy local file with bitrate info
+      final fmt = _localLibraryItem!.format?.toUpperCase() ?? fileExt;
+      audioQualityStr = '$fmt ${_localBitrate}kbps';
+    } else if (bitDepth != null && bitDepth! > 0 && sampleRate != null) {
+      // Lossless file with actual bit depth (FLAC, ALAC)
       final sampleRateKHz = (sampleRate! / 1000).toStringAsFixed(1);
       audioQualityStr = '$bitDepth-bit/${sampleRateKHz}kHz';
     } else {
@@ -1031,7 +1090,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     bool fileExists,
     int? fileSize,
   ) {
-    final fileName = cleanFilePath.split(Platform.pathSeparator).last;
+    final displayFilePath = _formatPathForDisplay(cleanFilePath);
+    final fileName = _extractFileNameFromPathOrUri(cleanFilePath);
     final fileExtension = fileName.contains('.')
         ? fileName.split('.').last.toUpperCase()
         : 'Unknown';
@@ -1128,7 +1188,33 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                       ),
                     ),
                   )
-                else if (bitDepth != null && sampleRate != null)
+                else if (_isLocalItem &&
+                    _localBitrate != null &&
+                    _localBitrate! > 0 &&
+                    (fileExtension == 'MP3' ||
+                        fileExtension == 'OPUS' ||
+                        fileExtension == 'OGG'))
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.tertiaryContainer,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${_localBitrate}kbps',
+                      style: TextStyle(
+                        color: colorScheme.onTertiaryContainer,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  )
+                else if (bitDepth != null &&
+                    bitDepth! > 0 &&
+                    sampleRate != null)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -1194,7 +1280,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        cleanFilePath,
+                        displayFilePath,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontFamily: 'monospace',
                           color: colorScheme.onSurfaceVariant,

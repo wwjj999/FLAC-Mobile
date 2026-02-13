@@ -1,5 +1,62 @@
 # Changelog
 
+## [3.6.7] - 2026-02-13
+
+### Added
+
+- "Advanced Filename Templates" - new placeholders for custom track/disc formatting and date patterns
+  - `{track_raw}` and `{disc_raw}` - unpadded raw numbers
+  - `{track:N}` and `{disc:N}` - zero-padded to N digits (e.g. `{track:02}` → `01`)
+  - `{date}` - full release date from metadata
+  - `{date:%Y-%m-%d}` - date formatting with strftime patterns
+  - "Show advanced tags" toggle in Settings > Download > Filename Format to reveal these placeholders
+- Low-RAM / ARM32-only device profiling - detects constrained devices at startup and reduces image cache (120 items / 24 MiB) and disables overscroll effects for smoother performance
+- Responsive selection bar on artist screen - switches to compact stacked layout on narrow screens (< 430dp) or large text scale (> 1.15x)
+- Quality picker dialog before downloading individual tracks from artist screen (when "Ask quality before download" is enabled)
+- Project website with GitHub Pages deployment workflow
+  - Mobile burger menu navigation for all site pages
+- Go filename template test suite
+
+### Fixed
+
+- Fixed ICU plural syntax errors in DE, ES, PT, RU translations - incorrect `=1` clause was causing missing plural forms
+- Fixed featured-artist regex incorrectly splitting on `&` character (e.g. "Simon & Garfunkel" was being split) - removed `&` from separator pattern
+- Fixed `{date}` placeholder not working in filename templates - release date was not being passed to the template builder across all providers (Amazon, Qobuz, Tidal, YouTube, extensions)
+
+### Changed
+
+- Improved Go backend metadata handling - filename builder now supports fallback metadata keys and automatic type conversion for more robust template rendering
+- Extension providers now pass full metadata set to filename builder (track, disc, year, date, release_date)
+- Updated translations: added filename advanced tags strings (EN, ID), regenerated all locale dart files
+- Updated app screenshot assets
+
+---
+
+## [3.6.6] - 2026-02-12
+
+### Added
+
+- "Filter Contributing Artists in Album Artist" setting - strips featured/contributing artists from Album Artist metadata tag
+- Library scan notifications (Android and iOS) - shows progress, completion, failure, and cancellation status
+- Collapsible "Artist Name Filters" section in download settings UI
+
+### Fixed
+
+- Fixed downloads not working on iOS - missing `downloadByStrategy` and `downloadFromYouTube` method channel handlers in AppDelegate.swift
+- Fixed extended metadata (genre, label, copyright) lost during service fallback (e.g. Tidal unavailable, falls back to Qobuz) - Go backend now enriches metadata from Deezer by ISRC before download and preserves it through the fallback chain
+- Fixed local library showing incorrect "16-bit" quality label for lossy formats (MP3, Opus) - now displays actual bitrate (e.g. "MP3 320kbps")
+- Fixed inaccurate Opus/Vorbis duration calculation (e.g. 4:11 showing as 8:44) - now reads granule position from last Ogg page for precise duration
+- Fixed MP3 duration/bitrate inaccuracy for VBR files - added Xing/Info and VBRI header parsing with MPEG2/2.5 bitrate table support
+- Fixed Track Metadata screen showing scan date instead of file date for local library items
+- Fixed SAF content URI paths displayed as raw `content://` strings in Track Metadata - now shows human-readable paths
+
+### Changed
+
+- Removed legacy iOS download handlers (`downloadTrack`, `downloadWithFallback`, `downloadFromYouTube`) - iOS now uses `downloadByStrategy` only
+- Updated translations from Crowdin (all 14 languages)
+
+---
+
 ## [3.6.5] - 2026-02-10
 
 ### Highlights

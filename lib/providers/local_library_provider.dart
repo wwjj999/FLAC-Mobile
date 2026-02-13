@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/services/history_database.dart';
 import 'package:spotiflac_android/services/library_database.dart';
+import 'package:spotiflac_android/services/notification_service.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
@@ -116,6 +118,7 @@ class LocalLibraryState {
 class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   final LibraryDatabase _db = LibraryDatabase.instance;
   final HistoryDatabase _historyDb = HistoryDatabase.instance;
+  final NotificationService _notificationService = NotificationService();
   static const _progressPollingInterval = Duration(milliseconds: 800);
   Timer? _progressTimer;
   bool _isLoaded = false;
@@ -180,6 +183,58 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     await _loadFromDatabase();
   }
 
+  Set<String> _buildPathMatchKeys(String? filePath) {
+    final raw = filePath?.trim() ?? '';
+    if (raw.isEmpty) return const {};
+
+    final cleaned = raw.startsWith('EXISTS:') ? raw.substring(7) : raw;
+    final keys = <String>{cleaned};
+
+    void addNormalized(String value) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) return;
+      keys.add(trimmed);
+      keys.add(trimmed.toLowerCase());
+      if (trimmed.contains('\\')) {
+        final slash = trimmed.replaceAll('\\', '/');
+        keys.add(slash);
+        keys.add(slash.toLowerCase());
+      }
+      if (trimmed.contains('%')) {
+        try {
+          final decoded = Uri.decodeFull(trimmed);
+          keys.add(decoded);
+          keys.add(decoded.toLowerCase());
+        } catch (_) {}
+      }
+    }
+
+    addNormalized(cleaned);
+
+    if (cleaned.startsWith('content://')) {
+      try {
+        final uri = Uri.parse(cleaned);
+        addNormalized(uri.toString());
+        addNormalized(uri.replace(query: null, fragment: null).toString());
+      } catch (_) {}
+    }
+
+    return keys;
+  }
+
+  bool _isDownloadedPath(String? filePath, Set<String> downloadedPathKeys) {
+    if (filePath == null || filePath.isEmpty || downloadedPathKeys.isEmpty) {
+      return false;
+    }
+    final candidateKeys = _buildPathMatchKeys(filePath);
+    for (final key in candidateKeys) {
+      if (downloadedPathKeys.contains(key)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   Future<void> startScan(
     String folderPath, {
     bool forceFullScan = false,
@@ -202,6 +257,12 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       scanErrorCount: 0,
       scanWasCancelled: false,
     );
+    await _showScanProgressNotification(
+      progress: 0,
+      scannedFiles: 0,
+      totalFiles: 0,
+      currentFile: null,
+    );
 
     try {
       final appSupportDir = await getApplicationSupportDirectory();
@@ -217,10 +278,26 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     try {
       final isSaf = folderPath.startsWith('content://');
 
-      // Get all file paths from download history to exclude them
+      // Get all file paths from download history to exclude them.
+      // Merge DB + in-memory state to avoid race when a fresh download has not
+      // been flushed to SQLite yet.
       final downloadedPaths = await _historyDb.getAllFilePaths();
+      final inMemoryHistoryPaths = ref
+          .read(downloadHistoryProvider)
+          .items
+          .map((item) => item.filePath)
+          .where((path) => path.isNotEmpty);
+      final allHistoryPaths = <String>{
+        ...downloadedPaths,
+        ...inMemoryHistoryPaths,
+      };
+      final downloadedPathKeys = <String>{};
+      for (final path in allHistoryPaths) {
+        downloadedPathKeys.addAll(_buildPathMatchKeys(path));
+      }
       _log.i(
-        'Excluding ${downloadedPaths.length} downloaded files from library scan',
+        'Excluding ${allHistoryPaths.length} downloaded files from library scan '
+        '(${downloadedPathKeys.length} path keys)',
       );
 
       if (forceFullScan) {
@@ -230,6 +307,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
             : await PlatformBridge.scanLibraryFolder(folderPath);
         if (_scanCancelRequested) {
           state = state.copyWith(isScanning: false, scanWasCancelled: true);
+          await _showScanCancelledNotification();
           return;
         }
 
@@ -238,7 +316,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         for (final json in results) {
           final filePath = json['filePath'] as String?;
           // Skip files that are already in download history
-          if (filePath != null && downloadedPaths.contains(filePath)) {
+          if (_isDownloadedPath(filePath, downloadedPathKeys)) {
             skippedDownloads++;
             continue;
           }
@@ -275,6 +353,11 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
           'Full scan complete: ${items.length} tracks found, '
           '$skippedDownloads already in downloads',
         );
+        await _showScanCompleteNotification(
+          totalTracks: items.length,
+          excludedDownloadedCount: skippedDownloads,
+          errorCount: state.scanErrorCount,
+        );
       } else {
         // Incremental scan path - only scans new/modified files
         final existingFiles = await _db.getFileModTimes();
@@ -308,6 +391,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
 
         if (_scanCancelRequested) {
           state = state.copyWith(isScanning: false, scanWasCancelled: true);
+          await _showScanCancelledNotification();
           return;
         }
 
@@ -344,7 +428,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
           for (final json in scannedList) {
             final map = json as Map<String, dynamic>;
             final filePath = map['filePath'] as String?;
-            if (filePath != null && downloadedPaths.contains(filePath)) {
+            if (_isDownloadedPath(filePath, downloadedPathKeys)) {
               skippedDownloads++;
               continue;
             }
@@ -399,10 +483,16 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
           '(${scannedList.length} new/updated, $skippedCount unchanged, '
           '${deletedPaths.length} removed, $skippedDownloads already in downloads)',
         );
+        await _showScanCompleteNotification(
+          totalTracks: items.length,
+          excludedDownloadedCount: skippedDownloads,
+          errorCount: state.scanErrorCount,
+        );
       }
     } catch (e, stack) {
       _log.e('Library scan failed: $e', e, stack);
       state = state.copyWith(isScanning: false, scanWasCancelled: false);
+      await _showScanFailedNotification(e.toString());
     } finally {
       _stopProgressPolling();
     }
@@ -441,6 +531,12 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
             scannedFiles: scannedFiles,
             scanErrorCount: errorCount,
           );
+          await _showScanProgressNotification(
+            progress: normalizedProgress,
+            scannedFiles: scannedFiles,
+            totalFiles: totalFiles,
+            currentFile: currentFile,
+          );
         }
 
         if (progress['is_complete'] == true) {
@@ -473,6 +569,75 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     await PlatformBridge.cancelLibraryScan();
     state = state.copyWith(isScanning: false, scanWasCancelled: true);
     _stopProgressPolling();
+    await _showScanCancelledNotification();
+  }
+
+  Future<void> _showScanProgressNotification({
+    required double progress,
+    required int scannedFiles,
+    required int totalFiles,
+    required String? currentFile,
+  }) async {
+    try {
+      await _notificationService.showLibraryScanProgress(
+        progress: progress,
+        scannedFiles: scannedFiles,
+        totalFiles: totalFiles,
+        currentFile: _shortenFileForNotification(currentFile),
+      );
+    } catch (e) {
+      _log.w('Failed to show scan progress notification: $e');
+    }
+  }
+
+  Future<void> _showScanCompleteNotification({
+    required int totalTracks,
+    required int excludedDownloadedCount,
+    required int errorCount,
+  }) async {
+    try {
+      await _notificationService.showLibraryScanComplete(
+        totalTracks: totalTracks,
+        excludedDownloadedCount: excludedDownloadedCount,
+        errorCount: errorCount,
+      );
+    } catch (e) {
+      _log.w('Failed to show scan complete notification: $e');
+    }
+  }
+
+  Future<void> _showScanFailedNotification(String message) async {
+    try {
+      await _notificationService.showLibraryScanFailed(message);
+    } catch (e) {
+      _log.w('Failed to show scan failure notification: $e');
+    }
+  }
+
+  Future<void> _showScanCancelledNotification() async {
+    try {
+      await _notificationService.showLibraryScanCancelled();
+    } catch (e) {
+      _log.w('Failed to show scan cancelled notification: $e');
+    }
+  }
+
+  String? _shortenFileForNotification(String? path) {
+    final raw = path?.trim() ?? '';
+    if (raw.isEmpty) return null;
+
+    var decoded = raw;
+    try {
+      decoded = Uri.decodeFull(raw);
+    } catch (_) {}
+
+    final slashIdx = decoded.lastIndexOf('/');
+    final backslashIdx = decoded.lastIndexOf('\\');
+    final cut = slashIdx > backslashIdx ? slashIdx : backslashIdx;
+    if (cut >= 0 && cut < decoded.length - 1) {
+      return decoded.substring(cut + 1);
+    }
+    return decoded;
   }
 
   Future<int> cleanupMissingFiles() async {

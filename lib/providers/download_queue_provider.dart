@@ -323,7 +323,10 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
       if (item.downloadTreeUri == null || item.downloadTreeUri!.isEmpty) {
         continue;
       }
-      if (item.filePath.isEmpty || !isContentUri(item.filePath)) {
+      final hasFilePath = item.filePath.trim().isNotEmpty;
+      final hasSafFileName =
+          item.safFileName != null && item.safFileName!.trim().isNotEmpty;
+      if (!hasFilePath && !hasSafFileName) {
         continue;
       }
       candidateIndexes.add(i);
@@ -344,52 +347,59 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
       for (var c = 0; c < candidateIndexes.length; c++) {
         final i = candidateIndexes[c];
         final item = items[i];
+        final rawPath = item.filePath.trim();
+        final isDirectSafUri = rawPath.isNotEmpty && isContentUri(rawPath);
 
-        final exists = await fileExists(item.filePath);
-        if (exists) {
-          final verified = item.copyWith(
-            safRepaired: true,
-            safFileName: item.safFileName ?? _fileNameFromUri(item.filePath),
-          );
-          updatedItems[i] = verified;
-          changed = true;
-          verifiedCount++;
-          await _db.upsert(verified.toJson());
-        } else {
-          final fallbackName =
-              item.safFileName ?? _fileNameFromUri(item.filePath);
-          if (fallbackName.isEmpty) {
-            _historyLog.w('Missing SAF filename for history item: ${item.id}');
+        if (isDirectSafUri) {
+          final exists = await fileExists(rawPath);
+          if (exists) {
+            final verified = item.copyWith(
+              safRepaired: true,
+              safFileName: item.safFileName ?? _fileNameFromUri(rawPath),
+            );
+            updatedItems[i] = verified;
+            changed = true;
+            verifiedCount++;
+            await _db.upsert(verified.toJson());
             continue;
           }
+        }
 
-          try {
-            final resolved = await PlatformBridge.resolveSafFile(
-              treeUri: item.downloadTreeUri!,
-              relativeDir: item.safRelativeDir ?? '',
-              fileName: fallbackName,
-            );
-            final newUri = resolved['uri'] as String? ?? '';
-            if (newUri.isEmpty) continue;
+        var fallbackName = (item.safFileName ?? '').trim();
+        if (fallbackName.isEmpty && isDirectSafUri) {
+          fallbackName = _fileNameFromUri(rawPath);
+        }
+        if (fallbackName.isEmpty) {
+          _historyLog.w('Missing SAF filename for history item: ${item.id}');
+          continue;
+        }
 
-            final newRelativeDir = resolved['relative_dir'] as String?;
-            final updated = item.copyWith(
-              filePath: newUri,
-              safRelativeDir:
-                  (newRelativeDir != null && newRelativeDir.isNotEmpty)
-                  ? newRelativeDir
-                  : item.safRelativeDir,
-              safFileName: fallbackName,
-              safRepaired: true,
-            );
+        try {
+          final resolved = await PlatformBridge.resolveSafFile(
+            treeUri: item.downloadTreeUri!,
+            relativeDir: item.safRelativeDir ?? '',
+            fileName: fallbackName,
+          );
+          final newUri = (resolved['uri'] as String? ?? '').trim();
+          if (newUri.isEmpty) continue;
 
-            updatedItems[i] = updated;
-            changed = true;
-            repairedCount++;
-            await _db.upsert(updated.toJson());
-          } catch (e) {
-            _historyLog.w('Failed to repair SAF URI: $e');
-          }
+          final newRelativeDir = resolved['relative_dir'] as String?;
+          final updated = item.copyWith(
+            filePath: newUri,
+            safRelativeDir:
+                (newRelativeDir != null && newRelativeDir.isNotEmpty)
+                ? newRelativeDir
+                : item.safRelativeDir,
+            safFileName: fallbackName,
+            safRepaired: true,
+          );
+
+          updatedItems[i] = updated;
+          changed = true;
+          repairedCount++;
+          await _db.upsert(updated.toJson());
+        } catch (e) {
+          _historyLog.w('Failed to repair SAF URI: $e');
         }
 
         if ((c + 1) % _safRepairBatchSize == 0) {
@@ -421,19 +431,33 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
       existing = state.getByIsrc(item.isrc!);
     }
 
+    final mergedItem = existing == null
+        ? item
+        : item.copyWith(
+            genre:
+                _normalizeOptionalString(item.genre) ??
+                _normalizeOptionalString(existing.genre),
+            label:
+                _normalizeOptionalString(item.label) ??
+                _normalizeOptionalString(existing.label),
+            copyright:
+                _normalizeOptionalString(item.copyright) ??
+                _normalizeOptionalString(existing.copyright),
+          );
+
     if (existing != null) {
       final updatedItems = state.items
           .where((i) => i.id != existing!.id)
           .toList();
-      updatedItems.insert(0, item);
+      updatedItems.insert(0, mergedItem);
       state = state.copyWith(items: updatedItems);
-      _historyLog.d('Updated existing history entry: ${item.trackName}');
+      _historyLog.d('Updated existing history entry: ${mergedItem.trackName}');
     } else {
-      state = state.copyWith(items: [item, ...state.items]);
-      _historyLog.d('Added new history entry: ${item.trackName}');
+      state = state.copyWith(items: [mergedItem, ...state.items]);
+      _historyLog.d('Added new history entry: ${mergedItem.trackName}');
     }
 
-    _db.upsert(item.toJson()).catchError((e) {
+    _db.upsert(mergedItem.toJson()).catchError((e) {
       _historyLog.e('Failed to save to database: $e');
     });
   }
@@ -1173,11 +1197,18 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     String albumFolderStructure = 'artist_album',
     bool useAlbumArtistForFolders = true,
     bool usePrimaryArtistOnly = false,
+    bool filterContributingArtistsInAlbumArtist = false,
   }) async {
     String baseDir = state.outputDir;
+    final normalizedAlbumArtist = _normalizeOptionalString(track.albumArtist);
     var folderArtist = useAlbumArtistForFolders
-        ? _normalizeOptionalString(track.albumArtist) ?? track.artistName
+        ? normalizedAlbumArtist ?? track.artistName
         : track.artistName;
+    if (useAlbumArtistForFolders &&
+        filterContributingArtistsInAlbumArtist &&
+        normalizedAlbumArtist != null) {
+      folderArtist = _extractPrimaryArtist(folderArtist);
+    }
     if (usePrimaryArtistOnly) {
       folderArtist = _extractPrimaryArtist(folderArtist);
     }
@@ -1273,7 +1304,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   }
 
   static final _featuredArtistPattern = RegExp(
-    r'\s*[,;&]\s*|\s+(?:feat\.?|ft\.?|featuring|with|x)\s+',
+    r'\s*[,;]\s*|\s+(?:feat\.?|ft\.?|featuring|with|x)\s+',
     caseSensitive: false,
   );
 
@@ -1283,6 +1314,15 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       return artist.substring(0, match.start).trim();
     }
     return artist;
+  }
+
+  String _resolveAlbumArtistForMetadata(Track track, AppSettings settings) {
+    var albumArtist =
+        _normalizeOptionalString(track.albumArtist) ?? track.artistName;
+    if (settings.filterContributingArtistsInAlbumArtist) {
+      albumArtist = _extractPrimaryArtist(albumArtist);
+    }
+    return albumArtist;
   }
 
   bool _isSafMode(AppSettings settings) {
@@ -1309,10 +1349,17 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     String albumFolderStructure = 'artist_album',
     bool useAlbumArtistForFolders = true,
     bool usePrimaryArtistOnly = false,
+    bool filterContributingArtistsInAlbumArtist = false,
   }) async {
+    final normalizedAlbumArtist = _normalizeOptionalString(track.albumArtist);
     var folderArtist = useAlbumArtistForFolders
-        ? _normalizeOptionalString(track.albumArtist) ?? track.artistName
+        ? normalizedAlbumArtist ?? track.artistName
         : track.artistName;
+    if (useAlbumArtistForFolders &&
+        filterContributingArtistsInAlbumArtist &&
+        normalizedAlbumArtist != null) {
+      folderArtist = _extractPrimaryArtist(folderArtist);
+    }
     if (usePrimaryArtistOnly) {
       folderArtist = _extractPrimaryArtist(folderArtist);
     }
@@ -1728,6 +1775,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     try {
       final settings = ref.read(settingsProvider);
       final extensionState = ref.read(extensionProvider);
+      final resolvedAlbumArtist = _resolveAlbumArtistForMetadata(
+        track,
+        settings,
+      );
 
       if (!settings.useExtensionProviders) return;
 
@@ -1742,8 +1793,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         'title': track.name,
         'artist': track.artistName,
         'album': track.albumName,
-        'album_artist':
-            _normalizeOptionalString(track.albumArtist) ?? track.artistName,
+        'album_artist': resolvedAlbumArtist,
         'track_number': track.trackNumber ?? 1,
         'disc_number': track.discNumber ?? 1,
         'isrc': track.isrc ?? '',
@@ -1803,7 +1853,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   Track _buildTrackForMetadataEmbedding(
     Track baseTrack,
     Map<String, dynamic> backendResult,
-    String? normalizedAlbumArtist,
+    String resolvedAlbumArtist,
   ) {
     final backendTrackNum = _parsePositiveInt(backendResult['track_number']);
     final backendDiscNum = _parsePositiveInt(backendResult['disc_number']);
@@ -1826,7 +1876,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       name: baseTrack.name,
       artistName: baseTrack.artistName,
       albumName: backendAlbum ?? baseTrack.albumName,
-      albumArtist: normalizedAlbumArtist,
+      albumArtist: resolvedAlbumArtist,
       coverUrl: baseTrack.coverUrl,
       duration: baseTrack.duration,
       isrc: baseTrack.isrc,
@@ -1890,16 +1940,15 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         'ALBUM': track.albumName,
       };
 
-      final albumArtist =
-          _normalizeOptionalString(track.albumArtist) ?? track.artistName;
+      final albumArtist = _resolveAlbumArtistForMetadata(track, settings);
       metadata['ALBUMARTIST'] = albumArtist;
 
-      if (track.trackNumber != null) {
+      if (track.trackNumber != null && track.trackNumber! > 0) {
         metadata['TRACKNUMBER'] = track.trackNumber.toString();
         metadata['TRACK'] = track.trackNumber.toString();
       }
 
-      if (track.discNumber != null) {
+      if (track.discNumber != null && track.discNumber! > 0) {
         metadata['DISCNUMBER'] = track.discNumber.toString();
         metadata['DISC'] = track.discNumber.toString();
       }
@@ -2033,16 +2082,15 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         'ALBUM': track.albumName,
       };
 
-      final albumArtist =
-          _normalizeOptionalString(track.albumArtist) ?? track.artistName;
+      final albumArtist = _resolveAlbumArtistForMetadata(track, settings);
       metadata['ALBUMARTIST'] = albumArtist;
 
-      if (track.trackNumber != null) {
+      if (track.trackNumber != null && track.trackNumber! > 0) {
         metadata['TRACKNUMBER'] = track.trackNumber.toString();
         metadata['TRACK'] = track.trackNumber.toString();
       }
 
-      if (track.discNumber != null) {
+      if (track.discNumber != null && track.discNumber! > 0) {
         metadata['DISCNUMBER'] = track.discNumber.toString();
         metadata['DISC'] = track.discNumber.toString();
       }
@@ -2198,15 +2246,14 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         'ALBUM': track.albumName,
       };
 
-      final albumArtist =
-          _normalizeOptionalString(track.albumArtist) ?? track.artistName;
+      final albumArtist = _resolveAlbumArtistForMetadata(track, settings);
       metadata['ALBUMARTIST'] = albumArtist;
 
-      if (track.trackNumber != null) {
+      if (track.trackNumber != null && track.trackNumber! > 0) {
         metadata['TRACKNUMBER'] = track.trackNumber.toString();
       }
 
-      if (track.discNumber != null) {
+      if (track.discNumber != null && track.discNumber! > 0) {
         metadata['DISCNUMBER'] = track.discNumber.toString();
       }
 
@@ -2442,6 +2489,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           await musicDir.create(recursive: true);
         }
         state = state.copyWith(outputDir: musicDir.path);
+        ref.read(settingsProvider.notifier).setDownloadDirectory(musicDir.path);
       } else if (!isValidIosWritablePath(state.outputDir)) {
         // Check for other invalid paths (like container root without Documents/)
         _log.w(
@@ -2451,6 +2499,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         final correctedPath = await validateOrFixIosPath(state.outputDir);
         _log.i('Corrected path: $correctedPath');
         state = state.copyWith(outputDir: correctedPath);
+        ref.read(settingsProvider.notifier).setDownloadDirectory(correctedPath);
       }
     }
 
@@ -2717,8 +2766,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
       _log.d('Track coverUrl after enrichment: ${trackToDownload.coverUrl}');
 
-      final normalizedAlbumArtist = _normalizeOptionalString(
-        trackToDownload.albumArtist,
+      final resolvedAlbumArtist = _resolveAlbumArtistForMetadata(
+        trackToDownload,
+        settings,
       );
 
       final quality = item.qualityOverride ?? state.audioQuality;
@@ -2731,6 +2781,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               albumFolderStructure: settings.albumFolderStructure,
               useAlbumArtistForFolders: settings.useAlbumArtistForFolders,
               usePrimaryArtistOnly: settings.usePrimaryArtistOnly,
+              filterContributingArtistsInAlbumArtist:
+                  settings.filterContributingArtistsInAlbumArtist,
             )
           : '';
       String? appOutputDir;
@@ -2743,6 +2795,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               albumFolderStructure: settings.albumFolderStructure,
               useAlbumArtistForFolders: settings.useAlbumArtistForFolders,
               usePrimaryArtistOnly: settings.usePrimaryArtistOnly,
+              filterContributingArtistsInAlbumArtist:
+                  settings.filterContributingArtistsInAlbumArtist,
             );
       var effectiveOutputDir = initialOutputDir;
       var effectiveSafMode = isSafMode;
@@ -2759,6 +2813,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               'track': trackToDownload.trackNumber ?? 0,
               'disc': trackToDownload.discNumber ?? 0,
               'year': _extractYear(trackToDownload.releaseDate) ?? '',
+              'date': trackToDownload.releaseDate ?? '',
             });
         final sanitized = await PlatformBridge.sanitizeFilename(baseName);
         safBaseName = sanitized;
@@ -2768,6 +2823,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
       String? genre;
       String? label;
+      String? copyright;
 
       String? deezerTrackId = trackToDownload.deezerId;
       if (deezerTrackId == null && trackToDownload.id.startsWith('deezer:')) {
@@ -2845,9 +2901,14 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 (trackToDownload.isrc == null && deezerIsrc != null) ||
                 (!_isValidISRC(trackToDownload.isrc ?? '') &&
                     deezerIsrc != null) ||
-                (trackToDownload.trackNumber == null &&
-                    deezerTrackNum != null) ||
-                (trackToDownload.discNumber == null && deezerDiscNum != null);
+                ((trackToDownload.trackNumber == null ||
+                        trackToDownload.trackNumber! <= 0) &&
+                    deezerTrackNum != null &&
+                    deezerTrackNum > 0) ||
+                ((trackToDownload.discNumber == null ||
+                        trackToDownload.discNumber! <= 0) &&
+                    deezerDiscNum != null &&
+                    deezerDiscNum > 0);
 
             if (needsEnrich) {
               trackToDownload = Track(
@@ -2861,8 +2922,16 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 isrc: (deezerIsrc != null && _isValidISRC(deezerIsrc))
                     ? deezerIsrc
                     : trackToDownload.isrc,
-                trackNumber: trackToDownload.trackNumber ?? deezerTrackNum,
-                discNumber: trackToDownload.discNumber ?? deezerDiscNum,
+                trackNumber:
+                    (trackToDownload.trackNumber != null &&
+                        trackToDownload.trackNumber! > 0)
+                    ? trackToDownload.trackNumber
+                    : deezerTrackNum,
+                discNumber:
+                    (trackToDownload.discNumber != null &&
+                        trackToDownload.discNumber! > 0)
+                    ? trackToDownload.discNumber
+                    : deezerDiscNum,
                 releaseDate: trackToDownload.releaseDate ?? deezerReleaseDate,
                 deezerId: deezerTrackId,
                 availability: trackToDownload.availability,
@@ -2889,8 +2958,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           if (extendedMetadata != null) {
             genre = extendedMetadata['genre'];
             label = extendedMetadata['label'];
+            copyright = extendedMetadata['copyright'];
             if (genre != null && genre.isNotEmpty) {
-              _log.d('Extended metadata - Genre: $genre, Label: $label');
+              _log.d(
+                'Extended metadata - Genre: $genre, Label: $label, Copyright: $copyright',
+              );
             }
           }
         } catch (e) {
@@ -2937,6 +3009,17 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         }
         _log.d('Output dir: $outputDir');
 
+        final normalizedTrackNumber =
+            (trackToDownload.trackNumber != null &&
+                trackToDownload.trackNumber! > 0)
+            ? trackToDownload.trackNumber!
+            : 1;
+        final normalizedDiscNumber =
+            (trackToDownload.discNumber != null &&
+                trackToDownload.discNumber! > 0)
+            ? trackToDownload.discNumber!
+            : 1;
+
         final payload = DownloadRequestPayload(
           isrc: trackToDownload.isrc ?? '',
           service: item.service,
@@ -2944,7 +3027,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           trackName: trackToDownload.name,
           artistName: trackToDownload.artistName,
           albumName: trackToDownload.albumName,
-          albumArtist: normalizedAlbumArtist ?? trackToDownload.artistName,
+          albumArtist: resolvedAlbumArtist,
           coverUrl: trackToDownload.coverUrl ?? '',
           outputDir: outputDir,
           filenameFormat: state.filenameFormat,
@@ -2952,14 +3035,15 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           // Keep prior behavior: non-YouTube paths were implicitly true.
           embedLyrics: isYouTube ? settings.embedLyrics : true,
           embedMaxQualityCover: settings.maxQualityCover,
-          trackNumber: trackToDownload.trackNumber ?? 1,
-          discNumber: trackToDownload.discNumber ?? 1,
+          trackNumber: normalizedTrackNumber,
+          discNumber: normalizedDiscNumber,
           releaseDate: trackToDownload.releaseDate ?? '',
           itemId: item.id,
           durationMs: trackToDownload.duration,
           source: trackToDownload.source ?? '',
           genre: genre ?? '',
           label: label ?? '',
+          copyright: copyright ?? '',
           deezerId: deezerTrackId ?? '',
           lyricsMode: settings.lyricsMode,
           storageMode: storageMode,
@@ -2992,6 +3076,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           albumFolderStructure: settings.albumFolderStructure,
           useAlbumArtistForFolders: settings.useAlbumArtistForFolders,
           usePrimaryArtistOnly: settings.usePrimaryArtistOnly,
+          filterContributingArtistsInAlbumArtist:
+              settings.filterContributingArtistsInAlbumArtist,
         );
         final fallbackResult = await runDownload(
           useSaf: false,
@@ -3329,7 +3415,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                       final finalTrack = _buildTrackForMetadataEmbedding(
                         trackToDownload,
                         result,
-                        normalizedAlbumArtist,
+                        resolvedAlbumArtist,
                       );
 
                       final backendGenre = result['genre'] as String?;
@@ -3493,7 +3579,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                         final finalTrack = _buildTrackForMetadataEmbedding(
                           trackToDownload,
                           result,
-                          normalizedAlbumArtist,
+                          resolvedAlbumArtist,
                         );
 
                         final backendGenre = result['genre'] as String?;
@@ -3553,7 +3639,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               final finalTrack = _buildTrackForMetadataEmbedding(
                 trackToDownload,
                 result,
-                normalizedAlbumArtist,
+                resolvedAlbumArtist,
               );
               final backendGenre = result['genre'] as String?;
               final backendLabel = result['label'] as String?;
@@ -3613,7 +3699,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             final finalTrack = _buildTrackForMetadataEmbedding(
               trackToDownload,
               result,
-              normalizedAlbumArtist,
+              resolvedAlbumArtist,
             );
             final backendGenre = result['genre'] as String?;
             final backendLabel = result['label'] as String?;
@@ -3650,7 +3736,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             final finalTrack = _buildTrackForMetadataEmbedding(
               trackToDownload,
               result,
-              normalizedAlbumArtist,
+              resolvedAlbumArtist,
             );
             final backendGenre = result['genre'] as String?;
             final backendLabel = result['label'] as String?;
@@ -3748,6 +3834,47 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           return;
         }
 
+        // SAF downloads should end with content URI. If we still have a
+        // transient FD path, recover URI from SAF metadata to keep history
+        // dedup/exclusion stable.
+        if (effectiveSafMode &&
+            filePath != null &&
+            filePath.isNotEmpty &&
+            !isContentUri(filePath) &&
+            settings.downloadTreeUri.isNotEmpty) {
+          final fallbackName = (finalSafFileName ?? safFileName ?? '').trim();
+          if (fallbackName.isNotEmpty) {
+            try {
+              final resolved = await PlatformBridge.resolveSafFile(
+                treeUri: settings.downloadTreeUri,
+                relativeDir: effectiveOutputDir,
+                fileName: fallbackName,
+              );
+              final resolvedUri = (resolved['uri'] as String? ?? '').trim();
+              final resolvedRelativeDir =
+                  (resolved['relative_dir'] as String? ?? '').trim();
+              if (resolvedUri.isNotEmpty && isContentUri(resolvedUri)) {
+                _log.w('Recovered SAF URI from transient path: $filePath');
+                filePath = resolvedUri;
+                finalSafFileName = fallbackName;
+                if (resolvedRelativeDir.isNotEmpty) {
+                  effectiveOutputDir = resolvedRelativeDir;
+                }
+              } else {
+                _log.w(
+                  'Failed to recover SAF URI (fileName=$fallbackName, dir=$effectiveOutputDir)',
+                );
+              }
+            } catch (e) {
+              _log.w('SAF URI recovery failed: $e');
+            }
+          } else {
+            _log.w(
+              'SAF download returned non-URI path without filename metadata: $filePath',
+            );
+          }
+        }
+
         updateItemStatus(
           item.id,
           DownloadStatus.completed,
@@ -3840,13 +3967,24 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           final backendGenre = result['genre'] as String?;
           final backendLabel = result['label'] as String?;
           final backendCopyright = result['copyright'] as String?;
+          final effectiveGenre =
+              _normalizeOptionalString(backendGenre) ??
+              _normalizeOptionalString(genre) ??
+              _normalizeOptionalString(existingInHistory?.genre);
+          final effectiveLabel =
+              _normalizeOptionalString(backendLabel) ??
+              _normalizeOptionalString(label) ??
+              _normalizeOptionalString(existingInHistory?.label);
+          final effectiveCopyright =
+              _normalizeOptionalString(backendCopyright) ??
+              _normalizeOptionalString(copyright) ??
+              _normalizeOptionalString(existingInHistory?.copyright);
 
           _log.d('Saving to history - coverUrl: ${trackToDownload.coverUrl}');
 
           final historyAlbumArtist =
-              (normalizedAlbumArtist != null &&
-                  normalizedAlbumArtist != trackToDownload.artistName)
-              ? normalizedAlbumArtist
+              resolvedAlbumArtist != trackToDownload.artistName
+              ? resolvedAlbumArtist
               : null;
 
           final isMp3 = filePath.endsWith('.mp3');
@@ -3899,9 +4037,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                   quality: actualQuality,
                   bitDepth: historyBitDepth,
                   sampleRate: historySampleRate,
-                  genre: backendGenre,
-                  label: backendLabel,
-                  copyright: backendCopyright,
+                  genre: effectiveGenre,
+                  label: effectiveLabel,
+                  copyright: effectiveCopyright,
                 ),
               );
 
