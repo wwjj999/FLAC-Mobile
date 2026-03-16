@@ -321,7 +321,26 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               title: Text(context.l10n.setupChooseFromFiles),
               onTap: () async {
                 Navigator.pop(ctx);
-                final result = await FilePicker.platform.getDirectoryPath();
+                if (Platform.isIOS) {
+                  await Future<void>.delayed(const Duration(milliseconds: 250));
+                }
+
+                String? result;
+                try {
+                  result = await FilePicker.platform.getDirectoryPath();
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to open folder picker: $e'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  }
+                  return;
+                }
+
                 if (result != null) {
                   // iOS: Validate the selected path is writable
                   if (Platform.isIOS) {

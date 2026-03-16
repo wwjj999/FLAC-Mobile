@@ -54,7 +54,7 @@ const (
 	qobuzDownloadAPIURL     = "https://www.musicdl.me/api/qobuz/download"
 	qobuzDabMusicAPIURL     = "https://dabmusic.xyz/api/stream?trackId="
 	qobuzDeebAPIURL         = "https://dab.yeet.su/api/stream?trackId="
-	qobuzAfkarAPIURL        = "https://qbz.afkarxyz.fun/api/track/"
+	qobuzAfkarAPIURL        = "https://qbz.afkarxyz.qzz.io/api/track/"
 	qobuzSquidAPIURL        = "https://qobuz.squid.wtf/api/download-music?country=US&track_id="
 	qobuzDebugKeyXORMask    = byte(0x5A)
 )

@@ -334,7 +334,7 @@ Thank you for your understanding and continued support. This decision was made t
   - Routing priority: YouTube service -> extension fallback -> built-in fallback -> direct service
 - New Android method channel handler: `"downloadByStrategy"` -> `Gobackend.downloadByStrategy(...)`
 - SpotFetch metadata fallback integration for Spotify-blocked regions
-  - New backend client for `spotify.afkarxyz.fun/api`
+  - New backend client for `sp.afkarxyz.qzz.io/api`
   - Automatic fallback in Spotify metadata fetch path when primary source fails
 - Lyrics extraction now supports MP3 (ID3v2) and Opus/OGG (Vorbis comments) in addition to FLAC
   - Includes heuristic detection of lyrics stored in Comment fields
@@ -349,7 +349,7 @@ Thank you for your understanding and continued support. This decision was made t
 - Legacy Dart bridge methods (`downloadTrack`, `downloadWithFallback`, `downloadWithExtensions`, `downloadFromYouTube`) are now thin wrappers and marked `@Deprecated`
 - Qobuz downloader updated to latest Jumo API contract (`/get` endpoint, required headers)
 - Amazon download flow now returns `decryption_key` from Go and performs decryption in Flutter (local file + SAF paths)
-- Amazon now uses the new `amazon.afkarxyz.fun` API flow (ASIN-based track endpoint + legacy fallback) with encrypted stream support
+- Amazon now uses the new `amzn.afkarxyz.qzz.io` API flow (ASIN-based track endpoint + legacy fallback) with encrypted stream support
 - Amazon ASIN extraction rewritten with robust URL/query-param parsing and regex fallback
 - Amazon provider re-enabled in download service picker and download settings (alongside Tidal, Qobuz, and YouTube picker flow)
 - Track Metadata cover UI now refreshes from the embedded file after Edit Metadata/Re-enrich, so the displayed art matches actual file tags

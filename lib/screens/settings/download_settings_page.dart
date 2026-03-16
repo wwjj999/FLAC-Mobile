@@ -1310,8 +1310,27 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
               subtitle: Text(context.l10n.setupChooseFromFilesSubtitle),
               onTap: () async {
                 Navigator.pop(ctx);
+                if (Platform.isIOS) {
+                  await Future<void>.delayed(const Duration(milliseconds: 250));
+                }
+
                 // Note: iOS requires folder to have at least one file to be selectable
-                final result = await FilePicker.platform.getDirectoryPath();
+                String? result;
+                try {
+                  result = await FilePicker.platform.getDirectoryPath();
+                } catch (e) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to open folder picker: $e'),
+                        backgroundColor: Theme.of(ctx).colorScheme.error,
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  }
+                  return;
+                }
+
                 if (result != null) {
                   // iOS: Validate the selected path is writable (not iCloud or container root)
                   if (Platform.isIOS) {
