@@ -2674,10 +2674,6 @@ class AppLocalizationsNl extends AppLocalizations {
       'You have unsaved changes that will be lost.';
 
   @override
-  String get lyricsProviderSpotifyApiDesc =>
-      'Spotify-sourced synced lyrics via community API';
-
-  @override
   String get lyricsProviderLrclibDesc => 'Open-source synced lyrics database';
 
   @override

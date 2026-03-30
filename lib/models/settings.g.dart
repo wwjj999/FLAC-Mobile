@@ -32,11 +32,6 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   historyViewMode: json['historyViewMode'] as String? ?? 'grid',
   historyFilterMode: json['historyFilterMode'] as String? ?? 'all',
   askQualityBeforeDownload: json['askQualityBeforeDownload'] as bool? ?? true,
-  spotifyClientId: json['spotifyClientId'] as String? ?? '',
-  spotifyClientSecret: json['spotifyClientSecret'] as String? ?? '',
-  useCustomSpotifyCredentials:
-      json['useCustomSpotifyCredentials'] as bool? ?? false,
-  metadataSource: json['metadataSource'] as String? ?? 'deezer',
   enableLogging: json['enableLogging'] as bool? ?? false,
   useExtensionProviders: json['useExtensionProviders'] as bool? ?? true,
   searchProvider: json['searchProvider'] as String?,
@@ -65,14 +60,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
       (json['lyricsProviders'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList() ??
-      const [
-        'lrclib',
-        'spotify_api',
-        'musixmatch',
-        'netease',
-        'apple_music',
-        'qqmusic',
-      ],
+      const ['lrclib', 'musixmatch', 'netease', 'apple_music', 'qqmusic'],
   lyricsIncludeTranslationNetease:
       json['lyricsIncludeTranslationNetease'] as bool? ?? false,
   lyricsIncludeRomanizationNetease:
@@ -111,10 +99,6 @@ Map<String, dynamic> _$AppSettingsToJson(
   'historyViewMode': instance.historyViewMode,
   'historyFilterMode': instance.historyFilterMode,
   'askQualityBeforeDownload': instance.askQualityBeforeDownload,
-  'spotifyClientId': instance.spotifyClientId,
-  'spotifyClientSecret': instance.spotifyClientSecret,
-  'useCustomSpotifyCredentials': instance.useCustomSpotifyCredentials,
-  'metadataSource': instance.metadataSource,
   'enableLogging': instance.enableLogging,
   'useExtensionProviders': instance.useExtensionProviders,
   'searchProvider': instance.searchProvider,

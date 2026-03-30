@@ -30,10 +30,6 @@ class AppSettings {
   final String historyViewMode;
   final String historyFilterMode;
   final bool askQualityBeforeDownload;
-  final String spotifyClientId;
-  final String spotifyClientSecret;
-  final bool useCustomSpotifyCredentials;
-  final String metadataSource;
   final bool enableLogging;
   final bool useExtensionProviders;
   final String? searchProvider;
@@ -107,10 +103,6 @@ class AppSettings {
     this.historyViewMode = 'grid',
     this.historyFilterMode = 'all',
     this.askQualityBeforeDownload = true,
-    this.spotifyClientId = '',
-    this.spotifyClientSecret = '',
-    this.useCustomSpotifyCredentials = false,
-    this.metadataSource = 'deezer',
     this.enableLogging = false,
     this.useExtensionProviders = true,
     this.searchProvider,
@@ -134,7 +126,6 @@ class AppSettings {
     this.hasCompletedTutorial = false,
     this.lyricsProviders = const [
       'lrclib',
-      'spotify_api',
       'musixmatch',
       'netease',
       'apple_music',
@@ -172,10 +163,6 @@ class AppSettings {
     String? historyViewMode,
     String? historyFilterMode,
     bool? askQualityBeforeDownload,
-    String? spotifyClientId,
-    String? spotifyClientSecret,
-    bool? useCustomSpotifyCredentials,
-    String? metadataSource,
     bool? enableLogging,
     bool? useExtensionProviders,
     String? searchProvider,
@@ -235,11 +222,6 @@ class AppSettings {
       historyFilterMode: historyFilterMode ?? this.historyFilterMode,
       askQualityBeforeDownload:
           askQualityBeforeDownload ?? this.askQualityBeforeDownload,
-      spotifyClientId: spotifyClientId ?? this.spotifyClientId,
-      spotifyClientSecret: spotifyClientSecret ?? this.spotifyClientSecret,
-      useCustomSpotifyCredentials:
-          useCustomSpotifyCredentials ?? this.useCustomSpotifyCredentials,
-      metadataSource: metadataSource ?? this.metadataSource,
       enableLogging: enableLogging ?? this.enableLogging,
       useExtensionProviders:
           useExtensionProviders ?? this.useExtensionProviders,

@@ -70,15 +70,7 @@ class OptionsSettingsPage extends ConsumerWidget {
               ),
             ),
             SliverToBoxAdapter(
-              child: SettingsGroup(
-                children: [
-                  _MetadataSourceSelector(
-                    onChanged: (v) => ref
-                        .read(settingsProvider.notifier)
-                        .setMetadataSource(v),
-                  ),
-                ],
-              ),
+              child: SettingsGroup(children: [const _MetadataSourceSelector()]),
             ),
 
             SliverToBoxAdapter(
@@ -706,8 +698,7 @@ class _ChannelChip extends StatelessWidget {
 }
 
 class _MetadataSourceSelector extends ConsumerWidget {
-  final ValueChanged<String> onChanged;
-  const _MetadataSourceSelector({required this.onChanged});
+  const _MetadataSourceSelector();
 
   static const _builtInProviders = {'tidal': 'Tidal', 'qobuz': 'Qobuz'};
 
@@ -770,7 +761,6 @@ class _MetadataSourceSelector extends ConsumerWidget {
                   if (hasNonDefaultProvider) {
                     ref.read(settingsProvider.notifier).setSearchProvider(null);
                   }
-                  onChanged('deezer');
                 },
               ),
               const SizedBox(width: 8),
@@ -782,7 +772,6 @@ class _MetadataSourceSelector extends ConsumerWidget {
                   ref
                       .read(settingsProvider.notifier)
                       .setSearchProvider('tidal');
-                  onChanged('tidal');
                 },
               ),
               const SizedBox(width: 8),
@@ -794,7 +783,6 @@ class _MetadataSourceSelector extends ConsumerWidget {
                   ref
                       .read(settingsProvider.notifier)
                       .setSearchProvider('qobuz');
-                  onChanged('qobuz');
                 },
               ),
             ],

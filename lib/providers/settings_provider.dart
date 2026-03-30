@@ -12,7 +12,7 @@ import 'package:spotiflac_android/utils/logger.dart';
 
 const _settingsKey = 'app_settings';
 const _migrationVersionKey = 'settings_migration_version';
-const _currentMigrationVersion = 7;
+const _currentMigrationVersion = 9;
 const _spotifyClientSecretKey = 'spotify_client_secret';
 final _log = AppLogger('SettingsProvider');
 
@@ -44,7 +44,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       await _normalizeSongLinkRegionIfNeeded();
     }
 
-    await _retireBuiltInSpotifyProvider();
+    await _cleanupRetiredSpotifySettings();
 
     LogBuffer.loggingEnabled = state.enableLogging;
 
@@ -86,13 +86,6 @@ class SettingsNotifier extends Notifier<AppSettings> {
   Future<void> _runMigrations(SharedPreferences prefs) async {
     final lastMigration = prefs.getInt(_migrationVersionKey) ?? 0;
 
-    if (lastMigration < 1) {
-      if (!state.useCustomSpotifyCredentials) {
-        state = state.copyWith(metadataSource: 'deezer');
-        await _saveSettings();
-      }
-    }
-
     if (lastMigration < _currentMigrationVersion) {
       if (state.downloadTreeUri.isNotEmpty && state.storageMode != 'saf') {
         state = state.copyWith(storageMode: 'saf');
@@ -101,26 +94,20 @@ class SettingsNotifier extends Notifier<AppSettings> {
       if (!state.isFirstLaunch && !state.hasCompletedTutorial) {
         state = state.copyWith(hasCompletedTutorial: true);
       }
-      // Migration 4: include Spotify Lyrics API in provider order for existing users
-      if (!state.lyricsProviders.contains('spotify_api')) {
-        final updatedProviders = List<String>.from(state.lyricsProviders);
-        final lrclibIndex = updatedProviders.indexOf('lrclib');
-        if (lrclibIndex >= 0) {
-          updatedProviders.insert(lrclibIndex + 1, 'spotify_api');
-        } else {
-          updatedProviders.add('spotify_api');
-        }
-        state = state.copyWith(lyricsProviders: updatedProviders);
-      }
-      if (state.metadataSource != 'deezer' ||
-          state.spotifyClientId.isNotEmpty ||
-          state.spotifyClientSecret.isNotEmpty ||
-          state.useCustomSpotifyCredentials) {
+      if (state.lyricsProviders.contains('spotify_api')) {
+        final updatedProviders = state.lyricsProviders
+            .where((provider) => provider != 'spotify_api')
+            .toList();
         state = state.copyWith(
-          metadataSource: 'deezer',
-          spotifyClientId: '',
-          spotifyClientSecret: '',
-          useCustomSpotifyCredentials: false,
+          lyricsProviders: updatedProviders.isEmpty
+              ? const [
+                  'lrclib',
+                  'musixmatch',
+                  'netease',
+                  'apple_music',
+                  'qqmusic',
+                ]
+              : updatedProviders,
         );
       }
       state = state.copyWith(lastSeenVersion: AppInfo.version);
@@ -134,8 +121,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   }
 
   Future<void> _saveSettings() async {
-    final settingsToSave = state.copyWith(spotifyClientSecret: '');
-    _pendingSettingsJson = jsonEncode(settingsToSave.toJson());
+    _pendingSettingsJson = jsonEncode(state.toJson());
 
     if (_isSavingSettings) {
       _saveQueued = true;
@@ -186,28 +172,13 @@ class SettingsNotifier extends Notifier<AppSettings> {
     await _saveSettings();
   }
 
-  Future<void> _retireBuiltInSpotifyProvider() async {
+  Future<void> _cleanupRetiredSpotifySettings() async {
     final storedSecret = await _secureStorage.read(
       key: _spotifyClientSecretKey,
     );
     if (storedSecret != null && storedSecret.isNotEmpty) {
       await _secureStorage.delete(key: _spotifyClientSecretKey);
     }
-
-    if (state.metadataSource == 'deezer' &&
-        state.spotifyClientId.isEmpty &&
-        state.spotifyClientSecret.isEmpty &&
-        !state.useCustomSpotifyCredentials) {
-      return;
-    }
-
-    state = state.copyWith(
-      metadataSource: 'deezer',
-      spotifyClientId: '',
-      spotifyClientSecret: '',
-      useCustomSpotifyCredentials: false,
-    );
-    await _saveSettings();
   }
 
   void setDefaultService(String service) {
@@ -377,11 +348,6 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
   void setAskQualityBeforeDownload(bool enabled) {
     state = state.copyWith(askQualityBeforeDownload: enabled);
-    _saveSettings();
-  }
-
-  void setMetadataSource(String source) {
-    state = state.copyWith(metadataSource: source);
     _saveSettings();
   }
 

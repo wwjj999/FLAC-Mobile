@@ -426,7 +426,6 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
             );
       }
 
-      ref.read(settingsProvider.notifier).setMetadataSource('deezer');
       ref.read(settingsProvider.notifier).setFirstLaunchComplete();
 
       if (mounted) context.go('/tutorial');

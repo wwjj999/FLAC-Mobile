@@ -14,14 +14,7 @@ import (
 	"strings"
 )
 
-const deezerYoinkifyURL = "https://yoinkify.lol/api/download"
 const deezerMusicDLURL = "https://www.musicdl.me/api/download"
-
-type YoinkifyRequest struct {
-	URL         string `json:"url"`
-	Format      string `json:"format"`
-	GenreSource string `json:"genreSource"`
-}
 
 type DeezerDownloadResult struct {
 	FilePath    string
@@ -35,41 +28,6 @@ type DeezerDownloadResult struct {
 	DiscNumber  int
 	ISRC        string
 	LyricsLRC   string
-}
-
-func resolveSpotifyURLForYoinkify(req DownloadRequest) (string, error) {
-	rawSpotify := strings.TrimSpace(req.SpotifyID)
-	if rawSpotify != "" {
-		if isLikelySpotifyTrackID(rawSpotify) {
-			return fmt.Sprintf("https://open.spotify.com/track/%s", rawSpotify), nil
-		}
-
-		if parsed, err := parseSpotifyURI(rawSpotify); err == nil && parsed.Type == "track" && parsed.ID != "" {
-			return fmt.Sprintf("https://open.spotify.com/track/%s", parsed.ID), nil
-		}
-	}
-
-	deezerID := strings.TrimSpace(req.DeezerID)
-	if deezerID == "" {
-		if prefixed, found := strings.CutPrefix(rawSpotify, "deezer:"); found {
-			deezerID = strings.TrimSpace(prefixed)
-		}
-	}
-
-	if deezerID != "" {
-		songlink := NewSongLinkClient()
-		spotifyID, err := songlink.GetSpotifyIDFromDeezer(deezerID)
-		if err != nil {
-			return "", fmt.Errorf("failed to map deezer:%s to Spotify ID: %w", deezerID, err)
-		}
-		spotifyID = strings.TrimSpace(spotifyID)
-		if spotifyID == "" {
-			return "", fmt.Errorf("SongLink returned empty Spotify ID for deezer:%s", deezerID)
-		}
-		return fmt.Sprintf("https://open.spotify.com/track/%s", spotifyID), nil
-	}
-
-	return "", fmt.Errorf("missing Spotify track ID for Deezer Yoinkify")
 }
 
 func isLikelySpotifyTrackID(value string) bool {
@@ -86,113 +44,6 @@ func isLikelySpotifyTrackID(value string) bool {
 		}
 	}
 	return true
-}
-
-func (c *DeezerClient) DownloadFromYoinkify(spotifyURL, outputPath string, outputFD int, itemID string) error {
-	payload := YoinkifyRequest{
-		URL:         spotifyURL,
-		Format:      "flac",
-		GenreSource: "spotify",
-	}
-
-	jsonData, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("failed to encode Yoinkify request: %w", err)
-	}
-
-	ctx := context.Background()
-	if itemID != "" {
-		StartItemProgress(itemID)
-		defer CompleteItemProgress(itemID)
-		ctx = initDownloadCancel(itemID)
-		defer clearDownloadCancel(itemID)
-	}
-
-	if isDownloadCancelled(itemID) {
-		return ErrDownloadCancelled
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, deezerYoinkifyURL, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return fmt.Errorf("failed to create Yoinkify request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("User-Agent", getRandomUserAgent())
-
-	resp, err := GetDownloadClient().Do(req)
-	if err != nil {
-		if isDownloadCancelled(itemID) {
-			return ErrDownloadCancelled
-		}
-		return fmt.Errorf("failed to call Yoinkify: %w", err)
-	}
-	defer resp.Body.Close()
-
-	contentType := strings.ToLower(strings.TrimSpace(resp.Header.Get("Content-Type")))
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		bodyText := strings.TrimSpace(string(bodyBytes))
-		if bodyText != "" {
-			return fmt.Errorf("Yoinkify returned status %d: %s", resp.StatusCode, bodyText)
-		}
-		return fmt.Errorf("Yoinkify returned status %d", resp.StatusCode)
-	}
-
-	if strings.Contains(contentType, "application/json") {
-		bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		bodyText := strings.TrimSpace(string(bodyBytes))
-		if bodyText == "" {
-			bodyText = "empty JSON payload"
-		}
-		return fmt.Errorf("Yoinkify returned JSON instead of audio: %s", bodyText)
-	}
-
-	expectedSize := resp.ContentLength
-	if expectedSize > 0 && itemID != "" {
-		SetItemBytesTotal(itemID, expectedSize)
-	}
-
-	out, err := openOutputForWrite(outputPath, outputFD)
-	if err != nil {
-		return err
-	}
-
-	bufWriter := bufio.NewWriterSize(out, 256*1024)
-	var written int64
-	if itemID != "" {
-		pw := NewItemProgressWriter(bufWriter, itemID)
-		written, err = io.Copy(pw, resp.Body)
-	} else {
-		written, err = io.Copy(bufWriter, resp.Body)
-	}
-
-	flushErr := bufWriter.Flush()
-	closeErr := out.Close()
-
-	if err != nil {
-		cleanupOutputOnError(outputPath, outputFD)
-		if isDownloadCancelled(itemID) {
-			return ErrDownloadCancelled
-		}
-		return fmt.Errorf("download interrupted: %w", err)
-	}
-	if flushErr != nil {
-		cleanupOutputOnError(outputPath, outputFD)
-		return fmt.Errorf("failed to flush output: %w", flushErr)
-	}
-	if closeErr != nil {
-		cleanupOutputOnError(outputPath, outputFD)
-		return fmt.Errorf("failed to close output: %w", closeErr)
-	}
-
-	if expectedSize > 0 && written != expectedSize {
-		cleanupOutputOnError(outputPath, outputFD)
-		return fmt.Errorf("incomplete download: expected %d bytes, got %d bytes", expectedSize, written)
-	}
-
-	GoLog("[Deezer] Downloaded via Yoinkify: %.2f MB\n", float64(written)/(1024*1024))
-	return nil
 }
 
 func resolveDeezerTrackURL(req DownloadRequest) (string, error) {
@@ -479,41 +330,29 @@ func downloadFromDeezer(req DownloadRequest) (DeezerDownloadResult, error) {
 		)
 	}()
 
-	// Try MusicDL first (better quality), fallback to Yoinkify
-	var downloadErr error
 	deezerTrackURL, deezerURLErr := resolveDeezerTrackURL(req)
-	if deezerURLErr == nil {
-		GoLog("[Deezer] Trying MusicDL for: %s\n", deezerTrackURL)
-		downloadErr = deezerClient.DownloadFromMusicDL(deezerTrackURL, outputPath, req.OutputFD, req.ItemID)
-		if downloadErr != nil {
-			if errors.Is(downloadErr, ErrDownloadCancelled) {
-				return DeezerDownloadResult{}, ErrDownloadCancelled
-			}
-			GoLog("[Deezer] MusicDL failed: %v, falling back to Yoinkify\n", downloadErr)
-		}
-	} else {
-		GoLog("[Deezer] Could not resolve Deezer URL: %v, using Yoinkify directly\n", deezerURLErr)
+	if deezerURLErr != nil {
+		return DeezerDownloadResult{}, fmt.Errorf(
+			"deezer download failed: could not resolve Deezer URL: %w",
+			deezerURLErr,
+		)
 	}
 
-	if downloadErr != nil || deezerURLErr != nil {
-		spotifyURL, err := resolveSpotifyURLForYoinkify(req)
-		if err != nil {
-			if deezerURLErr != nil {
-				return DeezerDownloadResult{}, fmt.Errorf(
-					"deezer download failed: direct Deezer resolution error: %v; Yoinkify fallback error: %w",
-					deezerURLErr,
-					err,
-				)
-			}
-			return DeezerDownloadResult{}, err
+	GoLog("[Deezer] Trying MusicDL for: %s\n", deezerTrackURL)
+	downloadErr := deezerClient.DownloadFromMusicDL(
+		deezerTrackURL,
+		outputPath,
+		req.OutputFD,
+		req.ItemID,
+	)
+	if downloadErr != nil {
+		if errors.Is(downloadErr, ErrDownloadCancelled) {
+			return DeezerDownloadResult{}, ErrDownloadCancelled
 		}
-		downloadErr = deezerClient.DownloadFromYoinkify(spotifyURL, outputPath, req.OutputFD, req.ItemID)
-		if downloadErr != nil {
-			if errors.Is(downloadErr, ErrDownloadCancelled) {
-				return DeezerDownloadResult{}, ErrDownloadCancelled
-			}
-			return DeezerDownloadResult{}, fmt.Errorf("deezer download failed (MusicDL + Yoinkify): %w", downloadErr)
-		}
+		return DeezerDownloadResult{}, fmt.Errorf(
+			"deezer download failed via MusicDL: %w",
+			downloadErr,
+		)
 	}
 
 	<-parallelDone

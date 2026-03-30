@@ -4647,12 +4647,6 @@ abstract class AppLocalizations {
   /// **'You have unsaved changes that will be lost.'**
   String get lyricsProvidersDiscardContent;
 
-  /// Description for Spotify Lyrics API provider
-  ///
-  /// In en, this message translates to:
-  /// **'Spotify-sourced synced lyrics via community API'**
-  String get lyricsProviderSpotifyApiDesc;
-
   /// Description for LRCLIB provider
   ///
   /// In en, this message translates to:

@@ -17,7 +17,6 @@ class _LyricsProviderPriorityPageState
     extends ConsumerState<LyricsProviderPriorityPage> {
   static const _allProviderIds = [
     'lrclib',
-    'spotify_api',
     'netease',
     'musixmatch',
     'apple_music',
@@ -133,9 +132,7 @@ class _LyricsProviderPriorityPageState
   void _disableProvider(String id) {
     if (_enabledProviders.length <= 1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.lyricsProvidersAtLeastOne),
-        ),
+        SnackBar(content: Text(context.l10n.lyricsProvidersAtLeastOne)),
       );
       return;
     }
@@ -184,12 +181,6 @@ class _LyricsProviderPriorityPageState
     BuildContext context,
   ) {
     switch (id) {
-      case 'spotify_api':
-        return _LyricsProviderInfo(
-          name: 'Spotify Lyrics API',
-          description: context.l10n.lyricsProviderSpotifyApiDesc,
-          icon: Icons.music_note_outlined,
-        );
       case 'lrclib':
         return _LyricsProviderInfo(
           name: 'LRCLIB',

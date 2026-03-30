@@ -662,9 +662,8 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
         if (settings.searchProvider == extensionId) {
           ref.read(settingsProvider.notifier).setSearchProvider(null);
-          ref.read(settingsProvider.notifier).setMetadataSource('deezer');
           _log.d(
-            'Cleared search provider and reset to Deezer because extension $extensionId was disabled',
+            'Cleared search provider because extension $extensionId was disabled',
           );
         }
 

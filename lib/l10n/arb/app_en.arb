@@ -3551,10 +3551,6 @@
   "@lyricsProvidersDiscardContent": {
     "description": "Body text of the discard-changes dialog on lyrics provider page"
   },
-  "lyricsProviderSpotifyApiDesc": "Spotify-sourced synced lyrics via community API",
-  "@lyricsProviderSpotifyApiDesc": {
-    "description": "Description for Spotify Lyrics API provider"
-  },
   "lyricsProviderLrclibDesc": "Open-source synced lyrics database",
   "@lyricsProviderLrclibDesc": {
     "description": "Description for LRCLIB provider"
