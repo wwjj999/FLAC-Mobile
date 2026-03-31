@@ -77,6 +77,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get downloadFilenameFormat => 'Формат имени файла';
 
   @override
+  String get downloadSingleFilenameFormat => 'Single Filename Format';
+
+  @override
+  String get downloadSingleFilenameFormatDescription =>
+      'Filename pattern for singles and EPs. Uses the same tags as the album format.';
+
+  @override
   String get downloadFolderOrganization => 'Организация папок';
 
   @override

@@ -77,6 +77,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get downloadFilenameFormat => 'Format Nama File';
 
   @override
+  String get downloadSingleFilenameFormat => 'Single Filename Format';
+
+  @override
+  String get downloadSingleFilenameFormatDescription =>
+      'Filename pattern for singles and EPs. Uses the same tags as the album format.';
+
+  @override
   String get downloadFolderOrganization => 'Organisasi Folder';
 
   @override

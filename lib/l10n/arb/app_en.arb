@@ -89,6 +89,14 @@
   "@downloadFilenameFormat": {
     "description": "Setting for output filename pattern"
   },
+  "downloadSingleFilenameFormat": "Single Filename Format",
+  "@downloadSingleFilenameFormat": {
+    "description": "Setting for output filename pattern for singles/EPs"
+  },
+  "downloadSingleFilenameFormatDescription": "Filename pattern for singles and EPs. Uses the same tags as the album format.",
+  "@downloadSingleFilenameFormatDescription": {
+    "description": "Subtitle description for single filename format setting"
+  },
   "downloadFolderOrganization": "Folder Organization",
   "@downloadFolderOrganization": {
     "description": "Setting for folder structure"

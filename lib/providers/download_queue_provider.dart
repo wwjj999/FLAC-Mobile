@@ -1104,6 +1104,7 @@ class DownloadQueueState {
   final bool isPaused;
   final String outputDir;
   final String filenameFormat;
+  final String singleFilenameFormat;
   final String audioQuality;
   final bool autoFallback;
   final int concurrentDownloads;
@@ -1115,6 +1116,7 @@ class DownloadQueueState {
     this.isPaused = false,
     this.outputDir = '',
     this.filenameFormat = '{artist} - {title}',
+    this.singleFilenameFormat = '{title} - {artist}',
     this.audioQuality = 'LOSSLESS',
     this.autoFallback = true,
     this.concurrentDownloads = 1,
@@ -1127,6 +1129,7 @@ class DownloadQueueState {
     bool? isPaused,
     String? outputDir,
     String? filenameFormat,
+    String? singleFilenameFormat,
     String? audioQuality,
     bool? autoFallback,
     int? concurrentDownloads,
@@ -1140,6 +1143,7 @@ class DownloadQueueState {
       isPaused: isPaused ?? this.isPaused,
       outputDir: outputDir ?? this.outputDir,
       filenameFormat: filenameFormat ?? this.filenameFormat,
+      singleFilenameFormat: singleFilenameFormat ?? this.singleFilenameFormat,
       audioQuality: audioQuality ?? this.audioQuality,
       autoFallback: autoFallback ?? this.autoFallback,
       concurrentDownloads: concurrentDownloads ?? this.concurrentDownloads,
@@ -2256,6 +2260,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           ? settings.downloadDirectory
           : state.outputDir,
       filenameFormat: settings.filenameFormat,
+      singleFilenameFormat: settings.singleFilenameFormat,
       audioQuality: settings.audioQuality,
       autoFallback: settings.autoFallback,
       concurrentDownloads: concurrentDownloads,
@@ -3842,16 +3847,18 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       String? safBaseName;
       String safOutputExt = _determineOutputExt(quality, item.service);
       if (isSafMode) {
-        final baseName =
-            await PlatformBridge.buildFilename(state.filenameFormat, {
-              'title': trackToDownload.name,
-              'artist': trackToDownload.artistName,
-              'album': trackToDownload.albumName,
-              'track': trackToDownload.trackNumber ?? 0,
-              'disc': trackToDownload.discNumber ?? 0,
-              'year': _extractYear(trackToDownload.releaseDate) ?? '',
-              'date': trackToDownload.releaseDate ?? '',
-            });
+        final effectiveFormat = trackToDownload.isSingle
+            ? state.singleFilenameFormat
+            : state.filenameFormat;
+        final baseName = await PlatformBridge.buildFilename(effectiveFormat, {
+          'title': trackToDownload.name,
+          'artist': trackToDownload.artistName,
+          'album': trackToDownload.albumName,
+          'track': trackToDownload.trackNumber ?? 0,
+          'disc': trackToDownload.discNumber ?? 0,
+          'year': _extractYear(trackToDownload.releaseDate) ?? '',
+          'date': trackToDownload.releaseDate ?? '',
+        });
         final sanitized = await PlatformBridge.sanitizeFilename(baseName);
         safBaseName = sanitized;
         safFileName = '$sanitized$safOutputExt';
@@ -4214,7 +4221,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               ? (trackToDownload.coverUrl ?? '')
               : '',
           outputDir: outputDir,
-          filenameFormat: state.filenameFormat,
+          filenameFormat: trackToDownload.isSingle
+              ? state.singleFilenameFormat
+              : state.filenameFormat,
           quality: quality,
           embedMetadata: metadataEmbeddingEnabled,
           artistTagMode: settings.artistTagMode,

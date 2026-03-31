@@ -35,6 +35,7 @@ class AppSettings {
   final String? searchProvider;
   final String? homeFeedProvider;
   final bool separateSingles;
+  final String singleFilenameFormat;
   final String albumFolderStructure;
   final bool showExtensionStore;
   final String locale;
@@ -108,6 +109,7 @@ class AppSettings {
     this.searchProvider,
     this.homeFeedProvider,
     this.separateSingles = false,
+    this.singleFilenameFormat = '{title} - {artist}',
     this.albumFolderStructure = 'artist_album',
     this.showExtensionStore = true,
     this.locale = 'system',
@@ -170,6 +172,7 @@ class AppSettings {
     String? homeFeedProvider,
     bool clearHomeFeedProvider = false,
     bool? separateSingles,
+    String? singleFilenameFormat,
     String? albumFolderStructure,
     bool? showExtensionStore,
     String? locale,
@@ -232,6 +235,7 @@ class AppSettings {
           ? null
           : (homeFeedProvider ?? this.homeFeedProvider),
       separateSingles: separateSingles ?? this.separateSingles,
+      singleFilenameFormat: singleFilenameFormat ?? this.singleFilenameFormat,
       albumFolderStructure: albumFolderStructure ?? this.albumFolderStructure,
       showExtensionStore: showExtensionStore ?? this.showExtensionStore,
       locale: locale ?? this.locale,

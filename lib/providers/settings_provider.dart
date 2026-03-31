@@ -196,6 +196,11 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _saveSettings();
   }
 
+  void setSingleFilenameFormat(String format) {
+    state = state.copyWith(singleFilenameFormat: format);
+    _saveSettings();
+  }
+
   void setDownloadDirectory(String directory) {
     state = state.copyWith(downloadDirectory: directory);
     _saveSettings();

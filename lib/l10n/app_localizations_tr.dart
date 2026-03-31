@@ -77,6 +77,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get downloadFilenameFormat => 'Dosya adı formatı';
 
   @override
+  String get downloadSingleFilenameFormat => 'Single Filename Format';
+
+  @override
+  String get downloadSingleFilenameFormatDescription =>
+      'Filename pattern for singles and EPs. Uses the same tags as the album format.';
+
+  @override
   String get downloadFolderOrganization => 'Dosya Organizasyonu';
 
   @override

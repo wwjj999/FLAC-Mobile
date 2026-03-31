@@ -256,6 +256,18 @@ abstract class AppLocalizations {
   /// **'Filename Format'**
   String get downloadFilenameFormat;
 
+  /// Setting for output filename pattern for singles/EPs
+  ///
+  /// In en, this message translates to:
+  /// **'Single Filename Format'**
+  String get downloadSingleFilenameFormat;
+
+  /// Subtitle description for single filename format setting
+  ///
+  /// In en, this message translates to:
+  /// **'Filename pattern for singles and EPs. Uses the same tags as the album format.'**
+  String get downloadSingleFilenameFormatDescription;
+
   /// Title of the folder organization picker bottom sheet
   ///
   /// In en, this message translates to:

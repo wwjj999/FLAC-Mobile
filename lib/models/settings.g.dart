@@ -15,7 +15,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   downloadTreeUri: json['downloadTreeUri'] as String? ?? '',
   autoFallback: json['autoFallback'] as bool? ?? true,
   embedMetadata: json['embedMetadata'] as bool? ?? true,
-  artistTagMode: json['artistTagMode'] as String? ?? 'joined',
+  artistTagMode: json['artistTagMode'] as String? ?? artistTagModeJoined,
   embedLyrics: json['embedLyrics'] as bool? ?? true,
   maxQualityCover: json['maxQualityCover'] as bool? ?? true,
   isFirstLaunch: json['isFirstLaunch'] as bool? ?? true,
@@ -37,6 +37,8 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   searchProvider: json['searchProvider'] as String?,
   homeFeedProvider: json['homeFeedProvider'] as String?,
   separateSingles: json['separateSingles'] as bool? ?? false,
+  singleFilenameFormat:
+      json['singleFilenameFormat'] as String? ?? '{title} - {artist}',
   albumFolderStructure:
       json['albumFolderStructure'] as String? ?? 'artist_album',
   showExtensionStore: json['showExtensionStore'] as bool? ?? true,
@@ -104,6 +106,7 @@ Map<String, dynamic> _$AppSettingsToJson(
   'searchProvider': instance.searchProvider,
   'homeFeedProvider': instance.homeFeedProvider,
   'separateSingles': instance.separateSingles,
+  'singleFilenameFormat': instance.singleFilenameFormat,
   'albumFolderStructure': instance.albumFolderStructure,
   'showExtensionStore': instance.showExtensionStore,
   'locale': instance.locale,

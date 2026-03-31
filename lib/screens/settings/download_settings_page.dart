@@ -593,6 +593,22 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     ),
                   ),
                   SettingsItem(
+                    icon: Icons.music_note_outlined,
+                    title: context.l10n.downloadSingleFilenameFormat,
+                    subtitle: settings.singleFilenameFormat,
+                    onTap: () => _showFormatEditor(
+                      context,
+                      ref,
+                      settings.singleFilenameFormat,
+                      onSave: ref
+                          .read(settingsProvider.notifier)
+                          .setSingleFilenameFormat,
+                      title: context.l10n.downloadSingleFilenameFormat,
+                      description:
+                          context.l10n.downloadSingleFilenameFormatDescription,
+                    ),
+                  ),
+                  SettingsItem(
                     icon: Icons.folder_outlined,
                     title: context.l10n.downloadDirectory,
                     subtitle: settings.downloadDirectory.isEmpty
@@ -952,7 +968,14 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
     );
   }
 
-  void _showFormatEditor(BuildContext context, WidgetRef ref, String current) {
+  void _showFormatEditor(
+    BuildContext context,
+    WidgetRef ref,
+    String current, {
+    void Function(String)? onSave,
+    String? title,
+    String? description,
+  }) {
     final controller = TextEditingController(text: current);
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -1035,14 +1058,14 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                       ),
                     ),
                     Text(
-                      context.l10n.filenameFormat,
+                      title ?? context.l10n.filenameFormat,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      context.l10n.downloadFilenameDescription,
+                      description ?? context.l10n.downloadFilenameDescription,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -1149,9 +1172,12 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                           flex: 2,
                           child: FilledButton(
                             onPressed: () {
-                              ref
-                                  .read(settingsProvider.notifier)
-                                  .setFilenameFormat(controller.text);
+                              final save =
+                                  onSave ??
+                                  ref
+                                      .read(settingsProvider.notifier)
+                                      .setFilenameFormat;
+                              save(controller.text);
                               Navigator.pop(context);
                             },
                             style: FilledButton.styleFrom(
