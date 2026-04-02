@@ -20,6 +20,10 @@ func (e *JSExecutionError) Error() string {
 }
 
 func RunWithTimeout(vm *goja.Runtime, script string, timeout time.Duration) (goja.Value, error) {
+	if vm == nil {
+		return nil, fmt.Errorf("extension runtime unavailable")
+	}
+
 	if timeout <= 0 {
 		timeout = DefaultJSTimeout
 	}
@@ -69,6 +73,11 @@ func RunWithTimeout(vm *goja.Runtime, script string, timeout time.Duration) (goj
 
 		vm.Interrupt("execution timeout")
 
+		// MUST wait for the goroutine to finish before returning.
+		// The Goja VM is NOT thread-safe — if we return while the goroutine
+		// is still executing JS (e.g. blocked on an HTTP call), the next
+		// caller will access the VM concurrently and crash with a nil
+		// pointer dereference.
 		select {
 		case res := <-resultCh:
 			if res.err != nil {
@@ -78,7 +87,10 @@ func RunWithTimeout(vm *goja.Runtime, script string, timeout time.Duration) (goj
 				Message:   "execution timeout exceeded",
 				IsTimeout: true,
 			}
-		case <-time.After(1 * time.Second):
+		case <-time.After(60 * time.Second):
+			// Goroutine is truly stuck (e.g. HTTP read with no timeout).
+			// Log a warning — the VM should NOT be reused after this.
+			GoLog("[ExtensionRuntime] WARNING: JS goroutine did not exit within 60s after interrupt, VM may be unsafe\n")
 			return nil, &JSExecutionError{
 				Message:   "execution timeout exceeded (force)",
 				IsTimeout: true,
@@ -93,7 +105,9 @@ func RunWithTimeoutAndRecover(vm *goja.Runtime, script string, timeout time.Dura
 	result, err := RunWithTimeout(vm, script, timeout)
 
 	// Clear any interrupt state so VM can be reused
-	vm.ClearInterrupt()
+	if vm != nil {
+		vm.ClearInterrupt()
+	}
 
 	return result, err
 }

@@ -105,7 +105,7 @@ func (r *ExtensionRuntime) fetchPolyfill(call goja.FunctionCall) goja.Value {
 	responseObj.Set("status", resp.StatusCode)
 	responseObj.Set("statusText", http.StatusText(resp.StatusCode))
 	responseObj.Set("headers", respHeaders)
-	responseObj.Set("url", urlStr)
+	responseObj.Set("url", resp.Request.URL.String())
 
 	bodyString := string(body)
 

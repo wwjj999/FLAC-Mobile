@@ -118,6 +118,7 @@ func (r *ExtensionRuntime) httpGet(call goja.FunctionCall) goja.Value {
 		"statusCode": resp.StatusCode,
 		"status":     resp.StatusCode,
 		"ok":         resp.StatusCode >= 200 && resp.StatusCode < 300,
+		"url":        resp.Request.URL.String(),
 		"body":       string(body),
 		"headers":    respHeaders,
 	})
@@ -214,6 +215,7 @@ func (r *ExtensionRuntime) httpPost(call goja.FunctionCall) goja.Value {
 		"statusCode": resp.StatusCode,
 		"status":     resp.StatusCode,
 		"ok":         resp.StatusCode >= 200 && resp.StatusCode < 300,
+		"url":        resp.Request.URL.String(),
 		"body":       string(body),
 		"headers":    respHeaders,
 	})
@@ -322,6 +324,7 @@ func (r *ExtensionRuntime) httpRequest(call goja.FunctionCall) goja.Value {
 		"statusCode": resp.StatusCode,
 		"status":     resp.StatusCode,
 		"ok":         resp.StatusCode >= 200 && resp.StatusCode < 300,
+		"url":        resp.Request.URL.String(),
 		"body":       string(body),
 		"headers":    respHeaders,
 	})
@@ -446,6 +449,7 @@ func (r *ExtensionRuntime) httpMethodShortcut(method string, call goja.FunctionC
 		"statusCode": resp.StatusCode,
 		"status":     resp.StatusCode,
 		"ok":         resp.StatusCode >= 200 && resp.StatusCode < 300,
+		"url":        resp.Request.URL.String(),
 		"body":       string(body),
 		"headers":    respHeaders,
 	})

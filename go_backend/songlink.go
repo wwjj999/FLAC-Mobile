@@ -164,9 +164,9 @@ func (s *SongLinkClient) doResolveRequest(payload []byte) (map[string]songLinkPl
 	}
 
 	var resolveResp struct {
-		Success  bool              `json:"success"`
-		ISRC     string            `json:"isrc"`
-		SongUrls map[string]string `json:"songUrls"`
+		Success  bool                           `json:"success"`
+		ISRC     string                         `json:"isrc"`
+		SongUrls map[string]json.RawMessage     `json:"songUrls"`
 	}
 	if err := json.Unmarshal(body, &resolveResp); err != nil {
 		return nil, fmt.Errorf("failed to decode resolve response: %w", err)
@@ -189,8 +189,12 @@ func (s *SongLinkClient) doResolveRequest(payload []byte) (map[string]songLinkPl
 
 	links := make(map[string]songLinkPlatformLink)
 	for resolveKey, platformKey := range keyMap {
-		if u, ok := resolveResp.SongUrls[resolveKey]; ok && strings.TrimSpace(u) != "" {
-			links[platformKey] = songLinkPlatformLink{URL: strings.TrimSpace(u)}
+		rawValue, ok := resolveResp.SongUrls[resolveKey]
+		if !ok {
+			continue
+		}
+		if u := extractResolveURLValue(rawValue); u != "" {
+			links[platformKey] = songLinkPlatformLink{URL: u}
 		}
 	}
 
@@ -199,6 +203,29 @@ func (s *SongLinkClient) doResolveRequest(payload []byte) (map[string]songLinkPl
 	}
 
 	return links, nil
+}
+
+func extractResolveURLValue(raw json.RawMessage) string {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
+		return ""
+	}
+
+	var direct string
+	if err := json.Unmarshal(trimmed, &direct); err == nil {
+		return strings.TrimSpace(direct)
+	}
+
+	var list []string
+	if err := json.Unmarshal(trimmed, &list); err == nil {
+		for _, candidate := range list {
+			if cleaned := strings.TrimSpace(candidate); cleaned != "" {
+				return cleaned
+			}
+		}
+	}
+
+	return ""
 }
 
 // songLinkByTargetURL calls the SongLink API with a target URL (for non-Spotify URLs).

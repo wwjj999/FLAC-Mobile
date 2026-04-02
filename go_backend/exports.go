@@ -3212,8 +3212,15 @@ func GetPlaylistWithExtensionJSON(extensionID, playlistID string) (string, error
 	if !ext.Manifest.IsMetadataProvider() {
 		return "", fmt.Errorf("extension '%s' is not a metadata provider", extensionID)
 	}
+	if !ext.Enabled {
+		return "", fmt.Errorf("extension '%s' is disabled", extensionID)
+	}
 
-	provider := NewExtensionProviderWrapper(ext)
+	vm, err := ext.lockReadyVM()
+	if err != nil {
+		return "", err
+	}
+	defer ext.VMMu.Unlock()
 
 	script := fmt.Sprintf(`
 		(function() {
@@ -3227,7 +3234,7 @@ func GetPlaylistWithExtensionJSON(extensionID, playlistID string) (string, error
 		})()
 	`, playlistID, playlistID)
 
-	result, err := RunWithTimeoutAndRecover(provider.vm, script, DefaultJSTimeout)
+	result, err := RunWithTimeoutAndRecover(vm, script, DefaultJSTimeout)
 	if err != nil {
 		return "", fmt.Errorf("getPlaylist failed: %w", err)
 	}

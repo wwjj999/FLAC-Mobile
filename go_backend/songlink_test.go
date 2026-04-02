@@ -114,6 +114,47 @@ func TestCheckTrackAvailabilityFromSpotifyResolveAPIFailure(t *testing.T) {
 	}
 }
 
+func TestCheckTrackAvailabilityFromSpotifyViaResolveAPIMixedSongURLShapes(t *testing.T) {
+	origRetryConfig := songLinkRetryConfig
+	defer func() { songLinkRetryConfig = origRetryConfig }()
+
+	client := &SongLinkClient{
+		client: &http.Client{
+			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				if req.URL.Host == "api.zarz.moe" && req.URL.Path == "/v1/resolve" && req.Method == "POST" {
+					body := `{"success":true,"isrc":"TCAHA2367688","songUrls":{"Spotify":"https://open.spotify.com/track/5glgyj6zH0irbNGfukHacv","Deezer":"https://www.deezer.com/track/2248583177","Tidal":"https://tidal.com/browse/track/290565315","AppleMusic":"https://geo.music.apple.com/us/album/example?i=1","YouTubeMusic":null,"YouTube":"https://www.youtube.com/watch?v=wD_e59XUNdQ","AmazonMusic":"https://music.amazon.com/tracks/B0C35TG38Y/?ref=dm_ff_amazonmusic_3p","Beatport":null,"BeatSource":null,"SoundCloud":null,"Qobuz":null,"Other":[]}}`
+					return &http.Response{
+						StatusCode: 200,
+						Header:     make(http.Header),
+						Body:       io.NopCloser(strings.NewReader(body)),
+						Request:    req,
+					}, nil
+				}
+				t.Fatalf("unexpected request: %s %s", req.Method, req.URL.String())
+				return nil, nil
+			}),
+		},
+	}
+
+	availability, err := client.CheckTrackAvailability("5glgyj6zH0irbNGfukHacv", "")
+	if err != nil {
+		t.Fatalf("CheckTrackAvailability() error = %v", err)
+	}
+
+	if availability.SpotifyID != "5glgyj6zH0irbNGfukHacv" {
+		t.Fatalf("SpotifyID = %q, want %q", availability.SpotifyID, "5glgyj6zH0irbNGfukHacv")
+	}
+	if !availability.Deezer || availability.DeezerID != "2248583177" {
+		t.Fatalf("Deezer availability = %+v, want DeezerID 2248583177", availability)
+	}
+	if !availability.Tidal || availability.TidalID != "290565315" {
+		t.Fatalf("Tidal availability = %+v, want TidalID 290565315", availability)
+	}
+	if availability.Qobuz {
+		t.Fatalf("Qobuz should remain false when resolve response contains null, got %+v", availability)
+	}
+}
+
 func TestCheckAvailabilityFromDeezerUsesSongLink(t *testing.T) {
 	origRetryConfig := songLinkRetryConfig
 	songLinkRetryConfig = func() RetryConfig {

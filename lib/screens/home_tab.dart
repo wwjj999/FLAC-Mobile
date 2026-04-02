@@ -757,7 +757,8 @@ class _HomeTabState extends ConsumerState<HomeTab>
           trackName: track.name,
           artistName: track.artistName,
           coverUrl: track.coverUrl,
-          recommendedService: trackState.searchSource,
+          recommendedService:
+              trackState.searchExtensionId ?? trackState.searchSource,
           onSelect: (quality, service) {
             ref
                 .read(downloadQueueProvider.notifier)
