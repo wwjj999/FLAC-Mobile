@@ -27,6 +27,37 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 
 flutter_ios_podfile_setup
 
+def patch_device_info_plus_vision_selector
+  plugin_file = File.join(
+    __dir__,
+    '.symlinks',
+    'plugins',
+    'device_info_plus',
+    'ios',
+    'device_info_plus',
+    'Sources',
+    'device_info_plus',
+    'FPPDeviceInfoPlusPlugin.m'
+  )
+  return unless File.exist?(plugin_file)
+
+  source = File.read(plugin_file)
+  return if source.include?('FPPDeviceInfoPlusVisionCompat')
+
+  marker = "#import <sys/utsname.h>\n"
+  declaration = <<~OBJC
+
+    // Older Xcode SDKs do not declare this selector yet, but device_info_plus
+    // only calls it behind an availability check.
+    @interface NSProcessInfo (FPPDeviceInfoPlusVisionCompat)
+    - (BOOL)isiOSAppOnVision;
+    @end
+  OBJC
+
+  patched = source.sub(marker, "#{marker}#{declaration}\n")
+  File.write(plugin_file, patched) if patched != source
+end
+
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
@@ -42,6 +73,8 @@ target 'RunnerTests' do
 end
 
 post_install do |installer|
+  patch_device_info_plus_vision_selector
+
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     target.build_configurations.each do |config|
