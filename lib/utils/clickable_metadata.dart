@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
+import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/screens/artist_screen.dart';
 import 'package:spotiflac_android/screens/album_screen.dart';
 import 'package:spotiflac_android/screens/home_tab.dart'
@@ -216,9 +217,8 @@ void _pushAlbumScreen(
   String? coverUrl,
   String? extensionId,
 }) {
-  const builtInProviders = {'tidal', 'qobuz'};
   final isExtension =
-      extensionId != null && !builtInProviders.contains(extensionId);
+      extensionId != null && !isBuiltInMetadataProvider(extensionId);
   final resolvedExtensionId = extensionId;
 
   _pushViaPreferredNavigator(

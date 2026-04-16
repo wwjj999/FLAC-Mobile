@@ -2575,9 +2575,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       final providerTrackId = track.id.substring(colonIdx + 1);
 
       _log.d('No ISRC, fetching from $provider API: $providerTrackId');
-      final providerData = provider == 'tidal'
-          ? await PlatformBridge.getTidalMetadata('track', providerTrackId)
-          : await PlatformBridge.getQobuzMetadata('track', providerTrackId);
+      final providerData = await PlatformBridge.getProviderMetadata(
+        provider,
+        'track',
+        providerTrackId,
+      );
 
       final trackData = providerData['track'] as Map<String, dynamic>?;
       if (trackData == null) {
@@ -4448,7 +4450,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           );
           final rawId = trackToDownload.id.split(':')[1];
           _log.d('Fetching full metadata for Deezer ID: $rawId');
-          final fullData = await PlatformBridge.getDeezerMetadata(
+          final fullData = await PlatformBridge.getProviderMetadata(
+            'deezer',
             'track',
             rawId,
           );

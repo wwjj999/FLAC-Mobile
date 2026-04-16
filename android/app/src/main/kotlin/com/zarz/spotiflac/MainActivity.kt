@@ -2864,23 +2864,20 @@ class MainActivity: FlutterFragmentActivity() {
                             }
                             result.success(null)
                         }
-                        "searchTidalAll" -> {
+                        "searchProviderAll" -> {
+                            val providerId = call.argument<String>("provider_id") ?: ""
                             val query = call.argument<String>("query") ?: ""
                             val trackLimit = call.argument<Int>("track_limit") ?: 15
                             val artistLimit = call.argument<Int>("artist_limit") ?: 2
                             val filter = call.argument<String>("filter") ?: ""
                             val response = withContext(Dispatchers.IO) {
-                                Gobackend.searchTidalAll(query, trackLimit.toLong(), artistLimit.toLong(), filter)
+                                Gobackend.searchProviderAllJSON(providerId, query, trackLimit.toLong(), artistLimit.toLong(), filter)
                             }
                             result.success(response)
                         }
-                        "searchQobuzAll" -> {
-                            val query = call.argument<String>("query") ?: ""
-                            val trackLimit = call.argument<Int>("track_limit") ?: 15
-                            val artistLimit = call.argument<Int>("artist_limit") ?: 2
-                            val filter = call.argument<String>("filter") ?: ""
+                        "getBuiltInProviders" -> {
                             val response = withContext(Dispatchers.IO) {
-                                Gobackend.searchQobuzAll(query, trackLimit.toLong(), artistLimit.toLong(), filter)
+                                Gobackend.getBuiltInProvidersJSON()
                             }
                             result.success(response)
                         }
@@ -2889,14 +2886,6 @@ class MainActivity: FlutterFragmentActivity() {
                             val limit = call.argument<Int>("limit") ?: 12
                             val response = withContext(Dispatchers.IO) {
                                 Gobackend.getDeezerRelatedArtists(artistId, limit.toLong())
-                            }
-                            result.success(response)
-                        }
-                        "getDeezerMetadata" -> {
-                            val resourceType = call.argument<String>("resource_type") ?: ""
-                            val resourceId = call.argument<String>("resource_id") ?: ""
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.getDeezerMetadata(resourceType, resourceId)
                             }
                             result.success(response)
                         }
@@ -2916,24 +2905,19 @@ class MainActivity: FlutterFragmentActivity() {
                             }
                             result.success(response)
                         }
-                        "parseDeezerUrl" -> {
-                            val url = call.argument<String>("url") ?: ""
+                        "getProviderMetadata" -> {
+                            val providerId = call.argument<String>("provider_id") ?: ""
+                            val resourceType = call.argument<String>("resource_type") ?: ""
+                            val resourceId = call.argument<String>("resource_id") ?: ""
                             val response = withContext(Dispatchers.IO) {
-                                Gobackend.parseDeezerURLExport(url)
+                                Gobackend.getProviderMetadataJSON(providerId, resourceType, resourceId)
                             }
                             result.success(response)
                         }
-                        "parseQobuzUrl" -> {
+                        "parseProviderUrl" -> {
                             val url = call.argument<String>("url") ?: ""
                             val response = withContext(Dispatchers.IO) {
-                                Gobackend.parseQobuzURLExport(url)
-                            }
-                            result.success(response)
-                        }
-                        "parseTidalUrl" -> {
-                            val url = call.argument<String>("url") ?: ""
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.parseTidalURLExport(url)
+                                Gobackend.parseProviderURLJSON(url)
                             }
                             result.success(response)
                         }
@@ -3288,30 +3272,6 @@ class MainActivity: FlutterFragmentActivity() {
                         "getURLHandlers" -> {
                             val response = withContext(Dispatchers.IO) {
                                 Gobackend.getURLHandlersJSON()
-                            }
-                            result.success(response)
-                        }
-                        "getAlbumWithExtension" -> {
-                            val extensionId = call.argument<String>("extension_id") ?: ""
-                            val albumId = call.argument<String>("album_id") ?: ""
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.getAlbumWithExtensionJSON(extensionId, albumId)
-                            }
-                            result.success(response)
-                        }
-                        "getPlaylistWithExtension" -> {
-                            val extensionId = call.argument<String>("extension_id") ?: ""
-                            val playlistId = call.argument<String>("playlist_id") ?: ""
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.getPlaylistWithExtensionJSON(extensionId, playlistId)
-                            }
-                            result.success(response)
-                        }
-                        "getArtistWithExtension" -> {
-                            val extensionId = call.argument<String>("extension_id") ?: ""
-                            val artistId = call.argument<String>("artist_id") ?: ""
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.getArtistWithExtensionJSON(extensionId, artistId)
                             }
                             result.success(response)
                         }

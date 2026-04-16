@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
+import 'package:spotiflac_android/utils/provider_ui_utils.dart';
 
 class ProviderPriorityPage extends ConsumerStatefulWidget {
   const ProviderPriorityPage({super.key});
@@ -325,28 +326,28 @@ class _ProviderItem extends StatelessWidget {
   }
 
   _ProviderInfo _getProviderInfo(String provider) {
-    switch (provider) {
-      case 'tidal':
-        return _ProviderInfo(
-          name: 'Tidal',
-          icon: Icons.music_note,
-          isBuiltIn: true,
-        );
-      case 'qobuz':
-        return _ProviderInfo(name: 'Qobuz', icon: Icons.album, isBuiltIn: true);
-      case 'deezer':
-        return _ProviderInfo(
-          name: 'Deezer',
-          icon: Icons.graphic_eq,
-          isBuiltIn: true,
-        );
-      default:
-        return _ProviderInfo(
-          name: provider,
-          icon: Icons.extension,
-          isBuiltIn: false,
-        );
+    final builtIn = builtInProviderSpecForId(provider);
+    if (builtIn != null) {
+      return _ProviderInfo(
+        name: builtIn.displayName,
+        icon: resolveProviderIcon(provider),
+        isBuiltIn: true,
+      );
     }
+
+    if (provider == 'deezer') {
+      return _ProviderInfo(
+        name: 'Deezer',
+        icon: Icons.graphic_eq,
+        isBuiltIn: false,
+      );
+    }
+
+    return _ProviderInfo(
+      name: provider,
+      icon: Icons.extension,
+      isBuiltIn: false,
+    );
   }
 }
 

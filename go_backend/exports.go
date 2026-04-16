@@ -1051,50 +1051,11 @@ func DownloadTrack(requestJSON string) (string, error) {
 		return errorResponse("Download cancelled")
 	}
 
-	var result DownloadResult
-	var err error
-
-	switch req.Service {
-	case "tidal":
-		tidalResult, tidalErr := downloadFromTidal(req)
-		if tidalErr == nil {
-			result = DownloadResult{
-				FilePath:    tidalResult.FilePath,
-				BitDepth:    tidalResult.BitDepth,
-				SampleRate:  tidalResult.SampleRate,
-				Title:       tidalResult.Title,
-				Artist:      tidalResult.Artist,
-				Album:       tidalResult.Album,
-				ReleaseDate: tidalResult.ReleaseDate,
-				TrackNumber: tidalResult.TrackNumber,
-				DiscNumber:  tidalResult.DiscNumber,
-				ISRC:        tidalResult.ISRC,
-				LyricsLRC:   tidalResult.LyricsLRC,
-			}
-		}
-		err = tidalErr
-	case "qobuz":
-		qobuzResult, qobuzErr := downloadFromQobuz(req)
-		if qobuzErr == nil {
-			result = DownloadResult{
-				FilePath:    qobuzResult.FilePath,
-				BitDepth:    qobuzResult.BitDepth,
-				SampleRate:  qobuzResult.SampleRate,
-				Title:       qobuzResult.Title,
-				Artist:      qobuzResult.Artist,
-				Album:       qobuzResult.Album,
-				ReleaseDate: qobuzResult.ReleaseDate,
-				TrackNumber: qobuzResult.TrackNumber,
-				DiscNumber:  qobuzResult.DiscNumber,
-				ISRC:        qobuzResult.ISRC,
-				CoverURL:    qobuzResult.CoverURL,
-				LyricsLRC:   qobuzResult.LyricsLRC,
-			}
-		}
-		err = qobuzErr
-	default:
+	if !isBuiltInDownloadProvider(req.Service) {
 		return errorResponse("Unknown service: " + req.Service)
 	}
+
+	result, err := downloadWithBuiltInProvider(req.Service, req)
 
 	if err != nil {
 		return errorResponse(err.Error())
@@ -1227,51 +1188,9 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 		GoLog("[DownloadWithFallback] Trying service: %s\n", service)
 		req.Service = service
 
-		var result DownloadResult
-		var err error
-
-		switch service {
-		case "tidal":
-			tidalResult, tidalErr := downloadFromTidal(req)
-			if tidalErr == nil {
-				result = DownloadResult{
-					FilePath:    tidalResult.FilePath,
-					BitDepth:    tidalResult.BitDepth,
-					SampleRate:  tidalResult.SampleRate,
-					Title:       tidalResult.Title,
-					Artist:      tidalResult.Artist,
-					Album:       tidalResult.Album,
-					ReleaseDate: tidalResult.ReleaseDate,
-					TrackNumber: tidalResult.TrackNumber,
-					DiscNumber:  tidalResult.DiscNumber,
-					ISRC:        tidalResult.ISRC,
-					LyricsLRC:   tidalResult.LyricsLRC,
-				}
-			} else if !errors.Is(tidalErr, ErrDownloadCancelled) {
-				GoLog("[DownloadWithFallback] Tidal error: %v\n", tidalErr)
-			}
-			err = tidalErr
-		case "qobuz":
-			qobuzResult, qobuzErr := downloadFromQobuz(req)
-			if qobuzErr == nil {
-				result = DownloadResult{
-					FilePath:    qobuzResult.FilePath,
-					BitDepth:    qobuzResult.BitDepth,
-					SampleRate:  qobuzResult.SampleRate,
-					Title:       qobuzResult.Title,
-					Artist:      qobuzResult.Artist,
-					Album:       qobuzResult.Album,
-					ReleaseDate: qobuzResult.ReleaseDate,
-					TrackNumber: qobuzResult.TrackNumber,
-					DiscNumber:  qobuzResult.DiscNumber,
-					ISRC:        qobuzResult.ISRC,
-					CoverURL:    qobuzResult.CoverURL,
-					LyricsLRC:   qobuzResult.LyricsLRC,
-				}
-			} else if !errors.Is(qobuzErr, ErrDownloadCancelled) {
-				GoLog("[DownloadWithFallback] Qobuz error: %v\n", qobuzErr)
-			}
-			err = qobuzErr
+		result, err := downloadWithBuiltInProvider(service, req)
+		if err != nil && !errors.Is(err, ErrDownloadCancelled) {
+			GoLog("[DownloadWithFallback] %s error: %v\n", service, err)
 		}
 
 		if err != nil && errors.Is(err, ErrDownloadCancelled) {
@@ -2058,6 +1977,28 @@ func SearchQobuzAll(query string, trackLimit, artistLimit int, filter string) (s
 	return string(jsonBytes), nil
 }
 
+func SearchProviderAllJSON(
+	providerID,
+	query string,
+	trackLimit,
+	artistLimit int,
+	filter string,
+) (string, error) {
+	normalizedProviderID := strings.ToLower(strings.TrimSpace(providerID))
+	if !isBuiltInSearchProvider(normalizedProviderID) {
+		return "", fmt.Errorf("unsupported search provider: %s", providerID)
+	}
+	return searchBuiltInProviderAll(normalizedProviderID, query, trackLimit, artistLimit, filter)
+}
+
+func GetBuiltInProvidersJSON() (string, error) {
+	jsonBytes, err := json.Marshal(getBuiltInProviderSpecs())
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
+
 func GetDeezerRelatedArtists(artistID string, limit int) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -2141,6 +2082,208 @@ func GetQobuzMetadata(resourceType, resourceID string) (string, error) {
 	return string(jsonBytes), nil
 }
 
+func normalizeExtensionTrackMetadataMap(
+	track ExtTrackMetadata,
+	fallbackCover string,
+	fallbackTrackNumber int,
+) map[string]interface{} {
+	coverURL := track.ResolvedCoverURL()
+	if coverURL == "" {
+		coverURL = fallbackCover
+	}
+
+	trackNum := track.TrackNumber
+	if trackNum == 0 && fallbackTrackNumber > 0 {
+		trackNum = fallbackTrackNumber
+	}
+
+	return map[string]interface{}{
+		"id":           track.ID,
+		"name":         track.Name,
+		"artists":      track.Artists,
+		"album_name":   track.AlbumName,
+		"album_artist": track.AlbumArtist,
+		"duration_ms":  track.DurationMS,
+		"images":       coverURL,
+		"cover_url":    coverURL,
+		"release_date": track.ReleaseDate,
+		"track_number": trackNum,
+		"total_tracks": track.TotalTracks,
+		"disc_number":  track.DiscNumber,
+		"total_discs":  track.TotalDiscs,
+		"isrc":         track.ISRC,
+		"provider_id":  track.ProviderID,
+		"item_type":    track.ItemType,
+		"album_type":   track.AlbumType,
+		"spotify_id":   track.SpotifyID,
+		"composer":     track.Composer,
+	}
+}
+
+func normalizeExtensionAlbumInfoMap(album *ExtAlbumMetadata) map[string]interface{} {
+	if album == nil {
+		return map[string]interface{}{}
+	}
+
+	return map[string]interface{}{
+		"id":           album.ID,
+		"name":         album.Name,
+		"artists":      album.Artists,
+		"artist_id":    album.ArtistID,
+		"images":       album.CoverURL,
+		"cover_url":    album.CoverURL,
+		"release_date": album.ReleaseDate,
+		"total_tracks": album.TotalTracks,
+		"album_type":   album.AlbumType,
+		"provider_id":  album.ProviderID,
+	}
+}
+
+func normalizeExtensionArtistAlbumMap(album ExtAlbumMetadata) map[string]interface{} {
+	return map[string]interface{}{
+		"id":           album.ID,
+		"name":         album.Name,
+		"artists":      album.Artists,
+		"images":       album.CoverURL,
+		"cover_url":    album.CoverURL,
+		"release_date": album.ReleaseDate,
+		"total_tracks": album.TotalTracks,
+		"album_type":   album.AlbumType,
+		"provider_id":  album.ProviderID,
+	}
+}
+
+func getExtensionProviderMetadataResponse(
+	providerID,
+	resourceType,
+	resourceID string,
+) (map[string]interface{}, error) {
+	manager := getExtensionManager()
+	ext, err := manager.GetExtension(providerID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !ext.Manifest.IsMetadataProvider() {
+		return nil, fmt.Errorf("extension '%s' is not a metadata provider", providerID)
+	}
+	if !ext.Enabled {
+		return nil, fmt.Errorf("extension '%s' is disabled", providerID)
+	}
+
+	provider := newExtensionProviderWrapper(ext)
+
+	switch resourceType {
+	case "track":
+		track, err := provider.GetTrack(resourceID)
+		if err != nil {
+			return nil, err
+		}
+		if track == nil {
+			return nil, fmt.Errorf("track not found")
+		}
+		return map[string]interface{}{
+			"track": normalizeExtensionTrackMetadataMap(*track, "", 0),
+		}, nil
+	case "album":
+		album, err := provider.GetAlbum(resourceID)
+		if err != nil {
+			return nil, err
+		}
+		if album == nil {
+			return nil, fmt.Errorf("album not found")
+		}
+
+		tracks := make([]map[string]interface{}, len(album.Tracks))
+		for i, track := range album.Tracks {
+			tracks[i] = normalizeExtensionTrackMetadataMap(track, album.CoverURL, i+1)
+		}
+
+		return map[string]interface{}{
+			"album_info": normalizeExtensionAlbumInfoMap(album),
+			"track_list": tracks,
+		}, nil
+	case "playlist":
+		playlist, err := provider.GetPlaylist(resourceID)
+		if err != nil {
+			return nil, err
+		}
+		if playlist == nil {
+			return nil, fmt.Errorf("playlist not found")
+		}
+
+		tracks := make([]map[string]interface{}, len(playlist.Tracks))
+		for i, track := range playlist.Tracks {
+			tracks[i] = normalizeExtensionTrackMetadataMap(track, playlist.CoverURL, i+1)
+		}
+
+		return map[string]interface{}{
+			"playlist_info": map[string]interface{}{
+				"id":          playlist.ID,
+				"name":        playlist.Name,
+				"images":      playlist.CoverURL,
+				"cover_url":   playlist.CoverURL,
+				"provider_id": playlist.ProviderID,
+				"owner": map[string]interface{}{
+					"name":   playlist.Artists,
+					"images": playlist.CoverURL,
+				},
+			},
+			"track_list": tracks,
+		}, nil
+	case "artist":
+		artist, err := provider.GetArtist(resourceID)
+		if err != nil {
+			return nil, err
+		}
+		if artist == nil {
+			return nil, fmt.Errorf("artist not found")
+		}
+
+		albums := make([]map[string]interface{}, len(artist.Albums))
+		for i, album := range artist.Albums {
+			albums[i] = normalizeExtensionArtistAlbumMap(album)
+		}
+
+		response := map[string]interface{}{
+			"artist_info": map[string]interface{}{
+				"id":           artist.ID,
+				"name":         artist.Name,
+				"images":       tidalFirstNonEmpty(artist.HeaderImage, artist.ImageURL),
+				"cover_url":    artist.ImageURL,
+				"header_image": artist.HeaderImage,
+				"provider_id":  artist.ProviderID,
+			},
+			"albums": albums,
+		}
+
+		if len(artist.Releases) > 0 {
+			releases := make([]map[string]interface{}, len(artist.Releases))
+			for i, release := range artist.Releases {
+				releases[i] = normalizeExtensionArtistAlbumMap(release)
+			}
+			response["releases"] = releases
+		}
+
+		if artist.Listeners > 0 {
+			artistInfo := response["artist_info"].(map[string]interface{})
+			artistInfo["listeners"] = artist.Listeners
+		}
+
+		if len(artist.TopTracks) > 0 {
+			topTracks := make([]map[string]interface{}, len(artist.TopTracks))
+			for i, track := range artist.TopTracks {
+				topTracks[i] = normalizeExtensionTrackMetadataMap(track, artist.ImageURL, i+1)
+			}
+			response["top_tracks"] = topTracks
+		}
+
+		return response, nil
+	default:
+		return nil, fmt.Errorf("unsupported provider resource type: %s", resourceType)
+	}
+}
+
 func GetTidalMetadata(resourceType, resourceID string) (string, error) {
 	downloader := NewTidalDownloader()
 
@@ -2169,6 +2312,34 @@ func GetTidalMetadata(resourceType, resourceID string) (string, error) {
 	}
 
 	return string(jsonBytes), nil
+}
+
+func GetProviderMetadataJSON(providerID, resourceType, resourceID string) (string, error) {
+	trimmedProviderID := strings.TrimSpace(providerID)
+	if trimmedProviderID == "" {
+		return "", fmt.Errorf("empty provider ID")
+	}
+
+	normalizedProviderID := strings.ToLower(trimmedProviderID)
+	if isBuiltInMetadataProvider(normalizedProviderID) {
+		return getBuiltInProviderMetadata(normalizedProviderID, resourceType, resourceID)
+	}
+
+	switch normalizedProviderID {
+	case "deezer":
+		return GetDeezerMetadata(resourceType, resourceID)
+	default:
+		response, err := getExtensionProviderMetadataResponse(trimmedProviderID, resourceType, resourceID)
+		if err != nil {
+			return "", err
+		}
+
+		jsonBytes, err := json.Marshal(response)
+		if err != nil {
+			return "", err
+		}
+		return string(jsonBytes), nil
+	}
 }
 
 func ParseDeezerURLExport(url string) (string, error) {
@@ -2226,6 +2397,38 @@ func ParseTidalURLExport(url string) (string, error) {
 	}
 
 	return string(jsonBytes), nil
+}
+
+func ParseProviderURLJSON(url string) (string, error) {
+	parsers := []struct {
+		providerID string
+		parse      func(string) (string, string, error)
+	}{
+		{providerID: "deezer", parse: parseDeezerURL},
+		{providerID: "qobuz", parse: parseQobuzURL},
+		{providerID: "tidal", parse: parseTidalURL},
+	}
+
+	for _, parser := range parsers {
+		resourceType, resourceID, err := parser.parse(url)
+		if err != nil {
+			continue
+		}
+
+		result := map[string]string{
+			"provider_id": parser.providerID,
+			"type":        resourceType,
+			"id":          resourceID,
+		}
+
+		jsonBytes, err := json.Marshal(result)
+		if err != nil {
+			return "", err
+		}
+		return string(jsonBytes), nil
+	}
+
+	return "", fmt.Errorf("unsupported provider URL")
 }
 
 func ConvertTidalToSpotifyDeezer(tidalURL string) (string, error) {
@@ -3597,288 +3800,6 @@ func FindURLHandlerJSON(url string) string {
 		return ""
 	}
 	return handler.extension.ID
-}
-
-func GetAlbumWithExtensionJSON(extensionID, albumID string) (string, error) {
-	manager := getExtensionManager()
-	ext, err := manager.GetExtension(extensionID)
-	if err != nil {
-		return "", err
-	}
-
-	if !ext.Manifest.IsMetadataProvider() {
-		return "", fmt.Errorf("extension '%s' is not a metadata provider", extensionID)
-	}
-	if !ext.Enabled {
-		return "", fmt.Errorf("extension '%s' is disabled", extensionID)
-	}
-
-	provider := newExtensionProviderWrapper(ext)
-	album, err := provider.GetAlbum(albumID)
-	if err != nil {
-		return "", err
-	}
-
-	if album == nil {
-		return "", fmt.Errorf("album not found")
-	}
-
-	tracks := make([]map[string]interface{}, len(album.Tracks))
-	for i, track := range album.Tracks {
-		trackCover := track.ResolvedCoverURL()
-		if trackCover == "" {
-			trackCover = album.CoverURL
-		}
-		trackNum := track.TrackNumber
-		if trackNum == 0 {
-			trackNum = i + 1
-		}
-		tracks[i] = map[string]interface{}{
-			"id":           track.ID,
-			"name":         track.Name,
-			"artists":      track.Artists,
-			"album_name":   track.AlbumName,
-			"album_artist": track.AlbumArtist,
-			"duration_ms":  track.DurationMS,
-			"cover_url":    trackCover,
-			"release_date": track.ReleaseDate,
-			"track_number": trackNum,
-			"total_tracks": track.TotalTracks,
-			"disc_number":  track.DiscNumber,
-			"total_discs":  track.TotalDiscs,
-			"isrc":         track.ISRC,
-			"provider_id":  track.ProviderID,
-			"item_type":    track.ItemType,
-			"album_type":   track.AlbumType,
-			"composer":     track.Composer,
-		}
-	}
-
-	response := map[string]interface{}{
-		"id":           album.ID,
-		"name":         album.Name,
-		"artists":      album.Artists,
-		"artist_id":    album.ArtistID,
-		"cover_url":    album.CoverURL,
-		"release_date": album.ReleaseDate,
-		"total_tracks": album.TotalTracks,
-		"album_type":   album.AlbumType,
-		"tracks":       tracks,
-		"provider_id":  album.ProviderID,
-	}
-
-	jsonBytes, err := json.Marshal(response)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
-}
-
-func GetPlaylistWithExtensionJSON(extensionID, playlistID string) (string, error) {
-	manager := getExtensionManager()
-	ext, err := manager.GetExtension(extensionID)
-	if err != nil {
-		return "", err
-	}
-
-	if !ext.Manifest.IsMetadataProvider() {
-		return "", fmt.Errorf("extension '%s' is not a metadata provider", extensionID)
-	}
-	if !ext.Enabled {
-		return "", fmt.Errorf("extension '%s' is disabled", extensionID)
-	}
-
-	vm, err := ext.lockReadyVM()
-	if err != nil {
-		return "", err
-	}
-	defer ext.VMMu.Unlock()
-
-	script := fmt.Sprintf(`
-		(function() {
-			if (typeof extension !== 'undefined' && typeof extension.getPlaylist === 'function') {
-				return extension.getPlaylist(%q);
-			}
-			if (typeof extension !== 'undefined' && typeof extension.getAlbum === 'function') {
-				return extension.getAlbum(%q);
-			}
-			return null;
-		})()
-	`, playlistID, playlistID)
-
-	result, err := RunWithTimeoutAndRecover(vm, script, DefaultJSTimeout)
-	if err != nil {
-		return "", fmt.Errorf("getPlaylist failed: %w", err)
-	}
-
-	if result == nil || goja.IsUndefined(result) || goja.IsNull(result) {
-		return "", fmt.Errorf("playlist not found")
-	}
-
-	exported := result.Export()
-	jsonBytes, err := json.Marshal(exported)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal result: %w", err)
-	}
-
-	var album ExtAlbumMetadata
-	if err := json.Unmarshal(jsonBytes, &album); err != nil {
-		return "", fmt.Errorf("failed to parse playlist: %w", err)
-	}
-	album.ProviderID = ext.ID
-	for i := range album.Tracks {
-		album.Tracks[i].ProviderID = ext.ID
-	}
-
-	tracks := make([]map[string]interface{}, len(album.Tracks))
-	for i, track := range album.Tracks {
-		trackCover := track.ResolvedCoverURL()
-		if trackCover == "" {
-			trackCover = album.CoverURL
-		}
-		tracks[i] = map[string]interface{}{
-			"id":           track.ID,
-			"name":         track.Name,
-			"artists":      track.Artists,
-			"album_name":   track.AlbumName,
-			"album_artist": track.AlbumArtist,
-			"duration_ms":  track.DurationMS,
-			"cover_url":    trackCover,
-			"release_date": track.ReleaseDate,
-			"track_number": track.TrackNumber,
-			"total_tracks": track.TotalTracks,
-			"disc_number":  track.DiscNumber,
-			"total_discs":  track.TotalDiscs,
-			"isrc":         track.ISRC,
-			"provider_id":  track.ProviderID,
-			"item_type":    track.ItemType,
-			"album_type":   track.AlbumType,
-			"composer":     track.Composer,
-		}
-	}
-
-	response := map[string]interface{}{
-		"id":           album.ID,
-		"name":         album.Name,
-		"owner":        album.Artists,
-		"cover_url":    album.CoverURL,
-		"total_tracks": album.TotalTracks,
-		"tracks":       tracks,
-		"provider_id":  album.ProviderID,
-	}
-
-	jsonBytes, err = json.Marshal(response)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
-}
-
-func GetArtistWithExtensionJSON(extensionID, artistID string) (string, error) {
-	manager := getExtensionManager()
-	ext, err := manager.GetExtension(extensionID)
-	if err != nil {
-		return "", err
-	}
-
-	if !ext.Manifest.IsMetadataProvider() {
-		return "", fmt.Errorf("extension '%s' is not a metadata provider", extensionID)
-	}
-
-	provider := newExtensionProviderWrapper(ext)
-	artist, err := provider.GetArtist(artistID)
-	if err != nil {
-		return "", err
-	}
-
-	if artist == nil {
-		return "", fmt.Errorf("artist not found")
-	}
-
-	albums := make([]map[string]interface{}, len(artist.Albums))
-	for i, album := range artist.Albums {
-		albums[i] = map[string]interface{}{
-			"id":           album.ID,
-			"name":         album.Name,
-			"artists":      album.Artists,
-			"cover_url":    album.CoverURL,
-			"release_date": album.ReleaseDate,
-			"total_tracks": album.TotalTracks,
-			"album_type":   album.AlbumType,
-			"provider_id":  album.ProviderID,
-		}
-	}
-
-	response := map[string]interface{}{
-		"id":          artist.ID,
-		"name":        artist.Name,
-		"cover_url":   artist.ImageURL,
-		"albums":      albums,
-		"provider_id": artist.ProviderID,
-	}
-
-	if len(artist.Releases) > 0 {
-		releases := make([]map[string]interface{}, len(artist.Releases))
-		for i, release := range artist.Releases {
-			releaseType := release.AlbumType
-			if releaseType == "" {
-				releaseType = "album"
-			}
-			releases[i] = map[string]interface{}{
-				"id":           release.ID,
-				"name":         release.Name,
-				"artists":      release.Artists,
-				"cover_url":    release.CoverURL,
-				"release_date": release.ReleaseDate,
-				"total_tracks": release.TotalTracks,
-				"album_type":   releaseType,
-				"provider_id":  release.ProviderID,
-			}
-		}
-		response["releases"] = releases
-	}
-
-	if artist.HeaderImage != "" {
-		response["header_image"] = artist.HeaderImage
-	}
-
-	if artist.Listeners > 0 {
-		response["listeners"] = artist.Listeners
-	}
-
-	if len(artist.TopTracks) > 0 {
-		topTracks := make([]map[string]interface{}, len(artist.TopTracks))
-		for i, track := range artist.TopTracks {
-			topTracks[i] = map[string]interface{}{
-				"id":           track.ID,
-				"name":         track.Name,
-				"artists":      track.Artists,
-				"album_name":   track.AlbumName,
-				"album_artist": track.AlbumArtist,
-				"duration_ms":  track.DurationMS,
-				"images":       track.ResolvedCoverURL(),
-				"release_date": track.ReleaseDate,
-				"track_number": track.TrackNumber,
-				"total_tracks": track.TotalTracks,
-				"disc_number":  track.DiscNumber,
-				"total_discs":  track.TotalDiscs,
-				"isrc":         track.ISRC,
-				"provider_id":  track.ProviderID,
-				"spotify_id":   track.SpotifyID,
-				"composer":     track.Composer,
-			}
-		}
-		response["top_tracks"] = topTracks
-	}
-
-	jsonBytes, err := json.Marshal(response)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
 }
 
 func GetURLHandlersJSON() (string, error) {

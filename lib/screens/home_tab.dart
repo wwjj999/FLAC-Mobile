@@ -31,6 +31,7 @@ import 'package:spotiflac_android/widgets/download_service_picker.dart';
 import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
 import 'package:spotiflac_android/widgets/animation_utils.dart';
 import 'package:spotiflac_android/utils/clickable_metadata.dart';
+import 'package:spotiflac_android/utils/provider_ui_utils.dart';
 
 class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
@@ -481,13 +482,14 @@ class _HomeTabState extends ConsumerState<HomeTab>
     final explicit = explicitSearchProvider?.trim();
     if (explicit != null &&
         explicit.isNotEmpty &&
-        (_builtInSearchProviders.contains(explicit) ||
+        (isBuiltInSearchProvider(explicit) ||
             extensions.any(
               (ext) => ext.enabled && ext.hasCustomSearch && ext.id == explicit,
             ))) {
       return explicit;
     }
-    return _defaultSearchExtension(extensions)?.id ?? 'tidal';
+    return _defaultSearchExtension(extensions)?.id ??
+        defaultBuiltInSearchProviderId;
   }
 
   String? _sanitizeSearchFilterForProvider(
@@ -503,7 +505,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
 
     if (currentSearchProvider == null ||
         currentSearchProvider.isEmpty ||
-        _builtInSearchProviders.contains(currentSearchProvider)) {
+        isBuiltInSearchProvider(currentSearchProvider)) {
       switch (canonicalFilter) {
         case 'track':
         case 'artist':
@@ -695,8 +697,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
 
     if (searchProvider == null || searchProvider.isEmpty) return false;
 
-    // Built-in providers (tidal, qobuz) also support live search
-    if (_builtInSearchProviders.contains(searchProvider)) return true;
+    if (isBuiltInSearchProvider(searchProvider)) return true;
 
     final extension = extState.extensions
         .where((e) => e.id == searchProvider && e.enabled)
@@ -755,8 +756,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
     }
   }
 
-  static const _builtInSearchProviders = {'tidal', 'qobuz'};
-
   Future<void> _performSearch(String query, {String? filterOverride}) async {
     final settings = ref.read(settingsProvider);
     final extState = ref.read(extensionProvider);
@@ -795,8 +794,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
     _invalidateSearchSortCaches();
 
     final isBuiltInProvider =
-        searchProvider != null &&
-        _builtInSearchProviders.contains(searchProvider);
+        searchProvider != null && isBuiltInSearchProvider(searchProvider);
 
     final isExtensionEnabled =
         searchProvider != null &&
@@ -3347,11 +3345,9 @@ class _HomeTabState extends ConsumerState<HomeTab>
     }
 
     if (searchProvider != null && searchProvider.isNotEmpty) {
-      if (searchProvider == 'tidal') {
-        return 'Search with Tidal...';
-      }
-      if (searchProvider == 'qobuz') {
-        return 'Search with Qobuz...';
+      final builtIn = builtInProviderSpecForId(searchProvider);
+      if (builtIn != null && builtIn.supportsSearch) {
+        return 'Search with ${builtIn.displayName}...';
       }
 
       final ext = extState.extensions
@@ -3566,16 +3562,19 @@ class _SearchProviderDropdown extends ConsumerWidget {
     final searchProviders = extensions
         .where((ext) => ext.enabled && ext.hasCustomSearch)
         .toList();
+    final builtInProviders = builtInSearchProviderSpecs;
     final primarySearchExtension = _defaultSearchExtension(searchProviders);
     final defaultProviderTarget =
-        primarySearchExtension?.displayName ?? 'Tidal';
+        primarySearchExtension?.displayName ??
+        defaultBuiltInSearchProviderDisplayName ??
+        context.l10n.extensionDefaultProvider;
     final defaultProviderLabel =
         '${context.l10n.extensionsHomeFeedAuto} ($defaultProviderTarget)';
     final defaultProviderIconPath = primarySearchExtension?.iconPath;
     final currentProvider =
         rawCurrentProvider != null &&
             rawCurrentProvider.isNotEmpty &&
-            ({'tidal', 'qobuz'}.contains(rawCurrentProvider) ||
+            (isBuiltInSearchProvider(rawCurrentProvider) ||
                 searchProviders.any((e) => e.id == rawCurrentProvider))
         ? rawCurrentProvider
         : null;
@@ -3587,9 +3586,8 @@ class _SearchProviderDropdown extends ConsumerWidget {
           .firstOrNull;
     }
 
-    const builtInProviders = {'tidal', 'qobuz'};
     final isBuiltInProvider =
-        currentProvider != null && builtInProviders.contains(currentProvider);
+        currentProvider != null && isBuiltInSearchProvider(currentProvider);
 
     IconData displayIcon = Icons.search;
     String? iconPath;
@@ -3612,7 +3610,7 @@ class _SearchProviderDropdown extends ConsumerWidget {
         );
       }
     } else if (isBuiltInProvider) {
-      displayIcon = Icons.music_note;
+      displayIcon = resolveProviderIcon(currentProvider);
     }
 
     return Padding(
@@ -3679,58 +3677,33 @@ class _SearchProviderDropdown extends ConsumerWidget {
               ],
             ),
           ),
-          PopupMenuItem<String>(
-            value: 'tidal',
-            child: Row(
-              children: [
-                Icon(
-                  Icons.music_note,
-                  size: 20,
-                  color: currentProvider == 'tidal'
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Tidal',
-                    style: TextStyle(
-                      fontWeight: currentProvider == 'tidal'
-                          ? FontWeight.w600
-                          : FontWeight.normal,
+          ...builtInProviders.map(
+            (provider) => PopupMenuItem<String>(
+              value: provider.id,
+              child: Row(
+                children: [
+                  Icon(
+                    resolveProviderIcon(provider.id),
+                    size: 20,
+                    color: currentProvider == provider.id
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      provider.displayName,
+                      style: TextStyle(
+                        fontWeight: currentProvider == provider.id
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                      ),
                     ),
                   ),
-                ),
-                if (currentProvider == 'tidal')
-                  Icon(Icons.check, size: 18, color: colorScheme.primary),
-              ],
-            ),
-          ),
-          PopupMenuItem<String>(
-            value: 'qobuz',
-            child: Row(
-              children: [
-                Icon(
-                  Icons.music_note,
-                  size: 20,
-                  color: currentProvider == 'qobuz'
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Qobuz',
-                    style: TextStyle(
-                      fontWeight: currentProvider == 'qobuz'
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ),
-                if (currentProvider == 'qobuz')
-                  Icon(Icons.check, size: 18, color: colorScheme.primary),
-              ],
+                  if (currentProvider == provider.id)
+                    Icon(Icons.check, size: 18, color: colorScheme.primary),
+                ],
+              ),
             ),
           ),
           if (searchProviders.isNotEmpty) const PopupMenuDivider(),
@@ -4627,21 +4600,17 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
     });
 
     try {
-      final result = await PlatformBridge.getAlbumWithExtension(
+      final result = await PlatformBridge.getProviderMetadata(
         widget.extensionId,
+        'album',
         widget.albumId,
       );
       if (!mounted) return;
 
-      if (result == null) {
-        setState(() {
-          _error = context.l10n.errorLoadAlbum;
-          _isLoading = false;
-        });
-        return;
-      }
-
-      final trackList = result['tracks'] as List<dynamic>?;
+      final albumInfo = result['album_info'] as Map<String, dynamic>? ?? result;
+      final trackList =
+          result['track_list'] as List<dynamic>? ??
+          result['tracks'] as List<dynamic>?;
       if (trackList == null) {
         setState(() {
           _error = context.l10n.errorNoTracksFound;
@@ -4650,12 +4619,15 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
         return;
       }
 
-      final artistId = (result['artist_id'] ?? result['artistId'])?.toString();
-      final artistName = result['artists'] as String?;
+      final artistId = (albumInfo['artist_id'] ?? albumInfo['artistId'])
+          ?.toString();
+      final artistName = (albumInfo['artists'] ?? albumInfo['artist'])
+          ?.toString();
       final albumType =
-          normalizeOptionalString(result['album_type']?.toString()) ??
+          normalizeOptionalString(albumInfo['album_type']?.toString()) ??
           _albumType;
-      final totalTracks = result['total_tracks'] as int? ?? _albumTotalTracks;
+      final totalTracks =
+          albumInfo['total_tracks'] as int? ?? _albumTotalTracks;
       final tracks = trackList
           .map(
             (t) => _parseTrack(
@@ -4818,21 +4790,16 @@ class _ExtensionPlaylistScreenState
     });
 
     try {
-      final result = await PlatformBridge.getPlaylistWithExtension(
+      final result = await PlatformBridge.getProviderMetadata(
         widget.extensionId,
+        'playlist',
         widget.playlistId,
       );
       if (!mounted) return;
 
-      if (result == null) {
-        setState(() {
-          _error = context.l10n.errorLoadPlaylist;
-          _isLoading = false;
-        });
-        return;
-      }
-
-      final trackList = result['tracks'] as List<dynamic>?;
+      final trackList =
+          result['track_list'] as List<dynamic>? ??
+          result['tracks'] as List<dynamic>?;
       if (trackList == null) {
         setState(() {
           _error = context.l10n.errorNoTracksFound;
@@ -4975,20 +4942,15 @@ class _ExtensionArtistScreenState extends ConsumerState<ExtensionArtistScreen> {
     });
 
     try {
-      final result = await PlatformBridge.getArtistWithExtension(
+      final result = await PlatformBridge.getProviderMetadata(
         widget.extensionId,
+        'artist',
         widget.artistId,
       );
       if (!mounted) return;
 
-      if (result == null) {
-        setState(() {
-          _error = context.l10n.errorLoadArtist;
-          _isLoading = false;
-        });
-        return;
-      }
-
+      final artistInfo =
+          result['artist_info'] as Map<String, dynamic>? ?? result;
       final albumList = result['albums'] as List<dynamic>?;
       final albums =
           albumList
@@ -5004,8 +4966,13 @@ class _ExtensionArtistScreenState extends ConsumerState<ExtensionArtistScreen> {
             .toList();
       }
 
-      final headerImage = result['header_image'] as String?;
-      final listeners = result['listeners'] as int?;
+      final headerImage =
+          artistInfo['images'] as String? ??
+          artistInfo['header_image'] as String? ??
+          artistInfo['cover_url'] as String? ??
+          result['header_image'] as String?;
+      final listeners =
+          artistInfo['listeners'] as int? ?? result['listeners'] as int?;
 
       setState(() {
         _albums = albums;

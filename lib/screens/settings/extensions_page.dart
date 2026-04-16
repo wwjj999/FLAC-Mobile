@@ -660,26 +660,27 @@ class _DownloadFallbackItem extends ConsumerWidget {
 class _SearchProviderSelector extends ConsumerWidget {
   const _SearchProviderSelector();
 
-  static const _builtInProviders = {'tidal': 'Tidal', 'qobuz': 'Qobuz'};
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final extState = ref.watch(extensionProvider);
     final colorScheme = Theme.of(context).colorScheme;
+    final builtInProviders = builtInSearchProviderSpecs;
 
     final searchProviders = extState.extensions
         .where((e) => e.enabled && e.hasCustomSearch)
         .toList();
 
     final hasAnyProvider =
-        searchProviders.isNotEmpty || _builtInProviders.isNotEmpty;
+        searchProviders.isNotEmpty || builtInProviders.isNotEmpty;
 
     String currentProviderName = context.l10n.extensionDefaultProvider;
     if (settings.searchProvider != null &&
         settings.searchProvider!.isNotEmpty) {
-      if (_builtInProviders.containsKey(settings.searchProvider)) {
-        currentProviderName = _builtInProviders[settings.searchProvider]!;
+      if (isBuiltInSearchProvider(settings.searchProvider)) {
+        currentProviderName = resolveProviderDisplayName(
+          settings.searchProvider!,
+        );
       } else {
         final ext = searchProviders
             .where((e) => e.id == settings.searchProvider)
@@ -754,6 +755,7 @@ class _SearchProviderSelector extends ConsumerWidget {
     List<Extension> searchProviders,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
+    final builtInProviders = builtInSearchProviderSpecs;
 
     showModalBottomSheet<void>(
       context: context,
@@ -800,18 +802,20 @@ class _SearchProviderSelector extends ConsumerWidget {
                   Navigator.pop(ctx);
                 },
               ),
-              ..._builtInProviders.entries.map(
-                (entry) => ListTile(
+              ...builtInProviders.map(
+                (provider) => ListTile(
                   leading: Icon(Icons.search, color: colorScheme.tertiary),
-                  title: Text(entry.value),
-                  subtitle: Text(ctx.l10n.extensionsSearchWith(entry.value)),
-                  trailing: settings.searchProvider == entry.key
+                  title: Text(provider.displayName),
+                  subtitle: Text(
+                    ctx.l10n.extensionsSearchWith(provider.displayName),
+                  ),
+                  trailing: settings.searchProvider == provider.id
                       ? Icon(Icons.check_circle, color: colorScheme.primary)
                       : Icon(Icons.circle_outlined, color: colorScheme.outline),
                   onTap: () {
                     ref
                         .read(settingsProvider.notifier)
-                        .setSearchProvider(entry.key);
+                        .setSearchProvider(provider.id);
                     Navigator.pop(ctx);
                   },
                 ),

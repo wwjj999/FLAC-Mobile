@@ -496,28 +496,15 @@ class PlatformBridge {
     await _channel.invokeMethod('clearTrackCache');
   }
 
-  static Future<Map<String, dynamic>> searchTidalAll(
+  static Future<Map<String, dynamic>> searchProviderAll(
+    String providerId,
     String query, {
     int trackLimit = 15,
     int artistLimit = 2,
     String? filter,
   }) async {
-    final result = await _channel.invokeMethod('searchTidalAll', {
-      'query': query,
-      'track_limit': trackLimit,
-      'artist_limit': artistLimit,
-      'filter': filter ?? '',
-    });
-    return jsonDecode(result as String) as Map<String, dynamic>;
-  }
-
-  static Future<Map<String, dynamic>> searchQobuzAll(
-    String query, {
-    int trackLimit = 15,
-    int artistLimit = 2,
-    String? filter,
-  }) async {
-    final result = await _channel.invokeMethod('searchQobuzAll', {
+    final result = await _channel.invokeMethod('searchProviderAll', {
+      'provider_id': providerId,
       'query': query,
       'track_limit': trackLimit,
       'artist_limit': artistLimit,
@@ -537,27 +524,6 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> getDeezerMetadata(
-    String resourceType,
-    String resourceId,
-  ) async {
-    final result = await _channel.invokeMethod('getDeezerMetadata', {
-      'resource_type': resourceType,
-      'resource_id': resourceId,
-    });
-    if (result == null) {
-      throw Exception(
-        'getDeezerMetadata returned null for $resourceType:$resourceId',
-      );
-    }
-    return jsonDecode(result as String) as Map<String, dynamic>;
-  }
-
-  static Future<Map<String, dynamic>> parseDeezerUrl(String url) async {
-    final result = await _channel.invokeMethod('parseDeezerUrl', {'url': url});
-    return jsonDecode(result as String) as Map<String, dynamic>;
-  }
-
   static Future<Map<String, dynamic>> getQobuzMetadata(
     String resourceType,
     String resourceId,
@@ -574,13 +540,10 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> parseQobuzUrl(String url) async {
-    final result = await _channel.invokeMethod('parseQobuzUrl', {'url': url});
-    return jsonDecode(result as String) as Map<String, dynamic>;
-  }
-
-  static Future<Map<String, dynamic>> parseTidalUrl(String url) async {
-    final result = await _channel.invokeMethod('parseTidalUrl', {'url': url});
+  static Future<Map<String, dynamic>> parseProviderUrl(String url) async {
+    final result = await _channel.invokeMethod('parseProviderUrl', {
+      'url': url,
+    });
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
@@ -595,6 +558,24 @@ class PlatformBridge {
     if (result == null) {
       throw Exception(
         'getTidalMetadata returned null for $resourceType:$resourceId',
+      );
+    }
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> getProviderMetadata(
+    String providerId,
+    String resourceType,
+    String resourceId,
+  ) async {
+    final result = await _channel.invokeMethod('getProviderMetadata', {
+      'provider_id': providerId,
+      'resource_type': resourceType,
+      'resource_id': resourceId,
+    });
+    if (result == null) {
+      throw Exception(
+        'getProviderMetadata returned null for $providerId:$resourceType:$resourceId',
       );
     }
     return jsonDecode(result as String) as Map<String, dynamic>;
@@ -969,6 +950,12 @@ class PlatformBridge {
     return list.map((e) => e as Map<String, dynamic>).toList();
   }
 
+  static Future<List<Map<String, dynamic>>> getBuiltInProviders() async {
+    final result = await _channel.invokeMethod('getBuiltInProviders');
+    final list = jsonDecode(result as String) as List<dynamic>;
+    return list.map((e) => e as Map<String, dynamic>).toList();
+  }
+
   static Future<Map<String, dynamic>?> handleURLWithExtension(
     String url,
   ) async {
@@ -993,57 +980,6 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('getURLHandlers');
     final list = jsonDecode(result as String) as List<dynamic>;
     return list.map((e) => e as Map<String, dynamic>).toList();
-  }
-
-  static Future<Map<String, dynamic>?> getAlbumWithExtension(
-    String extensionId,
-    String albumId,
-  ) async {
-    try {
-      final result = await _channel.invokeMethod('getAlbumWithExtension', {
-        'extension_id': extensionId,
-        'album_id': albumId,
-      });
-      if (result == null || result == '') return null;
-      return jsonDecode(result as String) as Map<String, dynamic>;
-    } catch (e) {
-      _log.e('getAlbumWithExtension failed: $e');
-      return null;
-    }
-  }
-
-  static Future<Map<String, dynamic>?> getPlaylistWithExtension(
-    String extensionId,
-    String playlistId,
-  ) async {
-    try {
-      final result = await _channel.invokeMethod('getPlaylistWithExtension', {
-        'extension_id': extensionId,
-        'playlist_id': playlistId,
-      });
-      if (result == null || result == '') return null;
-      return jsonDecode(result as String) as Map<String, dynamic>;
-    } catch (e) {
-      _log.e('getPlaylistWithExtension failed: $e');
-      return null;
-    }
-  }
-
-  static Future<Map<String, dynamic>?> getArtistWithExtension(
-    String extensionId,
-    String artistId,
-  ) async {
-    try {
-      final result = await _channel.invokeMethod('getArtistWithExtension', {
-        'extension_id': extensionId,
-        'artist_id': artistId,
-      });
-      if (result == null || result == '') return null;
-      return jsonDecode(result as String) as Map<String, dynamic>;
-    } catch (e) {
-      _log.e('getArtistWithExtension failed: $e');
-      return null;
-    }
   }
 
   static Future<Map<String, dynamic>?> getExtensionHomeFeed(

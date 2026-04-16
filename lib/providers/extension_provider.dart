@@ -15,6 +15,44 @@ const _metadataProviderPriorityKey = 'metadata_provider_priority';
 const _providerPriorityKey = 'provider_priority';
 const _spotifyWebExtensionId = 'spotify-web';
 
+class BuiltInProviderSpec {
+  final String id;
+  final String displayName;
+  final bool supportsMetadata;
+  final bool supportsDownload;
+  final bool supportsSearch;
+
+  const BuiltInProviderSpec({
+    required this.id,
+    required this.displayName,
+    this.supportsMetadata = false,
+    this.supportsDownload = false,
+    this.supportsSearch = false,
+  });
+
+  factory BuiltInProviderSpec.fromJson(Map<String, dynamic> json) {
+    return BuiltInProviderSpec(
+      id: json['id'] as String? ?? '',
+      displayName:
+          json['display_name'] as String? ??
+          json['displayName'] as String? ??
+          '',
+      supportsMetadata: json['supports_metadata'] as bool? ?? false,
+      supportsDownload: json['supports_download'] as bool? ?? false,
+      supportsSearch: json['supports_search'] as bool? ?? false,
+    );
+  }
+}
+
+List<BuiltInProviderSpec> _builtInProviderRegistry = const [];
+
+List<BuiltInProviderSpec> get builtInProviderSpecs =>
+    List<BuiltInProviderSpec>.unmodifiable(_builtInProviderRegistry);
+
+void _replaceBuiltInProviderRegistry(List<BuiltInProviderSpec> providers) {
+  _builtInProviderRegistry = List<BuiltInProviderSpec>.unmodifiable(providers);
+}
+
 class Extension {
   final String id;
   final String name;
@@ -193,6 +231,83 @@ class Extension {
     }
     return normalized;
   }
+}
+
+BuiltInProviderSpec? builtInProviderSpecForId(String? providerId) {
+  if (providerId == null) return null;
+
+  for (final provider in builtInProviderSpecs) {
+    if (provider.id == providerId) {
+      return provider;
+    }
+  }
+
+  return null;
+}
+
+List<BuiltInProviderSpec> _builtInProvidersWhere(
+  bool Function(BuiltInProviderSpec provider) predicate,
+) {
+  return List<BuiltInProviderSpec>.unmodifiable(
+    builtInProviderSpecs.where(predicate),
+  );
+}
+
+List<BuiltInProviderSpec> get builtInSearchProviderSpecs =>
+    _builtInProvidersWhere((provider) => provider.supportsSearch);
+
+List<BuiltInProviderSpec> get builtInMetadataProviderSpecs =>
+    _builtInProvidersWhere((provider) => provider.supportsMetadata);
+
+List<BuiltInProviderSpec> get builtInDownloadProviderSpecs =>
+    _builtInProvidersWhere((provider) => provider.supportsDownload);
+
+List<String> get builtInSearchProviderIds => List<String>.unmodifiable(
+  builtInSearchProviderSpecs.map((provider) => provider.id),
+);
+
+List<String> get builtInMetadataProviderIds => List<String>.unmodifiable(
+  builtInMetadataProviderSpecs.map((provider) => provider.id),
+);
+
+List<String> get builtInDownloadProviderIds => List<String>.unmodifiable(
+  builtInDownloadProviderSpecs.map((provider) => provider.id),
+);
+
+bool isBuiltInSearchProvider(String? providerId) =>
+    builtInProviderSpecForId(providerId)?.supportsSearch ?? false;
+
+bool isBuiltInMetadataProvider(String? providerId) =>
+    builtInProviderSpecForId(providerId)?.supportsMetadata ?? false;
+
+bool isBuiltInDownloadProvider(String? providerId) =>
+    builtInProviderSpecForId(providerId)?.supportsDownload ?? false;
+
+String? get defaultBuiltInSearchProviderId => builtInSearchProviderSpecs.isEmpty
+    ? null
+    : builtInSearchProviderSpecs.first.id;
+
+String? get defaultBuiltInSearchProviderDisplayName =>
+    builtInSearchProviderSpecs.isEmpty
+    ? null
+    : builtInSearchProviderSpecs.first.displayName;
+
+String resolveProviderDisplayName(
+  String providerId, {
+  Iterable<Extension> extensions = const [],
+}) {
+  final builtIn = builtInProviderSpecForId(providerId);
+  if (builtIn != null) {
+    return builtIn.displayName;
+  }
+
+  for (final extension in extensions) {
+    if (extension.id == providerId) {
+      return extension.displayName;
+    }
+  }
+
+  return providerId;
 }
 
 class SearchFilter {
@@ -460,6 +575,7 @@ class ExtensionSetting {
 
 class ExtensionState {
   final List<Extension> extensions;
+  final List<BuiltInProviderSpec> builtInProviders;
   final List<String> providerPriority;
   final List<String> metadataProviderPriority;
   final bool isLoading;
@@ -468,6 +584,7 @@ class ExtensionState {
 
   const ExtensionState({
     this.extensions = const [],
+    this.builtInProviders = const [],
     this.providerPriority = const [],
     this.metadataProviderPriority = const [],
     this.isLoading = false,
@@ -477,6 +594,7 @@ class ExtensionState {
 
   ExtensionState copyWith({
     List<Extension>? extensions,
+    List<BuiltInProviderSpec>? builtInProviders,
     List<String>? providerPriority,
     List<String>? metadataProviderPriority,
     bool? isLoading,
@@ -485,6 +603,7 @@ class ExtensionState {
   }) {
     return ExtensionState(
       extensions: extensions ?? this.extensions,
+      builtInProviders: builtInProviders ?? this.builtInProviders,
       providerPriority: providerPriority ?? this.providerPriority,
       metadataProviderPriority:
           metadataProviderPriority ?? this.metadataProviderPriority,
@@ -496,7 +615,6 @@ class ExtensionState {
 }
 
 class ExtensionNotifier extends Notifier<ExtensionState> {
-  static const _builtInMetadataProviders = ['qobuz', 'tidal'];
   AppLifecycleListener? _appLifecycleListener;
   bool _cleanupInFlight = false;
   Completer<void>? _initializationCompleter;
@@ -546,6 +664,12 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
     _initializationCompleter = completer;
 
     state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      await refreshBuiltInProviders();
+    } catch (e) {
+      _log.w('Failed to refresh built-in providers before init: $e');
+    }
 
     if (!PlatformBridge.supportsExtensionSystem) {
       state = state.copyWith(
@@ -632,6 +756,16 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       _log.e('Failed to refresh extensions: $e');
       state = state.copyWith(error: e.toString());
     }
+  }
+
+  Future<void> refreshBuiltInProviders() async {
+    final list = await PlatformBridge.getBuiltInProviders();
+    final providers = list
+        .map((e) => BuiltInProviderSpec.fromJson(e))
+        .where((provider) => provider.id.isNotEmpty)
+        .toList();
+    _replaceBuiltInProviderRegistry(providers);
+    state = state.copyWith(builtInProviders: providers);
   }
 
   void clearError() {
@@ -727,10 +861,16 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
         }
 
         if (ext.hasDownloadProvider && settings.defaultService == extensionId) {
-          ref.read(settingsProvider.notifier).setDefaultService('tidal');
-          _log.d(
-            'Reset default service to Tidal because extension $extensionId was disabled',
-          );
+          final availableProviders = getAllDownloadProviders();
+          if (availableProviders.isNotEmpty) {
+            final fallbackService = availableProviders.first;
+            ref
+                .read(settingsProvider.notifier)
+                .setDefaultService(fallbackService);
+            _log.d(
+              'Reset default service to $fallbackService because extension $extensionId was disabled',
+            );
+          }
         }
       }
     } catch (e) {
@@ -973,7 +1113,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
   }
 
   List<String> getAllDownloadProviders() {
-    final providers = ['tidal', 'qobuz'];
+    final providers = List<String>.from(builtInDownloadProviderIds);
     for (final ext in state.extensions) {
       if (ext.enabled && ext.hasDownloadProvider) {
         providers.add(ext.id);
@@ -995,7 +1135,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
     return [
       ...primarySearchMetadataExtensions,
-      ..._builtInMetadataProviders,
+      ...builtInMetadataProviderIds,
       ...otherMetadataExtensions,
     ];
   }
@@ -1012,10 +1152,10 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
     }
 
     final hasPreferredExtension = preferredOrder.any(
-      (provider) => !_builtInMetadataProviders.contains(provider),
+      (provider) => !isBuiltInMetadataProvider(provider),
     );
     final hasSavedExtension = result.any(
-      (provider) => !_builtInMetadataProviders.contains(provider),
+      (provider) => !isBuiltInMetadataProvider(provider),
     );
 
     if (!hasSavedExtension && hasPreferredExtension) {

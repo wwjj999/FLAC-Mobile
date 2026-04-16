@@ -12,6 +12,7 @@ import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
+import 'package:spotiflac_android/utils/provider_ui_utils.dart';
 import 'package:spotiflac_android/screens/settings/lyrics_provider_priority_page.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
@@ -24,7 +25,6 @@ class DownloadSettingsPage extends ConsumerStatefulWidget {
 }
 
 class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
-  static const _builtInServices = ['tidal', 'qobuz'];
   static const _songLinkRegions = [
     'AD',
     'AE',
@@ -300,7 +300,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final topPadding = normalizedHeaderTopPadding(context);
 
-    final isBuiltInService = _builtInServices.contains(settings.defaultService);
+    final isBuiltInService = isBuiltInDownloadProvider(settings.defaultService);
     final isTidalService = settings.defaultService == 'tidal';
 
     return PopScope(
@@ -2053,13 +2053,13 @@ class _ServiceSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final extState = ref.watch(extensionProvider);
-    final builtInServiceIds = ['tidal', 'qobuz'];
+    final builtInProviders = builtInDownloadProviderSpecs;
 
     final extensionProviders = extState.extensions
         .where((e) => e.enabled && e.hasDownloadProvider)
         .toList();
 
-    final isExtensionService = !builtInServiceIds.contains(currentService);
+    final isExtensionService = !isBuiltInDownloadProvider(currentService);
     final isCurrentExtensionEnabled = isExtensionService
         ? extensionProviders.any((e) => e.id == currentService)
         : true;
@@ -2070,25 +2070,17 @@ class _ServiceSelector extends ConsumerWidget {
       padding: const EdgeInsets.all(12),
       child: Column(
         children: [
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(
-                child: _ServiceChip(
-                  icon: Icons.music_note,
-                  label: 'Tidal',
-                  isSelected: effectiveService == 'tidal',
-                  onTap: () => onChanged('tidal'),
+              for (final provider in builtInProviders)
+                _ServiceChip(
+                  icon: resolveProviderIcon(provider.id),
+                  label: provider.displayName,
+                  isSelected: effectiveService == provider.id,
+                  onTap: () => onChanged(provider.id),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _ServiceChip(
-                  icon: Icons.album,
-                  label: 'Qobuz',
-                  isSelected: effectiveService == 'qobuz',
-                  onTap: () => onChanged('qobuz'),
-                ),
-              ),
             ],
           ),
           if (extensionProviders.isNotEmpty) ...[

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
+import 'package:spotiflac_android/utils/provider_ui_utils.dart';
 import 'package:spotiflac_android/widgets/priority_settings_scaffold.dart';
 
 class MetadataProviderPriorityPage extends ConsumerStatefulWidget {
@@ -220,36 +221,34 @@ class _MetadataProviderItem extends StatelessWidget {
     BuildContext context,
     String provider,
   ) {
-    switch (provider) {
-      case 'deezer':
-        return _MetadataProviderInfo(
-          name: 'Deezer',
-          icon: Icons.album,
-          description: context.l10n.providerExtension,
-          isBuiltIn: false,
-        );
-      case 'qobuz':
-        return _MetadataProviderInfo(
-          name: 'Qobuz',
-          icon: Icons.library_music,
-          description: context.l10n.providerBuiltIn,
-          isBuiltIn: true,
-        );
-      case 'tidal':
-        return _MetadataProviderInfo(
-          name: 'Tidal',
-          icon: Icons.music_note,
-          description: context.l10n.providerBuiltIn,
-          isBuiltIn: true,
-        );
-      default:
-        return _MetadataProviderInfo(
-          name: provider,
-          icon: Icons.extension,
-          description: context.l10n.providerExtension,
-          isBuiltIn: false,
-        );
+    final builtIn = builtInProviderSpecForId(provider);
+    if (builtIn != null) {
+      return _MetadataProviderInfo(
+        name: builtIn.displayName,
+        icon: resolveProviderIcon(
+          provider,
+          builtInDefaultIcon: Icons.library_music,
+        ),
+        description: context.l10n.providerBuiltIn,
+        isBuiltIn: true,
+      );
     }
+
+    if (provider == 'deezer') {
+      return _MetadataProviderInfo(
+        name: 'Deezer',
+        icon: Icons.album,
+        description: context.l10n.providerExtension,
+        isBuiltIn: false,
+      );
+    }
+
+    return _MetadataProviderInfo(
+      name: provider,
+      icon: Icons.extension,
+      description: context.l10n.providerExtension,
+      isBuiltIn: false,
+    );
   }
 }
 

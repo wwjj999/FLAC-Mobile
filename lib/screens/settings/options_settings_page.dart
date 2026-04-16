@@ -6,6 +6,7 @@ import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 import 'package:spotiflac_android/utils/artist_utils.dart';
+import 'package:spotiflac_android/utils/provider_ui_utils.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
 class OptionsSettingsPage extends ConsumerWidget {
@@ -717,8 +718,6 @@ class _ChannelChip extends StatelessWidget {
 class _MetadataSourceSelector extends ConsumerWidget {
   const _MetadataSourceSelector();
 
-  static const _builtInProviders = {'tidal': 'Tidal', 'qobuz': 'Qobuz'};
-
   Extension? _defaultSearchExtension(List<Extension> extensions) {
     return extensions
             .where(
@@ -738,12 +737,15 @@ class _MetadataSourceSelector extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final settings = ref.watch(settingsProvider);
     final extState = ref.watch(extensionProvider);
+    final builtInProviders = builtInSearchProviderSpecs;
 
     final rawSearchProvider = settings.searchProvider?.trim() ?? '';
-    final isValidBuiltIn = _builtInProviders.containsKey(rawSearchProvider);
+    final isValidBuiltIn = isBuiltInSearchProvider(rawSearchProvider);
     final primarySearchExtension = _defaultSearchExtension(extState.extensions);
     final defaultProviderTarget =
-        primarySearchExtension?.displayName ?? 'Tidal';
+        primarySearchExtension?.displayName ??
+        defaultBuiltInSearchProviderDisplayName ??
+        context.l10n.extensionDefaultProvider;
     final defaultProviderLabel =
         '${context.l10n.extensionsHomeFeedAuto} ($defaultProviderTarget)';
     final searchProvider =
@@ -754,7 +756,7 @@ class _MetadataSourceSelector extends ConsumerWidget {
             )
         ? rawSearchProvider
         : '';
-    final isBuiltIn = _builtInProviders.containsKey(searchProvider);
+    final isBuiltIn = isBuiltInSearchProvider(searchProvider);
 
     Extension? activeExtension;
     if (searchProvider.isNotEmpty && !isBuiltIn) {
@@ -766,7 +768,7 @@ class _MetadataSourceSelector extends ConsumerWidget {
 
     String subtitle;
     if (isBuiltIn) {
-      subtitle = 'Using ${_builtInProviders[searchProvider]}';
+      subtitle = 'Using ${resolveProviderDisplayName(searchProvider)}';
     } else if (activeExtension != null) {
       subtitle = context.l10n.optionsUsingExtension(
         activeExtension.displayName,
@@ -796,48 +798,34 @@ class _MetadataSourceSelector extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(
-                child: _SourceChip(
-                  icon: Icons.graphic_eq,
-                  label: defaultProviderLabel,
-                  isSelected: searchProvider.isEmpty,
-                  onTap: () {
-                    if (hasNonDefaultProvider) {
-                      ref
-                          .read(settingsProvider.notifier)
-                          .setSearchProvider(null);
-                    }
-                  },
-                ),
+              _SourceChip(
+                icon: Icons.graphic_eq,
+                label: defaultProviderLabel,
+                isSelected: searchProvider.isEmpty,
+                onTap: () {
+                  if (hasNonDefaultProvider) {
+                    ref.read(settingsProvider.notifier).setSearchProvider(null);
+                  }
+                },
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _SourceChip(
-                  icon: Icons.waves,
-                  label: 'Tidal',
-                  isSelected: searchProvider == 'tidal',
+              for (final provider in builtInProviders)
+                _SourceChip(
+                  icon: resolveProviderIcon(
+                    provider.id,
+                    tidalIcon: Icons.waves,
+                  ),
+                  label: provider.displayName,
+                  isSelected: searchProvider == provider.id,
                   onTap: () {
                     ref
                         .read(settingsProvider.notifier)
-                        .setSearchProvider('tidal');
+                        .setSearchProvider(provider.id);
                   },
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _SourceChip(
-                  icon: Icons.album,
-                  label: 'Qobuz',
-                  isSelected: searchProvider == 'qobuz',
-                  onTap: () {
-                    ref
-                        .read(settingsProvider.notifier)
-                        .setSearchProvider('qobuz');
-                  },
-                ),
-              ),
             ],
           ),
           if (activeExtension != null) ...[

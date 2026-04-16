@@ -96,6 +96,136 @@ type ExtDownloadURLResult struct {
 	SampleRate int    `json:"sample_rate,omitempty"`
 }
 
+type builtInProviderSpec struct {
+	ID               string                                                                         `json:"id"`
+	DisplayName      string                                                                         `json:"display_name"`
+	SupportsMetadata bool                                                                           `json:"supports_metadata"`
+	SupportsDownload bool                                                                           `json:"supports_download"`
+	SupportsSearch   bool                                                                           `json:"supports_search"`
+	GetMetadata      func(resourceType, resourceID string) (string, error)                          `json:"-"`
+	SearchAll        func(query string, trackLimit, artistLimit int, filter string) (string, error) `json:"-"`
+	SearchTracks     func(query string, limit int) ([]ExtTrackMetadata, error)                      `json:"-"`
+	Download         func(req DownloadRequest) (DownloadResult, error)                              `json:"-"`
+}
+
+var builtInProviderRegistry = []builtInProviderSpec{
+	{
+		ID:               "tidal",
+		DisplayName:      "Tidal",
+		SupportsMetadata: true,
+		SupportsDownload: true,
+		SupportsSearch:   true,
+		GetMetadata:      GetTidalMetadata,
+		SearchAll:        SearchTidalAll,
+		SearchTracks: func(query string, limit int) ([]ExtTrackMetadata, error) {
+			return NewTidalDownloader().SearchTracks(query, limit)
+		},
+		Download: downloadWithBuiltInTidal,
+	},
+	{
+		ID:               "qobuz",
+		DisplayName:      "Qobuz",
+		SupportsMetadata: true,
+		SupportsDownload: true,
+		SupportsSearch:   true,
+		GetMetadata:      GetQobuzMetadata,
+		SearchAll:        SearchQobuzAll,
+		SearchTracks: func(query string, limit int) ([]ExtTrackMetadata, error) {
+			return NewQobuzDownloader().SearchTracks(query, limit)
+		},
+		Download: downloadWithBuiltInQobuz,
+	},
+}
+
+func getBuiltInProviderSpecs() []builtInProviderSpec {
+	specs := make([]builtInProviderSpec, len(builtInProviderRegistry))
+	copy(specs, builtInProviderRegistry)
+	return specs
+}
+
+func getBuiltInProviderSpec(providerID string) (builtInProviderSpec, bool) {
+	normalized := strings.ToLower(strings.TrimSpace(providerID))
+	for _, spec := range builtInProviderRegistry {
+		if spec.ID == normalized {
+			return spec, true
+		}
+	}
+	return builtInProviderSpec{}, false
+}
+
+func getBuiltInProviderMetadata(providerID, resourceType, resourceID string) (string, error) {
+	spec, ok := getBuiltInProviderSpec(providerID)
+	if !ok || !spec.SupportsMetadata || spec.GetMetadata == nil {
+		return "", fmt.Errorf("unsupported built-in metadata provider: %s", providerID)
+	}
+	return spec.GetMetadata(resourceType, resourceID)
+}
+
+func searchBuiltInProviderAll(providerID, query string, trackLimit, artistLimit int, filter string) (string, error) {
+	spec, ok := getBuiltInProviderSpec(providerID)
+	if !ok || !spec.SupportsSearch || spec.SearchAll == nil {
+		return "", fmt.Errorf("unsupported search provider: %s", providerID)
+	}
+	return spec.SearchAll(query, trackLimit, artistLimit, filter)
+}
+
+func searchBuiltInProviderTracks(providerID, query string, limit int) ([]ExtTrackMetadata, error) {
+	spec, ok := getBuiltInProviderSpec(providerID)
+	if !ok || !spec.SupportsMetadata || spec.SearchTracks == nil {
+		return nil, fmt.Errorf("unsupported built-in metadata provider: %s", providerID)
+	}
+	return spec.SearchTracks(query, limit)
+}
+
+func downloadWithBuiltInProvider(providerID string, req DownloadRequest) (DownloadResult, error) {
+	spec, ok := getBuiltInProviderSpec(providerID)
+	if !ok || !spec.SupportsDownload || spec.Download == nil {
+		return DownloadResult{}, fmt.Errorf("unknown built-in provider: %s", providerID)
+	}
+	return spec.Download(req)
+}
+
+func downloadWithBuiltInTidal(req DownloadRequest) (DownloadResult, error) {
+	result, err := downloadFromTidal(req)
+	if err != nil {
+		return DownloadResult{}, err
+	}
+	return DownloadResult{
+		FilePath:    result.FilePath,
+		BitDepth:    result.BitDepth,
+		SampleRate:  result.SampleRate,
+		Title:       result.Title,
+		Artist:      result.Artist,
+		Album:       result.Album,
+		ReleaseDate: result.ReleaseDate,
+		TrackNumber: result.TrackNumber,
+		DiscNumber:  result.DiscNumber,
+		ISRC:        result.ISRC,
+		LyricsLRC:   result.LyricsLRC,
+	}, nil
+}
+
+func downloadWithBuiltInQobuz(req DownloadRequest) (DownloadResult, error) {
+	result, err := downloadFromQobuz(req)
+	if err != nil {
+		return DownloadResult{}, err
+	}
+	return DownloadResult{
+		FilePath:    result.FilePath,
+		BitDepth:    result.BitDepth,
+		SampleRate:  result.SampleRate,
+		Title:       result.Title,
+		Artist:      result.Artist,
+		Album:       result.Album,
+		ReleaseDate: result.ReleaseDate,
+		TrackNumber: result.TrackNumber,
+		DiscNumber:  result.DiscNumber,
+		ISRC:        result.ISRC,
+		CoverURL:    result.CoverURL,
+		LyricsLRC:   result.LyricsLRC,
+	}, nil
+}
+
 func shouldStopProviderFallback(availability *ExtAvailabilityResult) bool {
 	return availability != nil && availability.SkipFallback
 }
@@ -433,6 +563,61 @@ func (p *extensionProviderWrapper) GetAlbum(albumID string) (*ExtAlbumMetadata, 
 		album.Tracks[i].ProviderID = p.extension.ID
 	}
 	return &album, nil
+}
+
+func (p *extensionProviderWrapper) GetPlaylist(playlistID string) (*ExtAlbumMetadata, error) {
+	if !p.extension.Manifest.IsMetadataProvider() {
+		return nil, fmt.Errorf("extension '%s' is not a metadata provider", p.extension.ID)
+	}
+
+	if !p.extension.Enabled {
+		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
+	}
+	if err := p.lockReadyVM(); err != nil {
+		return nil, err
+	}
+	defer p.extension.VMMu.Unlock()
+
+	script := fmt.Sprintf(`
+		(function() {
+			if (typeof extension !== 'undefined' && typeof extension.getPlaylist === 'function') {
+				return extension.getPlaylist(%q);
+			}
+			if (typeof extension !== 'undefined' && typeof extension.getAlbum === 'function') {
+				return extension.getAlbum(%q);
+			}
+			return null;
+		})()
+	`, playlistID, playlistID)
+
+	result, err := RunWithTimeoutAndRecover(p.vm, script, DefaultJSTimeout)
+	if err != nil {
+		if IsTimeoutError(err) {
+			return nil, fmt.Errorf("getPlaylist timeout: extension took too long to respond")
+		}
+		return nil, fmt.Errorf("getPlaylist failed: %w", err)
+	}
+
+	if result == nil || goja.IsUndefined(result) || goja.IsNull(result) {
+		return nil, fmt.Errorf("getPlaylist returned null")
+	}
+
+	exported := result.Export()
+	jsonBytes, err := json.Marshal(exported)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	var playlist ExtAlbumMetadata
+	if err := json.Unmarshal(jsonBytes, &playlist); err != nil {
+		return nil, fmt.Errorf("failed to parse playlist: %w", err)
+	}
+
+	playlist.ProviderID = p.extension.ID
+	for i := range playlist.Tracks {
+		playlist.Tracks[i].ProviderID = p.extension.ID
+	}
+	return &playlist, nil
 }
 
 func (p *extensionProviderWrapper) GetArtist(artistID string) (*ExtArtistMetadata, error) {
@@ -919,7 +1104,7 @@ func GetProviderPriority() []string {
 	defer providerPriorityMu.RUnlock()
 
 	if len(providerPriority) == 0 {
-		return []string{"tidal", "qobuz"}
+		return []string{}
 	}
 
 	result := make([]string, len(providerPriority))
@@ -928,7 +1113,7 @@ func GetProviderPriority() []string {
 }
 
 func sanitizeDownloadProviderPriority(providerIDs []string) []string {
-	sanitized := make([]string, 0, len(providerIDs)+2)
+	sanitized := make([]string, 0, len(providerIDs))
 	seen := map[string]struct{}{}
 
 	for _, providerID := range providerIDs {
@@ -950,14 +1135,6 @@ func sanitizeDownloadProviderPriority(providerIDs []string) []string {
 			continue
 		}
 		seen[seenKey] = struct{}{}
-		sanitized = append(sanitized, providerID)
-	}
-
-	for _, providerID := range []string{"tidal", "qobuz"} {
-		if _, exists := seen[providerID]; exists {
-			continue
-		}
-		seen[providerID] = struct{}{}
 		sanitized = append(sanitized, providerID)
 	}
 
@@ -1027,7 +1204,7 @@ func SetMetadataProviderPriority(providerIDs []string) {
 	metadataProviderPriorityMu.Lock()
 	defer metadataProviderPriorityMu.Unlock()
 
-	sanitized := make([]string, 0, len(providerIDs)+2)
+	sanitized := make([]string, 0, len(providerIDs))
 	seen := map[string]struct{}{}
 	for _, providerID := range providerIDs {
 		providerID = strings.TrimSpace(providerID)
@@ -1040,14 +1217,6 @@ func SetMetadataProviderPriority(providerIDs []string) {
 		seen[providerID] = struct{}{}
 		sanitized = append(sanitized, providerID)
 	}
-	for _, providerID := range []string{"qobuz", "tidal"} {
-		if _, exists := seen[providerID]; exists {
-			continue
-		}
-		seen[providerID] = struct{}{}
-		sanitized = append(sanitized, providerID)
-	}
-
 	metadataProviderPriority = sanitized
 	GoLog("[Extension] Metadata provider priority set: %v\n", sanitized)
 }
@@ -1057,7 +1226,7 @@ func GetMetadataProviderPriority() []string {
 	defer metadataProviderPriorityMu.RUnlock()
 
 	if len(metadataProviderPriority) == 0 {
-		return []string{"qobuz", "tidal"}
+		return []string{}
 	}
 
 	result := make([]string, len(metadataProviderPriority))
@@ -1066,21 +1235,23 @@ func GetMetadataProviderPriority() []string {
 }
 
 func isBuiltInProvider(providerID string) bool {
-	switch providerID {
-	case "tidal", "qobuz":
-		return true
-	default:
-		return false
-	}
+	_, ok := getBuiltInProviderSpec(providerID)
+	return ok
+}
+
+func isBuiltInMetadataProvider(providerID string) bool {
+	spec, ok := getBuiltInProviderSpec(providerID)
+	return ok && spec.SupportsMetadata
+}
+
+func isBuiltInSearchProvider(providerID string) bool {
+	spec, ok := getBuiltInProviderSpec(providerID)
+	return ok && spec.SupportsSearch
 }
 
 func isBuiltInDownloadProvider(providerID string) bool {
-	switch providerID {
-	case "tidal", "qobuz":
-		return true
-	default:
-		return false
-	}
+	spec, ok := getBuiltInProviderSpec(providerID)
+	return ok && spec.SupportsDownload
 }
 
 func normalizeQualityForBuiltIn(quality string) string {
@@ -1150,14 +1321,7 @@ func metadataTrackDedupKey(track ExtTrackMetadata) string {
 }
 
 func searchBuiltInMetadataTracks(providerID, query string, limit int) ([]ExtTrackMetadata, error) {
-	switch providerID {
-	case "qobuz":
-		return NewQobuzDownloader().SearchTracks(query, limit)
-	case "tidal":
-		return NewTidalDownloader().SearchTracks(query, limit)
-	default:
-		return nil, fmt.Errorf("unsupported built-in metadata provider: %s", providerID)
-	}
+	return searchBuiltInProviderTracks(providerID, query, limit)
 }
 
 func (m *extensionManager) SearchTracksWithMetadataProviders(query string, limit int, includeExtensions bool) ([]ExtTrackMetadata, error) {
@@ -1958,49 +2122,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 func tryBuiltInProvider(providerID string, req DownloadRequest) (*DownloadResponse, error) {
 	req.Service = providerID
 
-	var result DownloadResult
-	var err error
-
-	switch providerID {
-	case "tidal":
-		tidalResult, tidalErr := downloadFromTidal(req)
-		if tidalErr == nil {
-			result = DownloadResult{
-				FilePath:    tidalResult.FilePath,
-				BitDepth:    tidalResult.BitDepth,
-				SampleRate:  tidalResult.SampleRate,
-				Title:       tidalResult.Title,
-				Artist:      tidalResult.Artist,
-				Album:       tidalResult.Album,
-				ReleaseDate: tidalResult.ReleaseDate,
-				TrackNumber: tidalResult.TrackNumber,
-				DiscNumber:  tidalResult.DiscNumber,
-				ISRC:        tidalResult.ISRC,
-			}
-		}
-		err = tidalErr
-	case "qobuz":
-		qobuzResult, qobuzErr := downloadFromQobuz(req)
-		if qobuzErr == nil {
-			result = DownloadResult{
-				FilePath:    qobuzResult.FilePath,
-				BitDepth:    qobuzResult.BitDepth,
-				SampleRate:  qobuzResult.SampleRate,
-				Title:       qobuzResult.Title,
-				Artist:      qobuzResult.Artist,
-				Album:       qobuzResult.Album,
-				ReleaseDate: qobuzResult.ReleaseDate,
-				TrackNumber: qobuzResult.TrackNumber,
-				DiscNumber:  qobuzResult.DiscNumber,
-				ISRC:        qobuzResult.ISRC,
-				CoverURL:    qobuzResult.CoverURL,
-			}
-		}
-		err = qobuzErr
-	default:
-		return nil, fmt.Errorf("unknown built-in provider: %s", providerID)
-	}
-
+	result, err := downloadWithBuiltInProvider(providerID, req)
 	if err != nil {
 		return nil, err
 	}

@@ -51,6 +51,21 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   String get _playlistName => _resolvedPlaylistName ?? widget.playlistName;
   String? get _coverUrl => _resolvedCoverUrl ?? widget.coverUrl;
 
+  String? _metadataProviderId(String playlistId) {
+    if (playlistId.startsWith('deezer:')) return 'deezer';
+    if (playlistId.startsWith('qobuz:')) return 'qobuz';
+    if (playlistId.startsWith('tidal:')) return 'tidal';
+    return null;
+  }
+
+  String _metadataResourceId(String providerId, String playlistId) {
+    final prefixed = '$providerId:';
+    if (playlistId.startsWith(prefixed)) {
+      return playlistId.substring(prefixed.length);
+    }
+    return playlistId;
+  }
+
   String? _recommendedDownloadService() {
     final explicit = widget.recommendedService;
     if (explicit != null && explicit.isNotEmpty) {
@@ -99,17 +114,19 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     try {
       String playlistId = widget.playlistId!;
       late final Map<String, dynamic> result;
-      if (playlistId.startsWith('deezer:')) {
-        playlistId = playlistId.substring(7);
-        result = await PlatformBridge.getDeezerMetadata('playlist', playlistId);
-      } else if (playlistId.startsWith('qobuz:')) {
-        playlistId = playlistId.substring(6);
-        result = await PlatformBridge.getQobuzMetadata('playlist', playlistId);
-      } else if (playlistId.startsWith('tidal:')) {
-        playlistId = playlistId.substring(6);
-        result = await PlatformBridge.getTidalMetadata('playlist', playlistId);
+      final providerId = _metadataProviderId(playlistId);
+      if (providerId != null) {
+        result = await PlatformBridge.getProviderMetadata(
+          providerId,
+          'playlist',
+          _metadataResourceId(providerId, playlistId),
+        );
       } else {
-        result = await PlatformBridge.getDeezerMetadata('playlist', playlistId);
+        result = await PlatformBridge.getProviderMetadata(
+          'deezer',
+          'playlist',
+          playlistId,
+        );
       }
       if (!mounted) return;
 

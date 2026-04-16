@@ -5040,7 +5040,8 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
 
     final deezerId = _extractRawDeezerTrackIdFromValue(sourceTrackId);
     if (deezerId != null) {
-      final deezerTrack = await PlatformBridge.getDeezerMetadata(
+      final deezerTrack = await PlatformBridge.getProviderMetadata(
+        'deezer',
         'track',
         deezerId,
       );
@@ -5291,7 +5292,8 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
           (enriched['isrc'] ?? '').trim().isEmpty &&
           deezerId != null) {
         try {
-          final deezerMeta = await PlatformBridge.getDeezerMetadata(
+          final deezerMeta = await PlatformBridge.getProviderMetadata(
+            'deezer',
             'track',
             deezerId,
           );

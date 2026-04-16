@@ -424,23 +424,19 @@ import Gobackend  // Import Go framework
             if let error = error { throw error }
             return response
             
-        case "searchTidalAll":
+        case "searchProviderAll":
             let args = call.arguments as! [String: Any]
+            let providerId = args["provider_id"] as! String
             let query = args["query"] as! String
             let trackLimit = args["track_limit"] as? Int ?? 15
             let artistLimit = args["artist_limit"] as? Int ?? 3
             let filter = args["filter"] as? String ?? ""
-            let response = GobackendSearchTidalAll(query, Int(trackLimit), Int(artistLimit), filter, &error)
+            let response = GobackendSearchProviderAllJSON(providerId, query, Int(trackLimit), Int(artistLimit), filter, &error)
             if let error = error { throw error }
             return response
 
-        case "searchQobuzAll":
-            let args = call.arguments as! [String: Any]
-            let query = args["query"] as! String
-            let trackLimit = args["track_limit"] as? Int ?? 15
-            let artistLimit = args["artist_limit"] as? Int ?? 3
-            let filter = args["filter"] as? String ?? ""
-            let response = GobackendSearchQobuzAll(query, Int(trackLimit), Int(artistLimit), filter, &error)
+        case "getBuiltInProviders":
+            let response = GobackendGetBuiltInProvidersJSON(&error)
             if let error = error { throw error }
             return response
 
@@ -449,14 +445,6 @@ import Gobackend  // Import Go framework
             let artistId = args["artist_id"] as! String
             let limit = args["limit"] as? Int ?? 12
             let response = GobackendGetDeezerRelatedArtists(artistId, Int(limit), &error)
-            if let error = error { throw error }
-            return response
-
-        case "getDeezerMetadata":
-            let args = call.arguments as! [String: Any]
-            let resourceType = args["resource_type"] as! String
-            let resourceId = args["resource_id"] as! String
-            let response = GobackendGetDeezerMetadata(resourceType, resourceId, &error)
             if let error = error { throw error }
             return response
 
@@ -476,24 +464,19 @@ import Gobackend  // Import Go framework
             if let error = error { throw error }
             return response
 
-        case "parseDeezerUrl":
+        case "getProviderMetadata":
             let args = call.arguments as! [String: Any]
-            let url = args["url"] as! String
-            let response = GobackendParseDeezerURLExport(url, &error)
+            let providerId = args["provider_id"] as! String
+            let resourceType = args["resource_type"] as! String
+            let resourceId = args["resource_id"] as! String
+            let response = GobackendGetProviderMetadataJSON(providerId, resourceType, resourceId, &error)
             if let error = error { throw error }
             return response
 
-        case "parseQobuzUrl":
+        case "parseProviderUrl":
             let args = call.arguments as! [String: Any]
             let url = args["url"] as! String
-            let response = GobackendParseQobuzURLExport(url, &error)
-            if let error = error { throw error }
-            return response
-
-        case "parseTidalUrl":
-            let args = call.arguments as! [String: Any]
-            let url = args["url"] as! String
-            let response = GobackendParseTidalURLExport(url, &error)
+            let response = GobackendParseProviderURLJSON(url, &error)
             if let error = error { throw error }
             return response
 
@@ -849,30 +832,6 @@ import Gobackend  // Import Go framework
             
         case "getURLHandlers":
             let response = GobackendGetURLHandlersJSON(&error)
-            if let error = error { throw error }
-            return response
-            
-        case "getAlbumWithExtension":
-            let args = call.arguments as! [String: Any]
-            let extensionId = args["extension_id"] as! String
-            let albumId = args["album_id"] as! String
-            let response = GobackendGetAlbumWithExtensionJSON(extensionId, albumId, &error)
-            if let error = error { throw error }
-            return response
-            
-        case "getPlaylistWithExtension":
-            let args = call.arguments as! [String: Any]
-            let extensionId = args["extension_id"] as! String
-            let playlistId = args["playlist_id"] as! String
-            let response = GobackendGetPlaylistWithExtensionJSON(extensionId, playlistId, &error)
-            if let error = error { throw error }
-            return response
-            
-        case "getArtistWithExtension":
-            let args = call.arguments as! [String: Any]
-            let extensionId = args["extension_id"] as! String
-            let artistId = args["artist_id"] as! String
-            let response = GobackendGetArtistWithExtensionJSON(extensionId, artistId, &error)
             if let error = error { throw error }
             return response
             

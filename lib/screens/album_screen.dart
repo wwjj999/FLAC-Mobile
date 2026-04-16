@@ -176,83 +176,12 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   Future<void> _fetchTracks() async {
     setState(() => _isLoading = true);
     try {
-      if (widget.albumId.startsWith('deezer:')) {
-        final deezerAlbumId = widget.albumId.replaceFirst('deezer:', '');
-        final metadata = await PlatformBridge.getDeezerMetadata(
+      final directProviderId = _directMetadataProviderId();
+      if (directProviderId != null) {
+        final metadata = await PlatformBridge.getProviderMetadata(
+          directProviderId,
           'album',
-          deezerAlbumId,
-        );
-        final trackList = metadata['track_list'] as List<dynamic>;
-        final albumInfo = metadata['album_info'] as Map<String, dynamic>?;
-        final artistId = (albumInfo?['artist_id'] ?? albumInfo?['artistId'])
-            ?.toString();
-        final albumType = normalizeOptionalString(
-          albumInfo?['album_type']?.toString(),
-        );
-        final totalTracks = albumInfo?['total_tracks'] as int?;
-        final tracks = trackList
-            .map(
-              (t) => _parseTrack(
-                t as Map<String, dynamic>,
-                albumTypeFallback: albumType,
-                totalTracksFallback: totalTracks,
-              ),
-            )
-            .toList();
-
-        _AlbumCache.set(widget.albumId, tracks);
-
-        if (mounted) {
-          setState(() {
-            _tracks = tracks;
-            _artistId = artistId;
-            _albumType = albumType;
-            _albumTotalTracks = totalTracks;
-            _isLoading = false;
-          });
-        }
-        return;
-      } else if (widget.albumId.startsWith('qobuz:')) {
-        final qobuzAlbumId = widget.albumId.replaceFirst('qobuz:', '');
-        final metadata = await PlatformBridge.getQobuzMetadata(
-          'album',
-          qobuzAlbumId,
-        );
-        final trackList = metadata['track_list'] as List<dynamic>;
-        final albumInfo = metadata['album_info'] as Map<String, dynamic>?;
-        final artistId = (albumInfo?['artist_id'] ?? albumInfo?['artistId'])
-            ?.toString();
-        final albumType = normalizeOptionalString(
-          albumInfo?['album_type']?.toString(),
-        );
-        final totalTracks = albumInfo?['total_tracks'] as int?;
-        final tracks = trackList
-            .map(
-              (t) => _parseTrack(
-                t as Map<String, dynamic>,
-                albumTypeFallback: albumType,
-                totalTracksFallback: totalTracks,
-              ),
-            )
-            .toList();
-
-        _AlbumCache.set(widget.albumId, tracks);
-
-        if (mounted) {
-          setState(() {
-            _tracks = tracks;
-            _artistId = artistId;
-            _albumType = albumType;
-            _albumTotalTracks = totalTracks;
-            _isLoading = false;
-          });
-        }
-        return;
-      } else if (widget.albumId.startsWith('tidal:')) {
-        final tidalAlbumId = widget.albumId.replaceFirst('tidal:', '');
-        final metadata = await PlatformBridge.getTidalMetadata(
-          'album',
-          tidalAlbumId,
+          _metadataResourceId(directProviderId),
         );
         final trackList = metadata['track_list'] as List<dynamic>;
         final albumInfo = metadata['album_info'] as Map<String, dynamic>?;
@@ -332,6 +261,24 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     }
   }
 
+  String? _directMetadataProviderId() {
+    if (widget.extensionId != null && widget.extensionId!.isNotEmpty) {
+      return widget.extensionId;
+    }
+    if (widget.albumId.startsWith('deezer:')) return 'deezer';
+    if (widget.albumId.startsWith('qobuz:')) return 'qobuz';
+    if (widget.albumId.startsWith('tidal:')) return 'tidal';
+    return null;
+  }
+
+  String _metadataResourceId(String providerId) {
+    final prefixed = '$providerId:';
+    if (widget.albumId.startsWith(prefixed)) {
+      return widget.albumId.substring(prefixed.length);
+    }
+    return widget.albumId;
+  }
+
   Track _parseTrack(
     Map<String, dynamic> data, {
     String? albumTypeFallback,
@@ -366,12 +313,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   }
 
   String? _recommendedDownloadService() {
-    if (widget.extensionId != null && widget.extensionId!.isNotEmpty) {
-      return widget.extensionId;
-    }
-    if (widget.albumId.startsWith('tidal:')) return 'tidal';
-    if (widget.albumId.startsWith('qobuz:')) return 'qobuz';
-    return null;
+    return _directMetadataProviderId();
   }
 
   @override

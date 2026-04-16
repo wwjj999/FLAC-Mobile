@@ -7,13 +7,13 @@ import (
 	"testing"
 )
 
-func TestSetMetadataProviderPriorityAddsBuiltIns(t *testing.T) {
+func TestSetMetadataProviderPriorityPreservesExplicitProvidersOnly(t *testing.T) {
 	original := GetMetadataProviderPriority()
 	defer SetMetadataProviderPriority(original)
 
 	SetMetadataProviderPriority([]string{"tidal"})
 	got := GetMetadataProviderPriority()
-	want := []string{"tidal", "qobuz"}
+	want := []string{"tidal"}
 	if len(got) != len(want) {
 		t.Fatalf("unexpected priority length: got %v want %v", got, want)
 	}
@@ -80,7 +80,7 @@ func TestSetProviderPriorityRemovesRetiredDeezerDownloader(t *testing.T) {
 	SetProviderPriority([]string{"deezer", "qobuz", "custom-ext"})
 
 	got := GetProviderPriority()
-	want := []string{"qobuz", "custom-ext", "tidal"}
+	want := []string{"qobuz", "custom-ext"}
 	if len(got) != len(want) {
 		t.Fatalf("unexpected priority length: got %v want %v", got, want)
 	}
