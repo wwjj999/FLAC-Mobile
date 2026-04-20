@@ -81,6 +81,8 @@ var defaultLyricsFetchOptions = LyricsFetchOptions{
 	MusixmatchLanguage:         "",
 }
 
+var instrumentalTrackPattern = regexp.MustCompile(`(?i)(?:^|[\s\[(\-])(?:instrumental|inst\.?)(?:[\s\])]|$)`)
+
 var (
 	lyricsFetchOptionsMu sync.RWMutex
 	lyricsFetchOptions   = defaultLyricsFetchOptions
@@ -410,6 +412,16 @@ func (c *LyricsClient) durationMatches(lrcDuration, targetDuration float64) bool
 func (c *LyricsClient) FetchLyricsAllSources(spotifyID, trackName, artistName string, durationSec float64) (*LyricsResponse, error) {
 	primaryArtist := normalizeArtistName(artistName)
 	fetchOptions := GetLyricsFetchOptions()
+
+	if isLikelyInstrumentalTrack(trackName) {
+		GoLog("[Lyrics] Track marked instrumental by title heuristic, skipping lyrics search: %s - %s\n", artistName, trackName)
+		instrumental := &LyricsResponse{
+			Instrumental: true,
+			Source:       "Heuristic: Instrumental",
+		}
+		globalLyricsCache.Set(artistName, trackName, durationSec, instrumental)
+		return instrumental, nil
+	}
 
 	extManager := getExtensionManager()
 	var extensionProviders []*extensionProviderWrapper
@@ -845,6 +857,15 @@ func normalizeArtistName(name string) string {
 	}
 
 	return strings.TrimSpace(result)
+}
+
+func isLikelyInstrumentalTrack(name string) bool {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return false
+	}
+
+	return instrumentalTrackPattern.MatchString(trimmed)
 }
 
 func SaveLRCFile(audioFilePath, lrcContent string) (string, error) {

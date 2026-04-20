@@ -158,6 +158,115 @@ func downloadWithBuiltInProvider(providerID string, req DownloadRequest) (Downlo
 	return spec.Download(req)
 }
 
+func manifestCapabilityStringList(manifest *ExtensionManifest, key string) []string {
+	if manifest == nil || manifest.Capabilities == nil {
+		return nil
+	}
+
+	raw, ok := manifest.Capabilities[key]
+	if !ok {
+		return nil
+	}
+
+	values, ok := raw.([]interface{})
+	if !ok {
+		return nil
+	}
+
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		str, ok := value.(string)
+		if !ok {
+			continue
+		}
+		trimmed := strings.ToLower(strings.TrimSpace(str))
+		if trimmed == "" {
+			continue
+		}
+		result = append(result, trimmed)
+	}
+	return result
+}
+
+func extensionReplacesBuiltInProvider(ext *loadedExtension, providerID string) bool {
+	if ext == nil {
+		return false
+	}
+
+	normalized := strings.ToLower(strings.TrimSpace(providerID))
+	if normalized == "" {
+		return false
+	}
+
+	for _, replaced := range manifestCapabilityStringList(ext.Manifest, "replacesBuiltInProviders") {
+		if replaced == normalized {
+			return true
+		}
+	}
+
+	return false
+}
+
+func trimKnownProviderPrefix(trackID, providerID string) string {
+	trimmedID := strings.TrimSpace(trackID)
+	normalizedProvider := strings.ToLower(strings.TrimSpace(providerID))
+	if trimmedID == "" || normalizedProvider == "" {
+		return trimmedID
+	}
+
+	prefix := normalizedProvider + ":"
+	if strings.HasPrefix(strings.ToLower(trimmedID), prefix) {
+		return trimmedID[len(prefix):]
+	}
+
+	return trimmedID
+}
+
+func resolvePreferredTrackIDForExtension(ext *loadedExtension, req DownloadRequest, explicitTrackID string) string {
+	candidates := make([]string, 0, 8)
+	appendCandidate := func(value string) {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			return
+		}
+		for _, existing := range candidates {
+			if existing == trimmed {
+				return
+			}
+		}
+		candidates = append(candidates, trimmed)
+	}
+
+	appendCandidate(explicitTrackID)
+
+	if extensionReplacesBuiltInProvider(ext, "tidal") {
+		appendCandidate(req.TidalID)
+		appendCandidate(trimKnownProviderPrefix(req.SpotifyID, "tidal"))
+	}
+	if extensionReplacesBuiltInProvider(ext, "qobuz") {
+		appendCandidate(req.QobuzID)
+		appendCandidate(trimKnownProviderPrefix(req.SpotifyID, "qobuz"))
+	}
+	if extensionReplacesBuiltInProvider(ext, "deezer") {
+		appendCandidate(req.DeezerID)
+		appendCandidate(trimKnownProviderPrefix(req.SpotifyID, "deezer"))
+	}
+	if extensionReplacesBuiltInProvider(ext, "spotify") {
+		appendCandidate(trimKnownProviderPrefix(req.SpotifyID, "spotify"))
+		appendCandidate(req.SpotifyID)
+	}
+
+	appendCandidate(req.SpotifyID)
+	appendCandidate(req.TidalID)
+	appendCandidate(req.QobuzID)
+	appendCandidate(req.DeezerID)
+
+	if len(candidates) == 0 {
+		return ""
+	}
+	return candidates[0]
+}
+
 func normalizeExtensionDownloadResult(result *ExtDownloadResult) (DownloadResult, bool) {
 	if result == nil {
 		return DownloadResult{}, false
@@ -315,6 +424,13 @@ func buildExtensionFallbackStoppedResponse(providerID string, availability *ExtA
 		ErrorType: "extension_error",
 		Service:   providerID,
 	}
+}
+
+func shouldAbortCancelledFallback(itemID string, err error) bool {
+	if errors.Is(err, ErrDownloadCancelled) {
+		return true
+	}
+	return itemID != "" && isDownloadCancelled(itemID)
 }
 
 type DownloadDecryptionInfo struct {
@@ -824,11 +940,11 @@ func (p *extensionProviderWrapper) EnrichTrackForItemID(track *ExtTrackMetadata,
 	return &enrichedTrack, nil
 }
 
-func (p *extensionProviderWrapper) CheckAvailability(isrc, trackName, artistName, spotifyID, deezerID string) (*ExtAvailabilityResult, error) {
-	return p.CheckAvailabilityForItemID(isrc, trackName, artistName, spotifyID, deezerID, "")
+func (p *extensionProviderWrapper) CheckAvailability(isrc, trackName, artistName, spotifyID, deezerID, tidalID, qobuzID string) (*ExtAvailabilityResult, error) {
+	return p.CheckAvailabilityForItemID(isrc, trackName, artistName, spotifyID, deezerID, tidalID, qobuzID, "")
 }
 
-func (p *extensionProviderWrapper) CheckAvailabilityForItemID(isrc, trackName, artistName, spotifyID, deezerID string, itemID string) (*ExtAvailabilityResult, error) {
+func (p *extensionProviderWrapper) CheckAvailabilityForItemID(isrc, trackName, artistName, spotifyID, deezerID, tidalID, qobuzID string, itemID string) (*ExtAvailabilityResult, error) {
 	if !p.extension.Manifest.IsDownloadProvider() {
 		return nil, fmt.Errorf("extension '%s' is not a download provider", p.extension.ID)
 	}
@@ -855,11 +971,16 @@ func (p *extensionProviderWrapper) CheckAvailabilityForItemID(isrc, trackName, a
 	script := fmt.Sprintf(`
 		(function() {
 			if (typeof extension !== 'undefined' && typeof extension.checkAvailability === 'function') {
-				return extension.checkAvailability(%q, %q, %q, {spotify_id: %q, deezer_id: %q});
+				return extension.checkAvailability(%q, %q, %q, {
+					spotify_id: %q,
+					deezer_id: %q,
+					tidal_id: %q,
+					qobuz_id: %q
+				});
 			}
 			return null;
 		})()
-	`, isrc, trackName, artistName, spotifyID, deezerID)
+	`, isrc, trackName, artistName, spotifyID, deezerID, tidalID, qobuzID)
 
 	result, err := RunWithTimeoutAndRecover(p.vm, script, DefaultJSTimeout)
 	if err != nil {
@@ -966,6 +1087,7 @@ func (p *extensionProviderWrapper) Download(trackID, quality, outputPath, itemID
 	if itemID != "" {
 		initDownloadCancel(itemID)
 		defer clearDownloadCancel(itemID)
+		SetItemPreparing(itemID)
 	}
 
 	p.vm.Set("__onProgress", func(call goja.FunctionCall) goja.Value {
@@ -1585,8 +1707,8 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 		ext, err := extManager.GetExtension(req.Source)
 		if err == nil && ext.Enabled && ext.Error == "" && ext.Manifest.IsDownloadProvider() {
 			provider := newExtensionProviderWrapper(ext)
-			availability, availErr := provider.CheckAvailabilityForItemID(req.ISRC, req.TrackName, req.ArtistName, req.SpotifyID, req.DeezerID, req.ItemID)
-			if errors.Is(availErr, ErrDownloadCancelled) {
+			availability, availErr := provider.CheckAvailabilityForItemID(req.ISRC, req.TrackName, req.ArtistName, req.SpotifyID, req.DeezerID, req.TidalID, req.QobuzID, req.ItemID)
+			if shouldAbortCancelledFallback(req.ItemID, availErr) {
 				return nil, ErrDownloadCancelled
 			}
 			if availErr != nil {
@@ -1624,7 +1746,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 			}
 
 			enrichedTrack, err := provider.EnrichTrackForItemID(trackMeta, req.ItemID)
-			if errors.Is(err, ErrDownloadCancelled) {
+			if shouldAbortCancelledFallback(req.ItemID, err) {
 				return nil, ErrDownloadCancelled
 			}
 			if err == nil && enrichedTrack != nil {
@@ -1716,7 +1838,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 		GoLog("[DownloadWithExtensionFallback] Metadata incomplete, searching providers for: %s\n", searchQuery)
 
 		tracks, searchErr := extManager.SearchTracksWithMetadataProvidersForItemID(searchQuery, 5, true, req.ItemID)
-		if errors.Is(searchErr, ErrDownloadCancelled) {
+		if shouldAbortCancelledFallback(req.ItemID, searchErr) {
 			return nil, ErrDownloadCancelled
 		}
 		if searchErr == nil && len(tracks) > 0 {
@@ -1770,6 +1892,9 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 		if req.ISRC != "" &&
 			(req.Genre == "" || req.Label == "" || req.Copyright == "") {
 			enrichExtraMetadataByISRC("DownloadWithExtensionFallback", req.ISRC, &req.Genre, &req.Label, &req.Copyright)
+			if isDownloadCancelled(req.ItemID) {
+				return nil, ErrDownloadCancelled
+			}
 		}
 	}
 
@@ -1793,10 +1918,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 
 			provider := newExtensionProviderWrapper(ext)
 
-			trackID := req.SpotifyID
-			if sourceExtensionTrackID != "" {
-				trackID = sourceExtensionTrackID
-			}
+			trackID := resolvePreferredTrackIDForExtension(ext, req, sourceExtensionTrackID)
 
 			GoLog("[DownloadWithExtensionFallback] Downloading from source extension with trackID: %s (skipBuiltInFallback: %v)\n", trackID, skipBuiltIn)
 
@@ -1823,6 +1945,9 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 				} else {
 					RemoveItemProgress(req.ItemID)
 				}
+			}
+			if shouldAbortCancelledFallback(req.ItemID, err) {
+				return nil, ErrDownloadCancelled
 			}
 
 			if err == nil && result.Success {
@@ -1994,8 +2119,8 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 
 			provider := newExtensionProviderWrapper(ext)
 
-			availability, err := provider.CheckAvailabilityForItemID(req.ISRC, req.TrackName, req.ArtistName, req.SpotifyID, req.DeezerID, req.ItemID)
-			if errors.Is(err, ErrDownloadCancelled) {
+			availability, err := provider.CheckAvailabilityForItemID(req.ISRC, req.TrackName, req.ArtistName, req.SpotifyID, req.DeezerID, req.TidalID, req.QobuzID, req.ItemID)
+			if shouldAbortCancelledFallback(req.ItemID, err) {
 				return nil, ErrDownloadCancelled
 			}
 			terminalAvailability := shouldStopProviderFallback(availability)
@@ -2035,6 +2160,9 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 				} else {
 					RemoveItemProgress(req.ItemID)
 				}
+			}
+			if shouldAbortCancelledFallback(req.ItemID, err) {
+				return nil, ErrDownloadCancelled
 			}
 
 			if err == nil && result.Success {

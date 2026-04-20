@@ -211,6 +211,24 @@ func TestBuildExtensionFallbackStoppedResponseFallsBackToError(t *testing.T) {
 	}
 }
 
+func TestShouldAbortCancelledFallbackWithCancelledError(t *testing.T) {
+	if !shouldAbortCancelledFallback("", ErrDownloadCancelled) {
+		t.Fatal("expected cancelled error to abort fallback")
+	}
+}
+
+func TestShouldAbortCancelledFallbackWithCancelledItemState(t *testing.T) {
+	const itemID = "cancelled-item"
+	initDownloadCancel(itemID)
+	defer clearDownloadCancel(itemID)
+
+	cancelDownload(itemID)
+
+	if !shouldAbortCancelledFallback(itemID, errors.New("generic failure")) {
+		t.Fatal("expected cancelled item state to abort fallback even for generic errors")
+	}
+}
+
 func TestCanEmbedGenreLabelRequiresExistingAbsoluteLocalFile(t *testing.T) {
 	tempFile := filepath.Join(t.TempDir(), "track.flac")
 	if err := os.WriteFile(tempFile, []byte("fLaC"), 0644); err != nil {

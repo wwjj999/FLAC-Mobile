@@ -52,19 +52,33 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   String get _playlistName => _resolvedPlaylistName ?? widget.playlistName;
   String? get _coverUrl => _resolvedCoverUrl ?? widget.coverUrl;
 
-  String? _metadataProviderId(String playlistId) {
-    if (playlistId.startsWith('deezer:')) return 'deezer';
-    if (playlistId.startsWith('qobuz:')) return 'qobuz';
-    if (playlistId.startsWith('tidal:')) return 'tidal';
+  String? _legacyProviderIdFromResourceId(String value) {
+    if (value.startsWith('deezer:')) return 'deezer';
+    if (value.startsWith('qobuz:')) return 'qobuz';
+    if (value.startsWith('tidal:')) return 'tidal';
     return null;
   }
 
-  String _metadataResourceId(String providerId, String playlistId) {
-    final prefixed = '$providerId:';
-    if (playlistId.startsWith(prefixed)) {
-      return playlistId.substring(prefixed.length);
+  String _stripPrefixedResourceId(String value) {
+    final colonIndex = value.indexOf(':');
+    if (colonIndex <= 0 || colonIndex == value.length - 1) {
+      return value;
     }
-    return playlistId;
+    return value.substring(colonIndex + 1);
+  }
+
+  String? _metadataProviderId(String playlistId) {
+    final providerId = _legacyProviderIdFromResourceId(playlistId);
+    if (providerId == null) return null;
+    final effective = resolveEffectiveMetadataProvider(
+      providerId,
+      ref.read(extensionProvider),
+    );
+    return effective.isEmpty ? null : effective;
+  }
+
+  String _metadataResourceId(String providerId, String playlistId) {
+    return _stripPrefixedResourceId(playlistId);
   }
 
   String? _recommendedDownloadService() {
@@ -75,8 +89,13 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
 
     final playlistId = widget.playlistId;
     if (playlistId != null) {
-      if (playlistId.startsWith('tidal:')) return 'tidal';
-      if (playlistId.startsWith('qobuz:')) return 'qobuz';
+      final providerId = _metadataProviderId(playlistId);
+      if (providerId != null && providerId.isNotEmpty) {
+        return resolveEffectiveDownloadService(
+          providerId,
+          ref.read(extensionProvider),
+        );
+      }
     }
 
     final source = _tracks.firstOrNull?.source;
@@ -85,8 +104,13 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     }
 
     final trackId = _tracks.firstOrNull?.id ?? '';
-    if (trackId.startsWith('tidal:')) return 'tidal';
-    if (trackId.startsWith('qobuz:')) return 'qobuz';
+    final trackProviderId = _legacyProviderIdFromResourceId(trackId);
+    if (trackProviderId != null) {
+      return resolveEffectiveDownloadService(
+        trackProviderId,
+        ref.read(extensionProvider),
+      );
+    }
     return null;
   }
 
@@ -509,11 +533,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       }
       ref
           .read(downloadQueueProvider.notifier)
-          .addToQueue(
-            track,
-            service,
-            playlistName: _playlistName,
-          );
+          .addToQueue(track, service, playlistName: _playlistName);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.snackbarAddedToQueue(track.name))),
       );

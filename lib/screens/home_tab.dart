@@ -3643,20 +3643,17 @@ class _SearchProviderDropdown extends ConsumerWidget {
         .where((ext) => ext.enabled && ext.hasCustomSearch)
         .toList();
     final builtInProviders = builtInSearchProviderSpecs;
-    final primarySearchExtension = _defaultSearchExtension(searchProviders);
-    final defaultProviderTarget =
-        primarySearchExtension?.displayName ??
-        defaultBuiltInSearchProviderDisplayName ??
-        context.l10n.extensionDefaultProvider;
-    final defaultProviderLabel =
-        '${context.l10n.extensionsHomeFeedAuto} ($defaultProviderTarget)';
-    final defaultProviderIconPath = primarySearchExtension?.iconPath;
-    final currentProvider =
+    final resolvedCurrentProvider =
         rawCurrentProvider != null &&
             rawCurrentProvider.isNotEmpty &&
             (isBuiltInSearchProvider(rawCurrentProvider) ||
                 searchProviders.any((e) => e.id == rawCurrentProvider))
         ? rawCurrentProvider
+        : _defaultSearchExtension(searchProviders)?.id ??
+              defaultBuiltInSearchProviderId;
+    final currentProvider =
+        resolvedCurrentProvider != null && resolvedCurrentProvider.isNotEmpty
+        ? resolvedCurrentProvider
         : null;
 
     Extension? currentExt;
@@ -3675,19 +3672,6 @@ class _SearchProviderDropdown extends ConsumerWidget {
       iconPath = currentExt.iconPath;
       if (currentExt.searchBehavior?.icon != null) {
         displayIcon = _getIconFromName(currentExt.searchBehavior!.icon!);
-      }
-    } else if (primarySearchExtension?.searchBehavior?.icon != null) {
-      displayIcon = _getIconFromName(
-        primarySearchExtension!.searchBehavior!.icon!,
-      );
-      iconPath = defaultProviderIconPath;
-    } else if (defaultProviderIconPath != null &&
-        defaultProviderIconPath.isNotEmpty) {
-      iconPath = defaultProviderIconPath;
-      if (primarySearchExtension?.searchBehavior?.icon != null) {
-        displayIcon = _getIconFromName(
-          primarySearchExtension!.searchBehavior!.icon!,
-        );
       }
     } else if (isBuiltInProvider) {
       displayIcon = resolveProviderIcon(currentProvider);
@@ -3724,39 +3708,10 @@ class _SearchProviderDropdown extends ConsumerWidget {
         offset: const Offset(0, 40),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         onSelected: (String providerId) {
-          final provider = providerId.isEmpty ? null : providerId;
-          ref.read(settingsProvider.notifier).setSearchProvider(provider);
+          ref.read(settingsProvider.notifier).setSearchProvider(providerId);
           onProviderChanged?.call();
         },
         itemBuilder: (context) => [
-          PopupMenuItem<String>(
-            value: '',
-            child: Row(
-              children: [
-                Icon(
-                  Icons.music_note,
-                  size: 20,
-                  color: currentProvider == null || currentProvider.isEmpty
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    defaultProviderLabel,
-                    style: TextStyle(
-                      fontWeight:
-                          currentProvider == null || currentProvider.isEmpty
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ),
-                if (currentProvider == null || currentProvider.isEmpty)
-                  Icon(Icons.check, size: 18, color: colorScheme.primary),
-              ],
-            ),
-          ),
           ...builtInProviders.map(
             (provider) => PopupMenuItem<String>(
               value: provider.id,

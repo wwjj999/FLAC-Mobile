@@ -479,6 +479,7 @@ func (r *extensionRuntime) RegisterAPIs(vm *goja.Runtime) {
 	utilsObj.Set("appUserAgent", r.appUserAgent)
 	utilsObj.Set("sleep", r.sleep)
 	utilsObj.Set("isDownloadCancelled", r.isDownloadCancelled)
+	utilsObj.Set("setDownloadStatus", r.setDownloadStatus)
 	vm.Set("utils", utilsObj)
 
 	logObj := vm.NewObject()

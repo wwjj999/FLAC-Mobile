@@ -80,6 +80,32 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   int? _albumTotalTracks;
   final ScrollController _scrollController = ScrollController();
 
+  String _legacyProviderIdFromResourceId(String value) {
+    if (value.startsWith('deezer:')) return 'deezer';
+    if (value.startsWith('qobuz:')) return 'qobuz';
+    if (value.startsWith('tidal:')) return 'tidal';
+    if (value.startsWith('spotify:')) return 'spotify';
+    return 'spotify';
+  }
+
+  String _effectiveMetadataProviderIdFromAlbumId() {
+    if (widget.extensionId != null && widget.extensionId!.isNotEmpty) {
+      return widget.extensionId!;
+    }
+    return resolveEffectiveMetadataProvider(
+      _legacyProviderIdFromResourceId(widget.albumId),
+      ref.read(extensionProvider),
+    );
+  }
+
+  String _stripPrefixedResourceId(String value) {
+    final colonIndex = value.indexOf(':');
+    if (colonIndex <= 0 || colonIndex == value.length - 1) {
+      return value;
+    }
+    return value.substring(colonIndex + 1);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -87,14 +113,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     _scrollController.addListener(_onScroll);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final providerId =
-          widget.extensionId ??
-          (() {
-            if (widget.albumId.startsWith('deezer:')) return 'deezer';
-            if (widget.albumId.startsWith('qobuz:')) return 'qobuz';
-            if (widget.albumId.startsWith('tidal:')) return 'tidal';
-            return 'spotify';
-          })();
+      final providerId = _effectiveMetadataProviderIdFromAlbumId();
       ref
           .read(recentAccessProvider.notifier)
           .recordAlbumAccess(
@@ -263,21 +282,12 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   }
 
   String? _directMetadataProviderId() {
-    if (widget.extensionId != null && widget.extensionId!.isNotEmpty) {
-      return widget.extensionId;
-    }
-    if (widget.albumId.startsWith('deezer:')) return 'deezer';
-    if (widget.albumId.startsWith('qobuz:')) return 'qobuz';
-    if (widget.albumId.startsWith('tidal:')) return 'tidal';
-    return null;
+    final providerId = _effectiveMetadataProviderIdFromAlbumId();
+    return providerId.isEmpty ? null : providerId;
   }
 
   String _metadataResourceId(String providerId) {
-    final prefixed = '$providerId:';
-    if (widget.albumId.startsWith(prefixed)) {
-      return widget.albumId.substring(prefixed.length);
-    }
-    return widget.albumId;
+    return _stripPrefixedResourceId(widget.albumId);
   }
 
   Track _parseTrack(
@@ -656,9 +666,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
         );
         return;
       }
-      ref
-          .read(downloadQueueProvider.notifier)
-          .addToQueue(track, service);
+      ref.read(downloadQueueProvider.notifier).addToQueue(track, service);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.snackbarAddedToQueue(track.name))),
       );

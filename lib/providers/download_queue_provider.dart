@@ -1711,6 +1711,21 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         continue;
       }
 
+      if (status == 'preparing') {
+        progressUpdates[itemId] = const _ProgressUpdate(
+          status: DownloadStatus.downloading,
+          progress: 0.0,
+          speedMBps: 0,
+          bytesReceived: 0,
+          bytesTotal: 0,
+        );
+
+        if (LogBuffer.loggingEnabled) {
+          _log.d('Preparing [$itemId]: waiting for real download bytes');
+        }
+        continue;
+      }
+
       final progressFromBackend =
           (itemProgress['progress'] as num?)?.toDouble() ?? 0.0;
 
@@ -1823,6 +1838,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       final bytesReceived =
           (firstProgress['bytes_received'] as num?)?.toInt() ?? 0;
       final bytesTotal = (firstProgress['bytes_total'] as num?)?.toInt() ?? 0;
+      final backendStatus = firstProgress['status'] as String? ?? 'downloading';
 
       if (downloadingCount > 0 && firstDownloading != null) {
         final trackName = downloadingCount == 1
@@ -1835,7 +1851,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         int notifProgress = bytesReceived;
         int notifTotal = bytesTotal;
 
-        if (bytesTotal <= 0) {
+        if (backendStatus == 'preparing') {
+          notifProgress = 0;
+          notifTotal = 100;
+        } else if (bytesTotal <= 0) {
           final progressPercent =
               (firstProgress['progress'] as num?)?.toDouble() ?? 0.0;
           notifProgress = (progressPercent * 100).toInt();
@@ -2620,11 +2639,17 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     try {
       final colonIdx = track.id.indexOf(':');
       final provider = track.id.substring(0, colonIdx);
+      final effectiveProvider = resolveEffectiveMetadataProvider(
+        provider,
+        ref.read(extensionProvider),
+      );
       final providerTrackId = track.id.substring(colonIdx + 1);
 
-      _log.d('No ISRC, fetching from $provider API: $providerTrackId');
+      _log.d(
+        'No ISRC, fetching from ${effectiveProvider.isEmpty ? provider : effectiveProvider} API: $providerTrackId',
+      );
       final providerData = await PlatformBridge.getProviderMetadata(
-        provider,
+        effectiveProvider.isEmpty ? provider : effectiveProvider,
         'track',
         providerTrackId,
       );
@@ -2647,7 +2672,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         );
       }
 
-      _log.d('Resolved ISRC from $provider: $resolvedIsrc');
+      _log.d(
+        'Resolved ISRC from ${effectiveProvider.isEmpty ? provider : effectiveProvider}: $resolvedIsrc',
+      );
 
       final updatedTrack = _copyTrackWithResolvedMetadata(
         track,
@@ -2661,7 +2688,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       );
       final deezerTrackId = await _searchDeezerTrackIdByIsrc(
         resolvedIsrc,
-        lookupContext: '$provider ISRC',
+        lookupContext:
+            '${effectiveProvider.isEmpty ? provider : effectiveProvider} ISRC',
         itemId: itemId,
       );
 

@@ -205,14 +205,19 @@ func (r *extensionRuntime) fileDownload(call goja.FunctionCall) goja.Value {
 	}
 	defer out.Close()
 
-	contentLength := resp.ContentLength
 	activeItemID := r.getActiveDownloadItemID()
-	if activeItemID != "" && contentLength > 0 {
+	if activeItemID != "" {
+		SetItemDownloading(activeItemID)
+	}
+
+	contentLength := resp.ContentLength
+	shouldTrackItemBytes := activeItemID != "" && onProgress == nil
+	if shouldTrackItemBytes && contentLength > 0 {
 		SetItemBytesTotal(activeItemID, contentLength)
 	}
 
 	var progressWriter interface{ Write([]byte) (int, error) } = out
-	if activeItemID != "" {
+	if shouldTrackItemBytes {
 		progressWriter = NewItemProgressWriter(out, activeItemID)
 	}
 

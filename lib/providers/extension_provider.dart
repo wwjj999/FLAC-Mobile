@@ -345,6 +345,50 @@ String resolveEffectiveDownloadService(
       '';
 }
 
+String resolveEffectiveMetadataProvider(
+  String requestedProvider,
+  ExtensionState extensionState,
+) {
+  final normalizedRequested = requestedProvider.trim().toLowerCase();
+  final builtInMetadataIds = extensionState.builtInProviders
+      .where((provider) => provider.supportsMetadata)
+      .map((provider) => provider.id.trim().toLowerCase())
+      .where((providerId) => providerId.isNotEmpty)
+      .toSet();
+  final enabledMetadataExtensions = extensionState.extensions
+      .where((ext) => ext.enabled && ext.hasMetadataProvider)
+      .toList(growable: false);
+
+  if (normalizedRequested.isNotEmpty) {
+    if (builtInMetadataIds.contains(normalizedRequested)) {
+      return normalizedRequested;
+    }
+
+    final matchingExtension = enabledMetadataExtensions
+        .where((ext) => ext.id.trim().toLowerCase() == normalizedRequested)
+        .firstOrNull;
+    if (matchingExtension != null) {
+      return matchingExtension.id;
+    }
+
+    final replacementExtension = enabledMetadataExtensions
+        .where(
+          (ext) => ext.replacesBuiltInProviders.contains(normalizedRequested),
+        )
+        .firstOrNull;
+    if (replacementExtension != null) {
+      return replacementExtension.id;
+    }
+  }
+
+  return enabledMetadataExtensions.firstOrNull?.id ??
+      extensionState.builtInProviders
+          .where((provider) => provider.supportsMetadata)
+          .map((provider) => provider.id)
+          .firstOrNull ??
+      '';
+}
+
 bool isDeezerCompatibleDownloadService(
   String service,
   ExtensionState extensionState,
@@ -1024,6 +1068,23 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
         .firstOrNull;
   }
 
+  String? _firstEnabledSearchProviderId() {
+    return state.extensions
+            .where(
+              (ext) =>
+                  ext.enabled &&
+                  ext.hasCustomSearch &&
+                  ext.searchBehavior?.primary == true,
+            )
+            .map((ext) => ext.id)
+            .firstOrNull ??
+        state.extensions
+            .where((ext) => ext.enabled && ext.hasCustomSearch)
+            .map((ext) => ext.id)
+            .firstOrNull ??
+        defaultBuiltInSearchProviderId;
+  }
+
   String? replacedBuiltInDownloadProviderFor(String providerId) {
     final normalized = providerId.trim().toLowerCase();
     if (normalized.isEmpty) return null;
@@ -1137,8 +1198,18 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   void _reconcileSearchProvider() {
     final settings = ref.read(settingsProvider);
-    final currentSearchProvider = settings.searchProvider?.trim();
-    if (currentSearchProvider == null || currentSearchProvider.isEmpty) {
+    final currentSearchProvider = settings.searchProvider?.trim() ?? '';
+    final preferredSearchProvider = _firstEnabledSearchProviderId() ?? '';
+
+    if (currentSearchProvider.isEmpty) {
+      if (preferredSearchProvider.isNotEmpty) {
+        ref
+            .read(settingsProvider.notifier)
+            .setSearchProvider(preferredSearchProvider);
+        _log.d(
+          'Adopted first enabled search provider as default: $preferredSearchProvider',
+        );
+      }
       return;
     }
 
@@ -1161,9 +1232,15 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
     );
     if (!isBuiltInSearchProvider(currentSearchProvider) &&
         !hasMatchingExtension) {
-      ref.read(settingsProvider.notifier).setSearchProvider(null);
+      ref
+          .read(settingsProvider.notifier)
+          .setSearchProvider(
+            preferredSearchProvider.isNotEmpty ? preferredSearchProvider : null,
+          );
       _log.d(
-        'Cleared stale search provider because $currentSearchProvider is no longer available',
+        preferredSearchProvider.isNotEmpty
+            ? 'Reset stale search provider $currentSearchProvider to $preferredSearchProvider'
+            : 'Cleared stale search provider because $currentSearchProvider is no longer available',
       );
     }
   }

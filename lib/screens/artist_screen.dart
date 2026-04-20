@@ -158,22 +158,39 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     return _directMetadataProviderId();
   }
 
-  String? _directMetadataProviderId() {
+  String _legacyProviderIdFromResourceId(String value) {
+    if (value.startsWith('deezer:')) return 'deezer';
+    if (value.startsWith('qobuz:')) return 'qobuz';
+    if (value.startsWith('tidal:')) return 'tidal';
+    if (value.startsWith('spotify:')) return 'spotify';
+    return 'spotify';
+  }
+
+  String _effectiveMetadataProviderIdFromArtistId() {
     if (widget.extensionId != null && widget.extensionId!.isNotEmpty) {
-      return widget.extensionId;
+      return widget.extensionId!;
     }
-    if (widget.artistId.startsWith('deezer:')) return 'deezer';
-    if (widget.artistId.startsWith('qobuz:')) return 'qobuz';
-    if (widget.artistId.startsWith('tidal:')) return 'tidal';
-    return null;
+    return resolveEffectiveMetadataProvider(
+      _legacyProviderIdFromResourceId(widget.artistId),
+      ref.read(extensionProvider),
+    );
+  }
+
+  String _stripPrefixedResourceId(String value) {
+    final colonIndex = value.indexOf(':');
+    if (colonIndex <= 0 || colonIndex == value.length - 1) {
+      return value;
+    }
+    return value.substring(colonIndex + 1);
+  }
+
+  String? _directMetadataProviderId() {
+    final providerId = _effectiveMetadataProviderIdFromArtistId();
+    return providerId.isEmpty ? null : providerId;
   }
 
   String _metadataResourceId(String providerId) {
-    final prefixed = '$providerId:';
-    if (widget.artistId.startsWith(prefixed)) {
-      return widget.artistId.substring(prefixed.length);
-    }
-    return widget.artistId;
+    return _stripPrefixedResourceId(widget.artistId);
   }
 
   @override
@@ -183,14 +200,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     _scrollController.addListener(_onScroll);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final providerId =
-          widget.extensionId ??
-          (() {
-            if (widget.artistId.startsWith('deezer:')) return 'deezer';
-            if (widget.artistId.startsWith('qobuz:')) return 'qobuz';
-            if (widget.artistId.startsWith('tidal:')) return 'tidal';
-            return 'spotify';
-          })();
+      final providerId = _effectiveMetadataProviderIdFromArtistId();
       ref
           .read(recentAccessProvider.notifier)
           .recordArtistAccess(
@@ -1034,9 +1044,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
   Future<List<Track>> _fetchAlbumTracks(ArtistAlbum album) async {
     final providerId = album.providerId;
     if (providerId != null && providerId.isNotEmpty) {
-      final resourceId = album.id.startsWith('$providerId:')
-          ? album.id.substring(providerId.length + 1)
-          : album.id;
+      final resourceId = _stripPrefixedResourceId(album.id);
       final metadata = await PlatformBridge.getProviderMetadata(
         providerId,
         'album',

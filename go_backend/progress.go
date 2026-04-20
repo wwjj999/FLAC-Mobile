@@ -26,6 +26,13 @@ type ItemProgress struct {
 	Status        string  `json:"status"`
 }
 
+const (
+	itemProgressStatusPreparing   = "preparing"
+	itemProgressStatusDownloading = "downloading"
+	itemProgressStatusCompleted   = "completed"
+	itemProgressStatusFinalizing  = "finalizing"
+)
+
 type MultiProgress struct {
 	Items map[string]*ItemProgress `json:"items"`
 }
@@ -106,9 +113,35 @@ func StartItemProgress(itemID string) {
 		BytesReceived: 0,
 		Progress:      0,
 		IsDownloading: true,
-		Status:        "downloading",
+		Status:        itemProgressStatusDownloading,
 	}
 	markMultiProgressDirtyLocked()
+}
+
+func SetItemPreparing(itemID string) {
+	multiMu.Lock()
+	defer multiMu.Unlock()
+
+	if item, ok := multiProgress.Items[itemID]; ok {
+		item.Progress = 0
+		item.BytesReceived = 0
+		item.BytesTotal = 0
+		item.SpeedMBps = 0
+		item.IsDownloading = true
+		item.Status = itemProgressStatusPreparing
+		markMultiProgressDirtyLocked()
+	}
+}
+
+func SetItemDownloading(itemID string) {
+	multiMu.Lock()
+	defer multiMu.Unlock()
+
+	if item, ok := multiProgress.Items[itemID]; ok {
+		item.IsDownloading = true
+		item.Status = itemProgressStatusDownloading
+		markMultiProgressDirtyLocked()
+	}
 }
 
 func SetItemBytesTotal(itemID string, total int64) {
@@ -155,7 +188,7 @@ func CompleteItemProgress(itemID string) {
 	if item, ok := multiProgress.Items[itemID]; ok {
 		item.Progress = 1.0
 		item.IsDownloading = false
-		item.Status = "completed"
+		item.Status = itemProgressStatusCompleted
 		markMultiProgressDirtyLocked()
 	}
 }
@@ -182,7 +215,7 @@ func SetItemFinalizing(itemID string) {
 
 	if item, ok := multiProgress.Items[itemID]; ok {
 		item.Progress = 1.0
-		item.Status = "finalizing"
+		item.Status = itemProgressStatusFinalizing
 		markMultiProgressDirtyLocked()
 	}
 }

@@ -674,18 +674,19 @@ class _SearchProviderSelector extends ConsumerWidget {
     final hasAnyProvider =
         searchProviders.isNotEmpty || builtInProviders.isNotEmpty;
 
-    String currentProviderName = context.l10n.extensionDefaultProvider;
-    if (settings.searchProvider != null &&
-        settings.searchProvider!.isNotEmpty) {
-      if (isBuiltInSearchProvider(settings.searchProvider)) {
-        currentProviderName = resolveProviderDisplayName(
-          settings.searchProvider!,
-        );
+    final resolvedProviderId =
+        (settings.searchProvider != null && settings.searchProvider!.isNotEmpty)
+        ? settings.searchProvider!
+        : searchProviders.firstOrNull?.id ?? defaultBuiltInSearchProviderId;
+    String currentProviderName = context.l10n.optionsPrimaryProviderSubtitle;
+    if (resolvedProviderId != null && resolvedProviderId.isNotEmpty) {
+      if (isBuiltInSearchProvider(resolvedProviderId)) {
+        currentProviderName = resolveProviderDisplayName(resolvedProviderId);
       } else {
         final ext = searchProviders
-            .where((e) => e.id == settings.searchProvider)
+            .where((e) => e.id == resolvedProviderId)
             .firstOrNull;
-        currentProviderName = ext?.displayName ?? settings.searchProvider!;
+        currentProviderName = ext?.displayName ?? resolvedProviderId;
       }
     }
 
@@ -787,20 +788,6 @@ class _SearchProviderSelector extends ConsumerWidget {
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
-              ),
-              ListTile(
-                leading: Icon(Icons.music_note, color: colorScheme.primary),
-                title: Text(ctx.l10n.extensionDefaultProvider),
-                subtitle: Text(ctx.l10n.extensionDefaultProviderSubtitle),
-                trailing:
-                    (settings.searchProvider == null ||
-                        settings.searchProvider!.isEmpty)
-                    ? Icon(Icons.check_circle, color: colorScheme.primary)
-                    : Icon(Icons.circle_outlined, color: colorScheme.outline),
-                onTap: () {
-                  ref.read(settingsProvider.notifier).setSearchProvider(null);
-                  Navigator.pop(ctx);
-                },
               ),
               ...builtInProviders.map(
                 (provider) => ListTile(

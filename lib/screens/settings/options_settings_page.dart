@@ -741,13 +741,6 @@ class _MetadataSourceSelector extends ConsumerWidget {
 
     final rawSearchProvider = settings.searchProvider?.trim() ?? '';
     final isValidBuiltIn = isBuiltInSearchProvider(rawSearchProvider);
-    final primarySearchExtension = _defaultSearchExtension(extState.extensions);
-    final defaultProviderTarget =
-        primarySearchExtension?.displayName ??
-        defaultBuiltInSearchProviderDisplayName ??
-        context.l10n.extensionDefaultProvider;
-    final defaultProviderLabel =
-        '${context.l10n.extensionsHomeFeedAuto} ($defaultProviderTarget)';
     final searchProvider =
         isValidBuiltIn ||
             extState.extensions.any(
@@ -755,7 +748,9 @@ class _MetadataSourceSelector extends ConsumerWidget {
                   e.enabled && e.hasCustomSearch && e.id == rawSearchProvider,
             )
         ? rawSearchProvider
-        : '';
+        : _defaultSearchExtension(extState.extensions)?.id ??
+              defaultBuiltInSearchProviderId ??
+              '';
     final isBuiltIn = isBuiltInSearchProvider(searchProvider);
 
     Extension? activeExtension;
@@ -764,7 +759,6 @@ class _MetadataSourceSelector extends ConsumerWidget {
           .where((e) => e.id == searchProvider && e.enabled)
           .firstOrNull;
     }
-    final hasNonDefaultProvider = isBuiltIn || activeExtension != null;
 
     String subtitle;
     if (isBuiltIn) {
@@ -792,7 +786,7 @@ class _MetadataSourceSelector extends ConsumerWidget {
           Text(
             subtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: hasNonDefaultProvider
+              color: searchProvider.isNotEmpty
                   ? colorScheme.primary
                   : colorScheme.onSurfaceVariant,
             ),
@@ -802,16 +796,6 @@ class _MetadataSourceSelector extends ConsumerWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _SourceChip(
-                icon: Icons.graphic_eq,
-                label: defaultProviderLabel,
-                isSelected: searchProvider.isEmpty,
-                onTap: () {
-                  if (hasNonDefaultProvider) {
-                    ref.read(settingsProvider.notifier).setSearchProvider(null);
-                  }
-                },
-              ),
               for (final provider in builtInProviders)
                 _SourceChip(
                   icon: resolveProviderIcon(
@@ -840,7 +824,7 @@ class _MetadataSourceSelector extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Tap $defaultProviderLabel to switch back from extension',
+                    context.l10n.optionsSwitchBack,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),

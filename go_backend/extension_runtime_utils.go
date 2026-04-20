@@ -312,6 +312,25 @@ func (r *extensionRuntime) isDownloadCancelled(call goja.FunctionCall) goja.Valu
 	return r.vm.ToValue(isDownloadCancelled(itemID))
 }
 
+func (r *extensionRuntime) setDownloadStatus(call goja.FunctionCall) goja.Value {
+	itemID := r.getActiveDownloadItemID()
+	if itemID == "" || len(call.Arguments) < 1 {
+		return goja.Undefined()
+	}
+
+	status := strings.ToLower(strings.TrimSpace(call.Arguments[0].String()))
+	switch status {
+	case itemProgressStatusPreparing:
+		SetItemPreparing(itemID)
+	case itemProgressStatusDownloading:
+		SetItemDownloading(itemID)
+	case itemProgressStatusFinalizing:
+		SetItemFinalizing(itemID)
+	}
+
+	return goja.Undefined()
+}
+
 func (r *extensionRuntime) logDebug(call goja.FunctionCall) goja.Value {
 	msg := r.formatLogArgs(call.Arguments)
 	GoLog("[Extension:%s:DEBUG] %s\n", r.extensionID, msg)
