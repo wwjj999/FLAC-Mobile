@@ -192,7 +192,10 @@ class SettingsNotifier extends Notifier<AppSettings> {
     if (normalizedDir == currentDir) return;
 
     _log.i('Normalized iOS download directory: $currentDir -> $normalizedDir');
-    state = state.copyWith(downloadDirectory: normalizedDir);
+    state = state.copyWith(
+      downloadDirectory: normalizedDir,
+      downloadDirectoryBookmark: '',
+    );
     await _saveSettings();
   }
 
@@ -260,8 +263,11 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _saveSettings();
   }
 
-  void setDownloadDirectory(String directory) {
-    state = state.copyWith(downloadDirectory: directory);
+  void setDownloadDirectory(String directory, {String? iosBookmark}) {
+    state = state.copyWith(
+      downloadDirectory: directory,
+      downloadDirectoryBookmark: iosBookmark ?? '',
+    );
     _saveSettings();
   }
 
@@ -277,6 +283,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
       downloadTreeUri: uri,
       storageMode: uri.isNotEmpty ? 'saf' : state.storageMode,
       downloadDirectory: nextDisplay,
+      downloadDirectoryBookmark: uri.isNotEmpty
+          ? ''
+          : state.downloadDirectoryBookmark,
     );
     _saveSettings();
   }

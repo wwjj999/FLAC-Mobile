@@ -30,6 +30,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
   bool _storagePermissionGranted = false;
   bool _notificationPermissionGranted = false;
   String? _selectedDirectory;
+  String? _selectedDirectoryBookmark;
   String? _selectedTreeUri;
   bool _isLoading = false;
   int _androidSdkVersion = 0;
@@ -338,7 +339,10 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               title: Text(context.l10n.setupAppDocumentsFolder),
               onTap: () async {
                 final dir = await _getDefaultDirectory();
-                setState(() => _selectedDirectory = dir);
+                setState(() {
+                  _selectedDirectory = dir;
+                  _selectedDirectoryBookmark = null;
+                });
                 if (ctx.mounted) Navigator.pop(ctx);
               },
             ),
@@ -369,30 +373,62 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                   return;
                 }
 
-                if (result != null) {
-                  // iOS: Validate the selected path is writable
-                  if (Platform.isIOS) {
-                    final validation = validateIosPath(result);
-                    if (!validation.isValid) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              validation.errorReason ??
-                                  'Invalid folder selected',
-                            ),
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.error,
-                            duration: const Duration(seconds: 4),
-                          ),
-                        );
-                      }
-                      return;
-                    }
+                if (result == null) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(context.l10n.setupNoFolderSelected),
+                      ),
+                    );
                   }
-                  setState(() => _selectedDirectory = result);
+                  return;
                 }
+
+                // iOS: Validate the selected path is writable
+                if (Platform.isIOS) {
+                  final validation = validateIosPath(result);
+                  if (!validation.isValid) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            validation.errorReason ?? 'Invalid folder selected',
+                          ),
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                          duration: const Duration(seconds: 4),
+                        ),
+                      );
+                    }
+                    return;
+                  }
+
+                  final bookmark =
+                      await PlatformBridge.createIosBookmarkFromPath(result);
+                  if (bookmark == null || bookmark.isEmpty) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            context.l10n.snackbarFolderPickerFailed(
+                              'Could not keep access to the selected folder',
+                            ),
+                          ),
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                          duration: const Duration(seconds: 4),
+                        ),
+                      );
+                    }
+                    return;
+                  }
+
+                  setState(() {
+                    _selectedDirectory = result;
+                    _selectedDirectoryBookmark = bookmark;
+                  });
+                  return;
+                }
+
+                setState(() => _selectedDirectory = result);
               },
             ),
             const SizedBox(height: 16),
@@ -426,14 +462,20 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
       if (!Platform.isAndroid ||
           _selectedTreeUri == null ||
           _selectedTreeUri!.isEmpty) {
-        final dir = Directory(_selectedDirectory!);
-        if (!await dir.exists()) {
-          await dir.create(recursive: true);
+        final iosBookmark = Platform.isIOS ? _selectedDirectoryBookmark : null;
+        if (iosBookmark == null || iosBookmark.isEmpty) {
+          final dir = Directory(_selectedDirectory!);
+          if (!await dir.exists()) {
+            await dir.create(recursive: true);
+          }
         }
         ref.read(settingsProvider.notifier).setStorageMode('app');
         ref
             .read(settingsProvider.notifier)
-            .setDownloadDirectory(_selectedDirectory!);
+            .setDownloadDirectory(
+              _selectedDirectory!,
+              iosBookmark: iosBookmark,
+            );
         ref.read(settingsProvider.notifier).setDownloadTreeUri('');
       } else {
         ref.read(settingsProvider.notifier).setStorageMode('saf');

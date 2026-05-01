@@ -4280,6 +4280,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     final settings = ref.read(settingsProvider);
     updateSettings(settings);
     final isSafMode = _isSafMode(settings);
+    var iosDownloadBookmarkActive = false;
     if (settings.downloadNetworkMode == 'wifi_only') {
       final connectivityResult = await Connectivity().checkConnectivity();
       final hasWifi = connectivityResult.contains(ConnectivityResult.wifi);
@@ -4391,8 +4392,38 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         return;
       }
     }
+
+    if (!isSafMode &&
+        Platform.isIOS &&
+        settings.downloadDirectoryBookmark.isNotEmpty) {
+      final resolvedPath = await PlatformBridge.startAccessingIosBookmark(
+        settings.downloadDirectoryBookmark,
+      );
+      if (resolvedPath != null && resolvedPath.isNotEmpty) {
+        iosDownloadBookmarkActive = true;
+        if (resolvedPath != state.outputDir) {
+          _log.i('Resolved iOS download bookmark path: $resolvedPath');
+          state = state.copyWith(outputDir: resolvedPath);
+        }
+      } else {
+        _log.w(
+          'Failed to access iOS download folder bookmark, falling back to app Documents folder',
+        );
+        final musicDir = await _ensureDefaultDocumentsOutputDir();
+        state = state.copyWith(outputDir: musicDir.path);
+        ref.read(settingsProvider.notifier).setDownloadDirectory(musicDir.path);
+      }
+    }
+
     _log.d('Concurrent downloads: ${state.concurrentDownloads}');
-    await _processQueueParallel();
+    try {
+      await _processQueueParallel();
+    } finally {
+      if (iosDownloadBookmarkActive) {
+        await PlatformBridge.stopAccessingIosBookmark();
+        iosDownloadBookmarkActive = false;
+      }
+    }
     final stoppedWhilePaused = state.isPaused;
     final keepConnectivityMonitoring =
         stoppedWhilePaused && _networkPausedByWifiOnly;

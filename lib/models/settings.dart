@@ -11,6 +11,7 @@ class AppSettings {
   final String audioQuality;
   final String filenameFormat;
   final String downloadDirectory;
+  final String downloadDirectoryBookmark;
   final String storageMode; // 'app' or 'saf'
   final String downloadTreeUri; // SAF persistable tree URI
   final bool autoFallback;
@@ -89,6 +90,7 @@ class AppSettings {
     this.audioQuality = 'LOSSLESS',
     this.filenameFormat = '{title} - {artist}',
     this.downloadDirectory = '',
+    this.downloadDirectoryBookmark = '',
     this.storageMode = 'app',
     this.downloadTreeUri = '',
     this.autoFallback = true,
@@ -153,6 +155,7 @@ class AppSettings {
     String? audioQuality,
     String? filenameFormat,
     String? downloadDirectory,
+    String? downloadDirectoryBookmark,
     String? storageMode,
     String? downloadTreeUri,
     bool? autoFallback,
@@ -213,6 +216,8 @@ class AppSettings {
       audioQuality: audioQuality ?? this.audioQuality,
       filenameFormat: filenameFormat ?? this.filenameFormat,
       downloadDirectory: downloadDirectory ?? this.downloadDirectory,
+      downloadDirectoryBookmark:
+          downloadDirectoryBookmark ?? this.downloadDirectoryBookmark,
       storageMode: storageMode ?? this.storageMode,
       downloadTreeUri: downloadTreeUri ?? this.downloadTreeUri,
       autoFallback: autoFallback ?? this.autoFallback,

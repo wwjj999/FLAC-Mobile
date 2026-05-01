@@ -1021,7 +1021,7 @@ import Gobackend  // Import Go framework
         let url = URL(fileURLWithPath: path)
         do {
             let bookmarkData = try url.bookmarkData(
-                options: .minimalBookmark,
+                options: .withSecurityScope,
                 includingResourceValuesForKeys: nil,
                 relativeTo: nil
             )
@@ -1051,7 +1051,7 @@ import Gobackend  // Import Go framework
         do {
             url = try URL(
                 resolvingBookmarkData: bookmarkData,
-                options: [],
+                options: .withSecurityScope,
                 relativeTo: nil,
                 bookmarkDataIsStale: &isStale
             )
@@ -1086,7 +1086,7 @@ import Gobackend  // Import Go framework
         do {
             url = try URL(
                 resolvingBookmarkData: bookmarkData,
-                options: [],
+                options: .withSecurityScope,
                 relativeTo: nil,
                 bookmarkDataIsStale: &isStale
             )

@@ -1420,13 +1420,13 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                 try {
                   result = await FilePicker.platform.getDirectoryPath();
                 } catch (e) {
-                  if (ctx.mounted) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          ctx.l10n.snackbarFolderPickerFailed(e.toString()),
+                          context.l10n.snackbarFolderPickerFailed(e.toString()),
                         ),
-                        backgroundColor: Theme.of(ctx).colorScheme.error,
+                        backgroundColor: Theme.of(context).colorScheme.error,
                         duration: const Duration(seconds: 4),
                       ),
                     );
@@ -1439,24 +1439,55 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                   if (Platform.isIOS) {
                     final validation = validateIosPath(result);
                     if (!validation.isValid) {
-                      if (ctx.mounted) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
                               validation.errorReason ??
                                   context.l10n.setupIcloudNotSupported,
                             ),
-                            backgroundColor: Theme.of(ctx).colorScheme.error,
+                            backgroundColor: Theme.of(context).colorScheme.error,
                             duration: const Duration(seconds: 4),
                           ),
                         );
                       }
                       return;
                     }
+
+                    final bookmark =
+                        await PlatformBridge.createIosBookmarkFromPath(result);
+                    if (bookmark == null || bookmark.isEmpty) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              context.l10n.snackbarFolderPickerFailed(
+                                'Could not keep access to the selected folder',
+                              ),
+                            ),
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.error,
+                            duration: const Duration(seconds: 4),
+                          ),
+                        );
+                      }
+                      return;
+                    }
+
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setDownloadDirectory(result, iosBookmark: bookmark);
+                    return;
                   }
+
                   ref
                       .read(settingsProvider.notifier)
                       .setDownloadDirectory(result);
+                } else if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(context.l10n.setupNoFolderSelected)),
+                  );
                 }
               },
             ),
