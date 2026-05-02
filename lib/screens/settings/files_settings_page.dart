@@ -753,7 +753,7 @@ class _FilesSettingsPageState extends ConsumerState<FilesSettingsPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      description ?? context.l10n.downloadFilenameDescription,
+                      description ?? context.l10n.downloadFilenameDescription as String,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
