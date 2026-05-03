@@ -16,6 +16,7 @@ class CachedCoverImage extends StatelessWidget {
   final Widget Function(BuildContext, String, Object)? errorWidget;
   final Widget Function(BuildContext, String)? placeholder;
   final BorderRadius? borderRadius;
+  final bool resizeDiskCache;
 
   const CachedCoverImage({
     super.key,
@@ -29,6 +30,7 @@ class CachedCoverImage extends StatelessWidget {
     this.errorWidget,
     this.placeholder,
     this.borderRadius,
+    this.resizeDiskCache = false,
   });
 
   @override
@@ -37,6 +39,8 @@ class CachedCoverImage extends StatelessWidget {
         memCacheWidth ?? _cacheExtentForLogicalSize(context, width);
     final autoMemCacheHeight =
         memCacheHeight ?? _cacheExtentForLogicalSize(context, height);
+    final diskCacheWidth = resizeDiskCache ? autoMemCacheWidth : null;
+    final diskCacheHeight = resizeDiskCache ? autoMemCacheHeight : null;
     final image = CachedNetworkImage(
       imageUrl: imageUrl,
       width: width,
@@ -45,11 +49,9 @@ class CachedCoverImage extends StatelessWidget {
       alignment: alignment,
       memCacheWidth: autoMemCacheWidth,
       memCacheHeight: autoMemCacheHeight,
-      maxWidthDiskCache: autoMemCacheWidth,
-      maxHeightDiskCache: autoMemCacheHeight,
-      cacheManager: CoverCacheManager.isInitialized
-          ? CoverCacheManager.instance
-          : null,
+      maxWidthDiskCache: diskCacheWidth,
+      maxHeightDiskCache: diskCacheHeight,
+      cacheManager: CoverCacheManager.instance,
       fadeInDuration: Duration.zero,
       fadeOutDuration: Duration.zero,
       useOldImageOnUrlChange: true,
@@ -80,9 +82,7 @@ class CachedCoverImage extends StatelessWidget {
 CachedNetworkImageProvider cachedCoverImageProvider(String url) {
   return CachedNetworkImageProvider(
     url,
-    cacheManager: CoverCacheManager.isInitialized
-        ? CoverCacheManager.instance
-        : null,
+    cacheManager: CoverCacheManager.instance,
   );
 }
 
