@@ -3414,6 +3414,37 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String notifDownloadsFinishedBody(int completed, int failed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      completed,
+      locale: localeName,
+      other: '$completed tracks downloaded',
+      one: '1 track downloaded',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      failed,
+      locale: localeName,
+      other: '$failed failed',
+      one: '1 failed',
+    );
+    return '$_temp0, $_temp1';
+  }
+
+  @override
+  String get notifDownloadsCanceledTitle => 'Downloads canceled';
+
+  @override
+  String notifDownloadsCanceledBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count downloads canceled by user',
+      one: '1 download canceled by user',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get notifScanningLibrary => 'Scanning local library';
 
   @override

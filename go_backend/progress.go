@@ -273,6 +273,10 @@ func SetItemBytesReceived(itemID string, received int64) {
 		if item.BytesTotal > 0 {
 			item.Progress = float64(received) / float64(item.BytesTotal)
 		}
+		if received > 0 {
+			item.IsDownloading = true
+			item.Status = itemProgressStatusDownloading
+		}
 		markMultiProgressDirtyIfChangedLocked(item, before)
 	}
 }
@@ -287,6 +291,10 @@ func SetItemBytesReceivedWithSpeed(itemID string, received int64, speedMBps floa
 		item.SpeedMBps = speedMBps
 		if item.BytesTotal > 0 {
 			item.Progress = float64(received) / float64(item.BytesTotal)
+		}
+		if received > 0 {
+			item.IsDownloading = true
+			item.Status = itemProgressStatusDownloading
 		}
 		markMultiProgressDirtyIfChangedLocked(item, before)
 	}
@@ -317,6 +325,10 @@ func SetItemProgress(itemID string, progress float64, bytesReceived, bytesTotal 
 		}
 		if bytesTotal > 0 {
 			item.BytesTotal = bytesTotal
+		}
+		if progress > 0 || bytesReceived > 0 || bytesTotal > 0 {
+			item.IsDownloading = true
+			item.Status = itemProgressStatusDownloading
 		}
 		markMultiProgressDirtyIfChangedLocked(item, before)
 	}

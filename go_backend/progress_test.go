@@ -27,8 +27,8 @@ func TestItemProgressPreparingAndDownloadingStatuses(t *testing.T) {
 	SetItemProgress(itemID, 0.37, 0, 0)
 	if item := multiProgress.Items[itemID]; item == nil {
 		t.Fatal("expected item progress entry to exist after update")
-	} else if item.Status != itemProgressStatusPreparing {
-		t.Fatalf("status after progress update = %q, want %q", item.Status, itemProgressStatusPreparing)
+	} else if item.Status != itemProgressStatusDownloading {
+		t.Fatalf("status after progress update = %q, want %q", item.Status, itemProgressStatusDownloading)
 	}
 
 	SetItemDownloading(itemID)

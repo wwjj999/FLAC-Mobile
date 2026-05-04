@@ -2876,10 +2876,11 @@ class MainActivity: FlutterFragmentActivity() {
                         "updateDownloadServiceProgress" -> {
                             val trackName = call.argument<String>("track_name") ?: ""
                             val artistName = call.argument<String>("artist_name") ?: ""
-                            val progress = call.argument<Long>("progress") ?: 0L
-                            val total = call.argument<Long>("total") ?: 0L
-                            val queueCount = call.argument<Int>("queue_count") ?: 0
-                            DownloadService.updateProgress(this@MainActivity, trackName, artistName, progress, total, queueCount)
+                            val progress = (call.argument<Number>("progress") ?: 0).toLong()
+                            val total = (call.argument<Number>("total") ?: 0).toLong()
+                            val queueCount = (call.argument<Number>("queue_count") ?: 0).toInt()
+                            val status = call.argument<String>("status") ?: "downloading"
+                            DownloadService.updateProgress(this@MainActivity, trackName, artistName, progress, total, queueCount, status)
                             result.success(null)
                         }
                         "isDownloadServiceRunning" -> {

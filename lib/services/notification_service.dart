@@ -23,6 +23,9 @@ class NotificationService {
     _l10n = l10n;
   }
 
+  String get embeddingMetadataLabel =>
+      _l10n?.notifEmbeddingMetadata ?? 'Embedding metadata...';
+
   static const int downloadProgressId = 1;
   static const int updateDownloadId = 2;
   static const int libraryScanId = 3;
@@ -282,11 +285,17 @@ class NotificationService {
     required int failedCount,
   }) async {
     if (!_isInitialized) await initialize();
+    if (completedCount <= 0 && failedCount <= 0) return;
 
     final title = failedCount > 0
         ? (_l10n?.notifDownloadsFinished(completedCount, failedCount) ??
               'Downloads Finished ($completedCount done, $failedCount failed)')
         : (_l10n?.notifAllDownloadsComplete ?? 'All Downloads Complete');
+    final body = failedCount > 0
+        ? (_l10n?.notifDownloadsFinishedBody(completedCount, failedCount) ??
+              '$completedCount downloaded, $failedCount failed')
+        : (_l10n?.notifTracksDownloadedSuccess(completedCount) ??
+              '$completedCount tracks downloaded successfully');
 
     const androidDetails = AndroidNotificationDetails(
       channelId,
@@ -313,9 +322,46 @@ class NotificationService {
     await _showSafely(
       id: downloadProgressId,
       title: title,
-      body:
-          _l10n?.notifTracksDownloadedSuccess(completedCount) ??
-          '$completedCount tracks downloaded successfully',
+      body: body,
+      details: details,
+    );
+  }
+
+  Future<void> showQueueCanceled({required int canceledCount}) async {
+    if (!_isInitialized) await initialize();
+    if (canceledCount <= 0) return;
+
+    final title = _l10n?.notifDownloadsCanceledTitle ?? 'Downloads canceled';
+    final body =
+        _l10n?.notifDownloadsCanceledBody(canceledCount) ??
+        '$canceledCount downloads canceled by user';
+
+    const androidDetails = AndroidNotificationDetails(
+      channelId,
+      channelName,
+      channelDescription: channelDescription,
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      autoCancel: true,
+      playSound: false,
+      icon: '@mipmap/ic_launcher',
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: false,
+    );
+
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _showSafely(
+      id: downloadProgressId,
+      title: title,
+      body: body,
       details: details,
     );
   }

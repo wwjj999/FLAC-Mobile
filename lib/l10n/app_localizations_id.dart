@@ -3412,15 +3412,28 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String notifDownloadsFinished(int completed, int failed) {
-    return 'Downloads Finished ($completed done, $failed failed)';
+    return 'Unduhan Selesai ($completed selesai, $failed gagal)';
   }
 
   @override
-  String get notifAllDownloadsComplete => 'All Downloads Complete';
+  String get notifAllDownloadsComplete => 'Semua Unduhan Selesai';
 
   @override
   String notifTracksDownloadedSuccess(int count) {
-    return '$count tracks downloaded successfully';
+    return '$count lagu berhasil diunduh';
+  }
+
+  @override
+  String notifDownloadsFinishedBody(int completed, int failed) {
+    return '$completed lagu diunduh, $failed gagal';
+  }
+
+  @override
+  String get notifDownloadsCanceledTitle => 'Unduhan dibatalkan';
+
+  @override
+  String notifDownloadsCanceledBody(int count) {
+    return '$count unduhan dibatalkan oleh pengguna';
   }
 
   @override

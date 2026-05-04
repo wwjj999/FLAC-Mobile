@@ -1354,6 +1354,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   bool _networkPausedByWifiOnly = false;
   String? _lastServiceTrackName;
   String? _lastServiceArtistName;
+  String? _lastServiceStatus;
   int _lastServicePercent = -1;
   int _lastServiceQueueCount = -1;
   DateTime _lastServiceUpdateAt = DateTime.fromMillisecondsSinceEpoch(0);
@@ -1672,6 +1673,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     int queuedCount = 0;
     int downloadingCount = 0;
     DownloadItem? firstDownloading;
+    bool hasFinalizingItem = false;
+    String? finalizingTrackName;
+    String? finalizingArtistName;
     for (int i = 0; i < currentItems.length; i++) {
       final item = currentItems[i];
       if (item.status == DownloadStatus.downloading) {
@@ -1679,15 +1683,17 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         firstDownloading ??= item;
       }
       if (item.status == DownloadStatus.queued ||
-          item.status == DownloadStatus.downloading) {
+          item.status == DownloadStatus.downloading ||
+          item.status == DownloadStatus.finalizing) {
         queuedCount++;
+      }
+      if (item.status == DownloadStatus.finalizing && !hasFinalizingItem) {
+        hasFinalizingItem = true;
+        finalizingTrackName = item.track.name;
+        finalizingArtistName = item.track.artistName;
       }
     }
     final progressUpdates = <String, _ProgressUpdate>{};
-
-    bool hasFinalizingItem = false;
-    String? finalizingTrackName;
-    String? finalizingArtistName;
 
     for (final entry in items.entries) {
       final itemId = entry.key;
@@ -1707,6 +1713,13 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           localItem.status == DownloadStatus.failed) {
         continue;
       }
+      if (localItem.status == DownloadStatus.finalizing) {
+        PlatformBridge.clearItemProgress(itemId).catchError((_) {});
+        hasFinalizingItem = true;
+        finalizingTrackName = localItem.track.name;
+        finalizingArtistName = localItem.track.artistName;
+        continue;
+      }
       final rawItemProgress = entry.value;
       if (rawItemProgress is! Map) {
         continue;
@@ -1718,6 +1731,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       final speedMBps = (itemProgress['speed_mbps'] as num?)?.toDouble() ?? 0.0;
       final isDownloading = itemProgress['is_downloading'] as bool? ?? false;
       final status = itemProgress['status'] as String? ?? 'downloading';
+      final progressFromBackend =
+          (itemProgress['progress'] as num?)?.toDouble() ?? 0.0;
+      final hasRealProgress =
+          bytesReceived > 0 || bytesTotal > 0 || progressFromBackend > 0;
 
       if (status == 'finalizing') {
         progressUpdates[itemId] = const _ProgressUpdate(
@@ -1730,7 +1747,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         continue;
       }
 
-      if (status == 'preparing') {
+      if (status == 'preparing' && !hasRealProgress) {
         progressUpdates[itemId] = const _ProgressUpdate(
           status: DownloadStatus.downloading,
           progress: 0.0,
@@ -1745,10 +1762,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         continue;
       }
 
-      final progressFromBackend =
-          (itemProgress['progress'] as num?)?.toDouble() ?? 0.0;
-
-      if (isDownloading) {
+      if (isDownloading || hasRealProgress) {
         double percentage = 0.0;
         if (bytesTotal > 0) {
           percentage = bytesReceived / bytesTotal;
@@ -1798,6 +1812,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           continue;
         }
         final update = entry.value;
+        if (current.status == DownloadStatus.finalizing &&
+            update.status != DownloadStatus.finalizing) {
+          continue;
+        }
         final next = current.copyWith(
           status: update.status,
           progress: update.progress,
@@ -1833,7 +1851,16 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
     if (hasFinalizingItem && finalizingTrackName != null) {
       final safeArtistName = finalizingArtistName ?? '';
-      if (finalizingTrackName != _lastFinalizingTrackName ||
+      if (Platform.isAndroid) {
+        _maybeUpdateAndroidDownloadService(
+          trackName: finalizingTrackName,
+          artistName: _notificationService.embeddingMetadataLabel,
+          progress: 100,
+          total: 100,
+          queueCount: queuedCount,
+          status: 'finalizing',
+        );
+      } else if (finalizingTrackName != _lastFinalizingTrackName ||
           safeArtistName != _lastFinalizingArtistName) {
         _notificationService.showDownloadFinalizing(
           trackName: finalizingTrackName,
@@ -1848,18 +1875,18 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     _lastFinalizingArtistName = null;
 
     if (items.isNotEmpty) {
-      final firstEntry = items.entries.first;
-      final rawFirstProgress = firstEntry.value;
-      if (rawFirstProgress is! Map) {
-        return;
-      }
-      final firstProgress = Map<String, dynamic>.from(rawFirstProgress);
-      final bytesReceived =
-          (firstProgress['bytes_received'] as num?)?.toInt() ?? 0;
-      final bytesTotal = (firstProgress['bytes_total'] as num?)?.toInt() ?? 0;
-      final backendStatus = firstProgress['status'] as String? ?? 'downloading';
-
       if (downloadingCount > 0 && firstDownloading != null) {
+        final rawProgress = items[firstDownloading.id];
+        if (rawProgress is! Map) {
+          return;
+        }
+        final selectedProgress = Map<String, dynamic>.from(rawProgress);
+        final bytesReceived =
+            (selectedProgress['bytes_received'] as num?)?.toInt() ?? 0;
+        final bytesTotal =
+            (selectedProgress['bytes_total'] as num?)?.toInt() ?? 0;
+        final backendStatus =
+            selectedProgress['status'] as String? ?? 'downloading';
         final trackName = downloadingCount == 1
             ? firstDownloading.track.name
             : '$downloadingCount downloads';
@@ -1870,24 +1897,29 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         int notifProgress = bytesReceived;
         int notifTotal = bytesTotal;
 
-        if (backendStatus == 'preparing') {
+        final progressPercent =
+            (selectedProgress['progress'] as num?)?.toDouble() ?? 0.0;
+        final hasRealProgress =
+            bytesReceived > 0 || bytesTotal > 0 || progressPercent > 0;
+
+        if (backendStatus == 'preparing' && !hasRealProgress) {
           notifProgress = 0;
-          notifTotal = 100;
+          notifTotal = 0;
         } else if (bytesTotal <= 0) {
-          final progressPercent =
-              (firstProgress['progress'] as num?)?.toDouble() ?? 0.0;
           notifProgress = (progressPercent * 100).toInt();
           notifTotal = 100;
         }
+        final serviceStatus = notifTotal <= 0 ? 'preparing' : 'downloading';
 
-        final safeNotifTotal = notifTotal > 0 ? notifTotal : 1;
-        if (_shouldUpdateProgressNotification(
-          trackName: trackName,
-          artistName: artistName,
-          progress: notifProgress,
-          total: safeNotifTotal,
-          queueCount: queuedCount,
-        )) {
+        if (!Platform.isAndroid &&
+            _shouldUpdateProgressNotification(
+              trackName: trackName,
+              artistName: artistName,
+              progress: notifProgress,
+              total: notifTotal,
+              queueCount: queuedCount,
+            )) {
+          final safeNotifTotal = notifTotal > 0 ? notifTotal : 1;
           _notificationService.showDownloadProgress(
             trackName: trackName,
             artistName: artistName,
@@ -1901,8 +1933,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             trackName: firstDownloading.track.name,
             artistName: firstDownloading.track.artistName,
             progress: notifProgress,
-            total: safeNotifTotal,
+            total: notifTotal,
             queueCount: queuedCount,
+            status: serviceStatus,
           );
         }
       }
@@ -1915,22 +1948,28 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     required int progress,
     required int total,
     required int queueCount,
+    String status = 'downloading',
   }) {
     final now = DateTime.now();
-    final safeTotal = total > 0 ? total : 1;
-    final progressPercent = ((progress * 100) / safeTotal)
-        .round()
-        .clamp(0, 100)
-        .toInt();
-    final progressBucket = progressPercent == 100
-        ? 100
-        : ((progressPercent ~/ _serviceProgressStepPercent) *
-                  _serviceProgressStepPercent)
-              .clamp(0, 100);
+    final progressBucket = total <= 0
+        ? -1
+        : (() {
+            final progressPercent = ((progress * 100) / total)
+                .round()
+                .clamp(0, 100)
+                .toInt();
+            return progressPercent == 100
+                ? 100
+                : ((progressPercent ~/ _serviceProgressStepPercent) *
+                          _serviceProgressStepPercent)
+                      .clamp(0, 100)
+                      .toInt();
+          })();
 
     final didContentChange =
         trackName != _lastServiceTrackName ||
         artistName != _lastServiceArtistName ||
+        status != _lastServiceStatus ||
         queueCount != _lastServiceQueueCount ||
         progressBucket != _lastServicePercent;
     final allowHeartbeat =
@@ -1942,6 +1981,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
     _lastServiceTrackName = trackName;
     _lastServiceArtistName = artistName;
+    _lastServiceStatus = status;
     _lastServicePercent = progressBucket;
     _lastServiceQueueCount = queueCount;
     _lastServiceUpdateAt = now;
@@ -1950,8 +1990,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       trackName: trackName,
       artistName: artistName,
       progress: progress,
-      total: safeTotal,
+      total: total,
       queueCount: queueCount,
+      status: status,
     ).catchError((_) {});
   }
 
@@ -1969,6 +2010,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     _usingProgressStream = false;
     _lastServiceTrackName = null;
     _lastServiceArtistName = null;
+    _lastServiceStatus = null;
     _lastServicePercent = -1;
     _lastServiceQueueCount = -1;
     _lastServiceUpdateAt = DateTime.fromMillisecondsSinceEpoch(0);
@@ -3014,6 +3056,26 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     final updatedItems = List<DownloadItem>.from(items);
     updatedItems[index] = next;
     state = state.copyWith(items: updatedItems);
+
+    if (Platform.isAndroid && status == DownloadStatus.finalizing) {
+      PlatformBridge.clearItemProgress(id).catchError((_) {});
+      final queueCount = updatedItems
+          .where(
+            (entry) =>
+                entry.status == DownloadStatus.queued ||
+                entry.status == DownloadStatus.downloading ||
+                entry.status == DownloadStatus.finalizing,
+          )
+          .length;
+      _maybeUpdateAndroidDownloadService(
+        trackName: next.track.name,
+        artistName: _notificationService.embeddingMetadataLabel,
+        progress: 100,
+        total: 100,
+        queueCount: queueCount,
+        status: 'finalizing',
+      );
+    }
 
     if (status == DownloadStatus.completed ||
         status == DownloadStatus.failed ||
@@ -4327,6 +4389,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         orElse: () => state.items.first,
       );
       try {
+        await _notificationService.cancelDownloadNotification();
         await PlatformBridge.startDownloadService(
           trackName: firstItem.track.name,
           artistName: firstItem.track.artistName,
@@ -4470,7 +4533,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     _log.i(
       'Queue stats - completed: $_completedInSession, failed: $_failedInSession, totalAtStart: $_totalQueuedAtStart',
     );
-    if (!stoppedWhilePaused && _totalQueuedAtStart > 0) {
+    final hasSessionResults = _completedInSession > 0 || _failedInSession > 0;
+    if (!stoppedWhilePaused && _totalQueuedAtStart > 0 && hasSessionResults) {
       await _notificationService.showQueueComplete(
         completedCount: _completedInSession,
         failedCount: _failedInSession,
@@ -4483,6 +4547,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           _log.i('Auto-exported failed downloads to: $exportPath');
         }
       }
+    } else if (!stoppedWhilePaused && _totalQueuedAtStart > 0) {
+      await _notificationService.showQueueCanceled(
+        canceledCount: _totalQueuedAtStart,
+      );
     }
 
     if (stoppedWhilePaused) {

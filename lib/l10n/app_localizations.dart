@@ -5818,8 +5818,26 @@ abstract class AppLocalizations {
   /// Notification body for queue complete - how many tracks were downloaded
   ///
   /// In en, this message translates to:
-  /// **'{count} tracks downloaded successfully'**
+  /// **'{count, plural, =1{1 track downloaded successfully} other{{count} tracks downloaded successfully}}'**
   String notifTracksDownloadedSuccess(int count);
+
+  /// Notification body when queue finishes with failures
+  ///
+  /// In en, this message translates to:
+  /// **'{completed, plural, =1{1 track downloaded} other{{completed} tracks downloaded}}, {failed, plural, =1{1 failed} other{{failed} failed}}'**
+  String notifDownloadsFinishedBody(int completed, int failed);
+
+  /// Notification title when downloads are canceled by the user
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads canceled'**
+  String get notifDownloadsCanceledTitle;
+
+  /// Notification body when downloads are canceled by the user
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 download canceled by user} other{{count} downloads canceled by user}}'**
+  String notifDownloadsCanceledBody(int count);
 
   /// Notification title while scanning local library
   ///

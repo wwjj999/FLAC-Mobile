@@ -35,6 +35,7 @@ class DownloadService : Service() {
         const val EXTRA_PROGRESS = "progress"
         const val EXTRA_TOTAL = "total"
         const val EXTRA_QUEUE_COUNT = "queue_count"
+        const val EXTRA_STATUS = "status"
         
         private var isRunning = false
         
@@ -61,7 +62,7 @@ class DownloadService : Service() {
             context.startService(intent)
         }
         
-        fun updateProgress(context: Context, trackName: String, artistName: String, progress: Long, total: Long, queueCount: Int) {
+        fun updateProgress(context: Context, trackName: String, artistName: String, progress: Long, total: Long, queueCount: Int, status: String = "downloading") {
             val intent = Intent(context, DownloadService::class.java).apply {
                 action = ACTION_UPDATE_PROGRESS
                 putExtra(EXTRA_TRACK_NAME, trackName)
@@ -69,6 +70,7 @@ class DownloadService : Service() {
                 putExtra(EXTRA_PROGRESS, progress)
                 putExtra(EXTRA_TOTAL, total)
                 putExtra(EXTRA_QUEUE_COUNT, queueCount)
+                putExtra(EXTRA_STATUS, status)
             }
             context.startService(intent)
         }
@@ -77,6 +79,7 @@ class DownloadService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var currentTrackName = ""
     private var currentArtistName = ""
+    private var currentStatus = "preparing"
     private var queueCount = 0
     
     override fun onCreate() {
@@ -89,6 +92,7 @@ class DownloadService : Service() {
             ACTION_START -> {
                 currentTrackName = intent.getStringExtra(EXTRA_TRACK_NAME) ?: ""
                 currentArtistName = intent.getStringExtra(EXTRA_ARTIST_NAME) ?: ""
+                currentStatus = "preparing"
                 queueCount = intent.getIntExtra(EXTRA_QUEUE_COUNT, 0)
                 startForegroundService()
             }
@@ -100,6 +104,7 @@ class DownloadService : Service() {
                 currentArtistName = intent.getStringExtra(EXTRA_ARTIST_NAME) ?: currentArtistName
                 val progress = intent.getLongExtra(EXTRA_PROGRESS, 0)
                 val total = intent.getLongExtra(EXTRA_TOTAL, 0)
+                currentStatus = intent.getStringExtra(EXTRA_STATUS) ?: currentStatus
                 queueCount = intent.getIntExtra(EXTRA_QUEUE_COUNT, queueCount)
                 updateNotification(progress, total)
             }
@@ -186,7 +191,11 @@ class DownloadService : Service() {
             "Downloading..."
         }
         
-        val text = if (currentArtistName.isNotEmpty() && queueCount <= 1) {
+        val text = if (currentStatus == "finalizing") {
+            if (currentArtistName.isNotEmpty()) currentArtistName else "Embedding metadata..."
+        } else if (currentStatus == "preparing" && total <= 0) {
+            "Preparing download..."
+        } else if (currentArtistName.isNotEmpty() && queueCount <= 1) {
             currentArtistName
         } else if (total > 0) {
             val progressPercent = (progress * 100 / total).toInt()
@@ -194,7 +203,7 @@ class DownloadService : Service() {
             val totalMB = total / (1024.0 * 1024.0)
             String.format("%.1f / %.1f MB (%d%%)", progressMB, totalMB, progressPercent)
         } else {
-            "Preparing download..."
+            "Downloading..."
         }
         
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
@@ -207,10 +216,12 @@ class DownloadService : Service() {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
         
-        if (total > 0) {
+        if (currentStatus == "preparing" && total <= 0) {
+            builder.setProgress(0, 0, true)
+        } else if (total > 0) {
             builder.setProgress(100, (progress * 100 / total).toInt(), false)
         } else {
-            builder.setProgress(0, 0, true)
+            builder.setProgress(0, 0, false)
         }
         
         return builder.build()

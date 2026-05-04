@@ -816,6 +816,7 @@ class PlatformBridge {
     required int progress,
     required int total,
     required int queueCount,
+    String status = 'downloading',
   }) async {
     await _channel.invokeMethod('updateDownloadServiceProgress', {
       'track_name': trackName,
@@ -823,6 +824,7 @@ class PlatformBridge {
       'progress': progress,
       'total': total,
       'queue_count': queueCount,
+      'status': status,
     });
   }
 
