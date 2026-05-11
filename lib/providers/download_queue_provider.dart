@@ -109,6 +109,31 @@ bool _isLossyAudioFormat(String? value) {
   }.contains(_normalizeAudioFormatValue(value));
 }
 
+String _lossyFormatForSetting(String value) {
+  final normalized = value.trim().toLowerCase();
+  if (normalized.startsWith('opus')) return 'opus';
+  if (normalized.startsWith('aac') || normalized.startsWith('m4a')) {
+    return 'aac';
+  }
+  return 'mp3';
+}
+
+String _lossyExtensionForFormat(String format) {
+  return switch (format) {
+    'opus' => '.opus',
+    'aac' => '.m4a',
+    _ => '.mp3',
+  };
+}
+
+String _metadataFormatForLossyFormat(String format) {
+  return format == 'aac' ? 'm4a' : format;
+}
+
+String _displayFormatForLossyFormat(String format) {
+  return format == 'aac' ? 'AAC' : format.toUpperCase();
+}
+
 String? _resolveDisplayQuality({
   required String? filePath,
   String? fileName,
@@ -6123,8 +6148,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     }
 
     final tidalHighFormat = settings.tidalHighFormat;
-    final format = tidalHighFormat.startsWith('opus') ? 'opus' : 'mp3';
-    final newExt = format == 'opus' ? '.opus' : '.mp3';
+    final format = _lossyFormatForSetting(tidalHighFormat);
+    final newExt = _lossyExtensionForFormat(format);
+    final displayFormat = _displayFormatForLossyFormat(format);
     final bitrateDisplay = tidalHighFormat.contains('_')
         ? '${tidalHighFormat.split('_').last}kbps'
         : '320kbps';
@@ -6134,7 +6160,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       await _embedMetadataToFile(
         convertedPath,
         track,
-        format: format,
+        format: _metadataFormatForLossyFormat(format),
         genre: result['genre'] as String?,
         label: result['label'] as String?,
         copyright: result['copyright'] as String?,
@@ -6182,8 +6208,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           await _deleteSafFile(filePath);
         }
         result['file_name'] = newFileName;
-        result['_native_actual_quality'] =
-            '${format.toUpperCase()} $bitrateDisplay';
+        result['_native_actual_quality'] = '$displayFormat $bitrateDisplay';
         return newUri;
       } finally {
         try {
@@ -6207,8 +6232,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       return null;
     }
     await embedConvertedMetadata(convertedPath);
-    result['_native_actual_quality'] =
-        '${format.toUpperCase()} $bitrateDisplay';
+    result['_native_actual_quality'] = '$displayFormat $bitrateDisplay';
     return convertedPath;
   }
 
@@ -7535,9 +7559,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                     progress: 0.95,
                   );
 
-                  final format = tidalHighFormat.startsWith('opus')
-                      ? 'opus'
-                      : 'mp3';
+                  final format = _lossyFormatForSetting(tidalHighFormat);
+                  final displayFormat = _displayFormatForLossyFormat(format);
                   convertedPath = await FFmpegService.convertM4aToLossy(
                     tempPath,
                     format: format,
@@ -7560,29 +7583,17 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                     final backendLabel = result['label'] as String?;
                     final backendCopyright = result['copyright'] as String?;
 
-                    if (format == 'mp3') {
-                      await _embedMetadataToFile(
-                        convertedPath,
-                        trackToDownload,
-                        format: 'mp3',
-                        genre: backendGenre ?? genre,
-                        label: backendLabel ?? label,
-                        copyright: backendCopyright,
-                        downloadService: item.service,
-                      );
-                    } else {
-                      await _embedMetadataToFile(
-                        convertedPath,
-                        trackToDownload,
-                        format: 'opus',
-                        genre: backendGenre ?? genre,
-                        label: backendLabel ?? label,
-                        copyright: backendCopyright,
-                        downloadService: item.service,
-                      );
-                    }
+                    await _embedMetadataToFile(
+                      convertedPath,
+                      trackToDownload,
+                      format: _metadataFormatForLossyFormat(format),
+                      genre: backendGenre ?? genre,
+                      label: backendLabel ?? label,
+                      copyright: backendCopyright,
+                      downloadService: item.service,
+                    );
 
-                    final newExt = format == 'opus' ? '.opus' : '.mp3';
+                    final newExt = _lossyExtensionForFormat(format);
                     final newFileName = '${safBaseName ?? 'track'}$newExt';
                     final newUri = await _writeTempToSaf(
                       treeUri: settings.downloadTreeUri,
@@ -7601,7 +7612,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                       final bitrateDisplay = tidalHighFormat.contains('_')
                           ? '${tidalHighFormat.split('_').last}kbps'
                           : '320kbps';
-                      actualQuality = '${format.toUpperCase()} $bitrateDisplay';
+                      actualQuality = '$displayFormat $bitrateDisplay';
                     } else {
                       _log.w(
                         'Failed to write converted $format to SAF, keeping M4A',
@@ -7822,9 +7833,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                   progress: 0.95,
                 );
 
-                final format = tidalHighFormat.startsWith('opus')
-                    ? 'opus'
-                    : 'mp3';
+                final format = _lossyFormatForSetting(tidalHighFormat);
+                final displayFormat = _displayFormatForLossyFormat(format);
                 final convertedPath = await FFmpegService.convertM4aToLossy(
                   currentFilePath,
                   format: format,
@@ -7837,7 +7847,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                   final bitrateDisplay = tidalHighFormat.contains('_')
                       ? '${tidalHighFormat.split('_').last}kbps'
                       : '320kbps';
-                  actualQuality = '${format.toUpperCase()} $bitrateDisplay';
+                  actualQuality = '$displayFormat $bitrateDisplay';
                   _log.i(
                     'Successfully converted M4A to $format: $convertedPath',
                   );
@@ -7853,27 +7863,15 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                   final backendLabel = result['label'] as String?;
                   final backendCopyright = result['copyright'] as String?;
 
-                  if (format == 'mp3') {
-                    await _embedMetadataToFile(
-                      convertedPath,
-                      trackToDownload,
-                      format: 'mp3',
-                      genre: backendGenre ?? genre,
-                      label: backendLabel ?? label,
-                      copyright: backendCopyright,
-                      downloadService: item.service,
-                    );
-                  } else {
-                    await _embedMetadataToFile(
-                      convertedPath,
-                      trackToDownload,
-                      format: 'opus',
-                      genre: backendGenre ?? genre,
-                      label: backendLabel ?? label,
-                      copyright: backendCopyright,
-                      downloadService: item.service,
-                    );
-                  }
+                  await _embedMetadataToFile(
+                    convertedPath,
+                    trackToDownload,
+                    format: _metadataFormatForLossyFormat(format),
+                    genre: backendGenre ?? genre,
+                    label: backendLabel ?? label,
+                    copyright: backendCopyright,
+                    downloadService: item.service,
+                  );
                   _log.d('Metadata embedded successfully');
                 } else {
                   _log.w('M4A to $format conversion failed, keeping M4A file');

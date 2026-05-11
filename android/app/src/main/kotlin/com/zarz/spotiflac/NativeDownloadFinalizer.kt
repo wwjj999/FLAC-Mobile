@@ -476,13 +476,23 @@ object NativeDownloadFinalizer {
         if (!looksLikeM4a(state.filePath, state.fileName)) return
 
         val tidalHighFormat = input.request.optString("tidal_high_format", "").ifBlank { "mp3_320" }
-        val format = if (tidalHighFormat.startsWith("opus")) "opus" else "mp3"
+        val format = when {
+            tidalHighFormat.startsWith("opus") -> "opus"
+            tidalHighFormat.startsWith("aac") || tidalHighFormat.startsWith("m4a") -> "aac"
+            else -> "mp3"
+        }
+        val metadataFormat = if (format == "aac") "m4a" else format
+        val displayFormat = if (format == "aac") "AAC" else format.uppercase(Locale.ROOT)
         val bitrate = if (tidalHighFormat.contains("_")) {
             "${tidalHighFormat.substringAfterLast("_")}k"
         } else {
             if (format == "opus") "128k" else "320k"
         }
-        val ext = if (format == "opus") ".opus" else ".mp3"
+        val ext = when (format) {
+            "opus" -> ".opus"
+            "aac" -> ".m4a"
+            else -> ".mp3"
+        }
         val localInput = materializeForFFmpeg(context, input, state)
         val deleteLocalInput = state.filePath.startsWith("content://")
         val output = buildOutputPath(localInput, ext)
@@ -490,6 +500,8 @@ object NativeDownloadFinalizer {
         try {
             val command = if (format == "opus") {
                 "-v error -hide_banner -i ${q(localInput)} -codec:a libopus -b:a $bitrate -vbr on -compression_level 10 -map 0:a ${q(output)} -y"
+            } else if (format == "aac") {
+                "-v error -hide_banner -i ${q(localInput)} -codec:a aac -b:a $bitrate -map 0:a -f mp4 ${q(output)} -y"
             } else {
                 "-v error -hide_banner -i ${q(localInput)} -codec:a libmp3lame -b:a $bitrate -map 0:a -id3v2_version 3 ${q(output)} -y"
             }
@@ -497,14 +509,14 @@ object NativeDownloadFinalizer {
             if (!result.first || !File(output).exists()) {
                 throw IllegalStateException("HIGH conversion failed: ${result.second}")
             }
-            embedBasicMetadata(context, output, input, format)
+            embedBasicMetadata(context, output, input, metadataFormat)
             replaceStatePath(context, input, state, output, deleteOld = true)
             adoptedOutput = true
         } finally {
             if (!adoptedOutput) File(output).delete()
             if (deleteLocalInput) File(localInput).delete()
         }
-        state.quality = "${format.uppercase(Locale.ROOT)} ${bitrate.removeSuffix("k")}kbps"
+        state.quality = "$displayFormat ${bitrate.removeSuffix("k")}kbps"
         state.bitDepth = null
         state.sampleRate = null
     }
@@ -1380,7 +1392,7 @@ object NativeDownloadFinalizer {
         val rawName = input.request.optString("saf_file_name", "")
             .ifBlank { state.fileName }
             .ifBlank { "${trackString(input, "artistName", input.request.optString("artist_name", "Artist"))} - ${trackString(input, "name", input.request.optString("track_name", "Track"))}" }
-        val knownExts = listOf(".flac", ".m4a", ".mp4", ".mp3", ".opus", ".ogg", ".lrc")
+        val knownExts = listOf(".flac", ".m4a", ".mp4", ".aac", ".mp3", ".opus", ".ogg", ".lrc")
         var base = rawName.trim()
         val lower = base.lowercase(Locale.ROOT)
         for (knownExt in knownExts) {

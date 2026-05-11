@@ -295,7 +295,7 @@ class FFmpegService {
             header[0] == 0x66 && // 'f'
             header[1] == 0x4C && // 'L'
             header[2] == 0x61 && // 'a'
-            header[3] == 0x43;   // 'C'
+            header[3] == 0x43; // 'C'
       } finally {
         await raf.close();
       }
@@ -330,7 +330,8 @@ class FFmpegService {
     String? bitrate,
     bool deleteOriginal = true,
   }) async {
-    String bitrateValue = format == 'opus' ? '128k' : '320k';
+    final normalizedFormat = format.toLowerCase();
+    String bitrateValue = normalizedFormat == 'opus' ? '128k' : '320k';
     if (bitrate != null && bitrate.contains('_')) {
       final parts = bitrate.split('_');
       if (parts.length == 2) {
@@ -338,13 +339,20 @@ class FFmpegService {
       }
     }
 
-    final extension = format == 'opus' ? '.opus' : '.mp3';
+    final extension = switch (normalizedFormat) {
+      'opus' => '.opus',
+      'aac' || 'm4a' => '.m4a',
+      _ => '.mp3',
+    };
     final outputPath = _buildOutputPath(inputPath, extension);
 
     String command;
-    if (format == 'opus') {
+    if (normalizedFormat == 'opus') {
       command =
           '-v error -hide_banner -i "$inputPath" -codec:a libopus -b:a $bitrateValue -vbr on -compression_level 10 -map 0:a "$outputPath" -y';
+    } else if (normalizedFormat == 'aac' || normalizedFormat == 'm4a') {
+      command =
+          '-v error -hide_banner -i "$inputPath" -codec:a aac -b:a $bitrateValue -map 0:a -f mp4 "$outputPath" -y';
     } else {
       command =
           '-v error -hide_banner -i "$inputPath" -codec:a libmp3lame -b:a $bitrateValue -map 0:a -id3v2_version 3 "$outputPath" -y';
@@ -361,7 +369,7 @@ class FFmpegService {
       return outputPath;
     }
 
-    _log.e('M4A to $format conversion failed: ${result.output}');
+    _log.e('M4A to $normalizedFormat conversion failed: ${result.output}');
     return null;
   }
 
@@ -1839,7 +1847,7 @@ class FFmpegService {
   }
 
   /// Unified audio format conversion with full metadata + cover preservation.
-  /// Supports: FLAC/M4A/MP3/Opus -> MP3/Opus/ALAC/FLAC.
+  /// Supports: FLAC/M4A/MP3/Opus -> AAC/M4A/MP3/Opus/ALAC/FLAC.
   /// ALAC and FLAC targets are lossless (bitrate parameter is ignored).
   static Future<String?> convertAudioFormat({
     required String inputPath,
@@ -1851,7 +1859,7 @@ class FFmpegService {
     bool deleteOriginal = true,
   }) async {
     final format = targetFormat.toLowerCase();
-    if (!const {'mp3', 'opus', 'alac', 'flac'}.contains(format)) {
+    if (!const {'mp3', 'opus', 'aac', 'alac', 'flac'}.contains(format)) {
       _log.e('Unsupported target format: $targetFormat');
       return null;
     }
@@ -1874,13 +1882,20 @@ class FFmpegService {
       );
     }
 
-    final extension = format == 'opus' ? '.opus' : '.mp3';
+    final extension = switch (format) {
+      'opus' => '.opus',
+      'aac' => '.m4a',
+      _ => '.mp3',
+    };
     final outputPath = _buildOutputPath(inputPath, extension);
 
     String command;
     if (format == 'opus') {
       command =
           '-v error -hide_banner -i "$inputPath" -codec:a libopus -b:a $bitrate -vbr on -compression_level 10 -map 0:a "$outputPath" -y';
+    } else if (format == 'aac') {
+      command =
+          '-v error -hide_banner -i "$inputPath" -codec:a aac -b:a $bitrate -map 0:a -f mp4 "$outputPath" -y';
     } else {
       command =
           '-v error -hide_banner -i "$inputPath" -codec:a libmp3lame -b:a $bitrate -map 0:a -id3v2_version 3 "$outputPath" -y';
@@ -1906,6 +1921,13 @@ class FFmpegService {
           mp3Path: outputPath,
           coverPath: coverPath,
           metadata: metadata,
+        );
+      } else if (format == 'aac') {
+        embedResult = await embedMetadataToM4a(
+          m4aPath: outputPath,
+          coverPath: coverPath,
+          metadata: metadata,
+          preserveMetadata: true,
         );
       } else {
         embedResult = await embedMetadataToOpus(

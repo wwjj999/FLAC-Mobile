@@ -68,6 +68,7 @@ type LyricsFetchOptions struct {
 	IncludeTranslationNetease  bool   `json:"include_translation_netease"`
 	IncludeRomanizationNetease bool   `json:"include_romanization_netease"`
 	MultiPersonWordByWord      bool   `json:"multi_person_word_by_word"`
+	AppleElrcWordSync          bool   `json:"apple_elrc_word_sync"`
 	MusixmatchLanguage         string `json:"musixmatch_language,omitempty"`
 }
 
@@ -75,6 +76,7 @@ var defaultLyricsFetchOptions = LyricsFetchOptions{
 	IncludeTranslationNetease:  false,
 	IncludeRomanizationNetease: false,
 	MultiPersonWordByWord:      true,
+	AppleElrcWordSync:          false,
 	MusixmatchLanguage:         "",
 }
 
@@ -151,12 +153,18 @@ func SetLyricsFetchOptions(opts LyricsFetchOptions) {
 
 	lyricsFetchOptionsMu.Lock()
 	defer lyricsFetchOptionsMu.Unlock()
+	changed := lyricsFetchOptions != normalized
 	lyricsFetchOptions = normalized
 
-	GoLog("[Lyrics] Fetch options set: translation=%v romanization=%v multi_person=%v musixmatch_lang=%q\n",
+	if changed {
+		globalLyricsCache.ClearAll()
+	}
+
+	GoLog("[Lyrics] Fetch options set: translation=%v romanization=%v multi_person=%v apple_elrc=%v musixmatch_lang=%q\n",
 		normalized.IncludeTranslationNetease,
 		normalized.IncludeRomanizationNetease,
 		normalized.MultiPersonWordByWord,
+		normalized.AppleElrcWordSync,
 		normalized.MusixmatchLanguage,
 	)
 }
@@ -530,9 +538,9 @@ func (c *LyricsClient) FetchLyricsAllSources(spotifyID, trackName, artistName st
 
 		case LyricsProviderAppleMusic:
 			appleClient := NewAppleMusicClient()
-			lyrics, err = appleClient.FetchLyrics(trackName, primaryArtist, durationSec, fetchOptions.MultiPersonWordByWord)
+			lyrics, err = appleClient.FetchLyrics(trackName, primaryArtist, durationSec, fetchOptions.MultiPersonWordByWord, fetchOptions.AppleElrcWordSync)
 			if err != nil && primaryArtist != artistName {
-				lyrics, err = appleClient.FetchLyrics(trackName, artistName, durationSec, fetchOptions.MultiPersonWordByWord)
+				lyrics, err = appleClient.FetchLyrics(trackName, artistName, durationSec, fetchOptions.MultiPersonWordByWord, fetchOptions.AppleElrcWordSync)
 			}
 
 		case LyricsProviderQQMusic:

@@ -182,7 +182,9 @@ class _AudioAnalysisCardState extends State<AudioAnalysisCard> {
         await _clearCache(widget.filePath);
       }
 
-      final cached = forceRefresh ? null : await _loadFromCache(widget.filePath);
+      final cached = forceRefresh
+          ? null
+          : await _loadFromCache(widget.filePath);
       AudioAnalysisData data;
       bool fromCache = false;
 
@@ -571,10 +573,7 @@ class _AudioAnalysisCardState extends State<AudioAnalysisCard> {
                 tooltip: l10n.audioAnalysisRescan,
                 visualDensity: VisualDensity.compact,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
-                ),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 color: cs.onErrorContainer,
                 onPressed: () => _analyze(forceRefresh: true),
               ),
@@ -904,9 +903,9 @@ class _AudioInfoCard extends StatelessWidget {
                   icon: Icons.surround_sound,
                   label: context.l10n.audioAnalysisChannels,
                   value: data.channels == 2
-                      ? 'Stereo'
+                      ? context.l10n.audioAnalysisStereo
                       : data.channels == 1
-                      ? 'Mono'
+                      ? context.l10n.audioAnalysisMono
                       : '${data.channels}',
                   cs: cs,
                 ),

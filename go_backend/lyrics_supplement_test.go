@@ -156,12 +156,26 @@ func TestExternalLyricsProvidersWithFakeHTTP(t *testing.T) {
 	if err != nil || !strings.Contains(rawApple, "Syllable") {
 		t.Fatalf("apple raw = %q/%v", rawApple, err)
 	}
-	appleLyrics, err := apple.FetchLyrics("Song", "Artist", 180, true)
+	appleLyrics, err := apple.FetchLyrics("Song", "Artist", 180, true, true)
 	if err != nil || appleLyrics.SyncType != "LINE_SYNCED" || appleLyrics.Provider != "Apple Music" {
 		t.Fatalf("apple lyrics = %#v/%v", appleLyrics, err)
 	}
-	if plain, err := formatPaxLyricsToLRC(`[{"timestamp":2000,"text":[{"text":"Plain","part":false}]}]`, false); err != nil || !strings.Contains(plain, "Plain") {
+	if plain, err := formatPaxLyricsToLRC(`[{"timestamp":2000,"text":[{"text":"Plain","part":false}]}]`, false, false); err != nil || !strings.Contains(plain, "Plain") {
 		t.Fatalf("direct pax = %q/%v", plain, err)
+	}
+	lineOnly, err := formatPaxLyricsToLRC(paxJSON, true, false)
+	if err != nil {
+		t.Fatalf("line-only pax = %v", err)
+	}
+	if strings.Contains(lineOnly, "<00:") {
+		t.Fatalf("line-only pax should not include inline word timing: %q", lineOnly)
+	}
+	elrc, err := formatPaxLyricsToLRC(paxJSON, true, true)
+	if err != nil {
+		t.Fatalf("elrc pax = %v", err)
+	}
+	if !strings.Contains(elrc, "<00:") {
+		t.Fatalf("elrc pax should include inline word timing: %q", elrc)
 	}
 	if _, err := apple.SearchSong("", "", 0); err == nil {
 		t.Fatal("expected empty apple search error")

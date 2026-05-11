@@ -1414,8 +1414,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                               color: Colors.white,
                             ),
                             const SizedBox(width: 4),
-                            const Text(
-                              'Local',
+                            Text(
+                              context.l10n.librarySourceLocal,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
@@ -1508,11 +1508,13 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                   if (openService == 'deezer') {
                     buttonLabel = context.l10n.trackOpenInDeezer;
                   } else if (openService == 'amazon') {
-                    buttonLabel = 'Open in Amazon Music';
+                    buttonLabel = context.l10n.trackOpenInService(
+                      'Amazon Music',
+                    );
                   } else if (openService == 'tidal') {
-                    buttonLabel = 'Open in Tidal';
+                    buttonLabel = context.l10n.trackOpenInService('Tidal');
                   } else if (openService == 'qobuz') {
-                    buttonLabel = 'Open in Qobuz';
+                    buttonLabel = context.l10n.trackOpenInService('Qobuz');
                   } else {
                     buttonLabel = context.l10n.trackOpenInSpotify;
                   }
@@ -1617,11 +1619,17 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       if (trackNumber != null && trackNumber! > 0)
         _MetadataItem(context.l10n.trackTrackNumber, trackNumber.toString()),
       if (totalTracks != null && totalTracks! > 0)
-        _MetadataItem('Track Total', totalTracks.toString()),
+        _MetadataItem(
+          context.l10n.editMetadataFieldTrackTotal,
+          totalTracks.toString(),
+        ),
       if (discNumber != null && discNumber! > 0)
         _MetadataItem(context.l10n.trackDiscNumber, discNumber.toString()),
       if (totalDiscs != null && totalDiscs! > 0)
-        _MetadataItem('Disc Total', totalDiscs.toString()),
+        _MetadataItem(
+          context.l10n.editMetadataFieldDiscTotal,
+          totalDiscs.toString(),
+        ),
       if (duration != null)
         _MetadataItem(context.l10n.trackDuration, _formatDuration(duration!)),
       if (audioQualityStr != null)
@@ -1635,7 +1643,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       if (copyright != null && copyright!.isNotEmpty)
         _MetadataItem(context.l10n.trackCopyright, copyright!),
       if (composer != null && composer!.isNotEmpty)
-        _MetadataItem('Composer', composer!),
+        _MetadataItem(context.l10n.editMetadataFieldComposer, composer!),
       if (isrc != null && isrc!.isNotEmpty) _MetadataItem('ISRC', isrc!),
     ];
 
@@ -2019,7 +2027,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  'Source: ${_lyricsSource!}',
+                  context.l10n.trackLyricsSource(_lyricsSource!),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -2219,7 +2227,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             _rawLyrics = embeddedLyrics;
             _lyricsSource = embeddedSource.isNotEmpty
                 ? embeddedSource
-                : 'Embedded';
+                : context.l10n.trackLyricsEmbeddedSource;
             _lyricsEmbedded = true;
             _lyricsLoading = false;
             _embeddedLyricsChecked = true;
@@ -2350,7 +2358,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
               _rawLyrics = embeddedLyrics;
               _lyricsSource = embeddedSource.isNotEmpty
                   ? embeddedSource
-                  : 'Embedded';
+                  : context.l10n.trackLyricsEmbeddedSource;
               _lyricsEmbedded = true;
               _lyricsLoading = false;
               _embeddedLyricsChecked = true;
@@ -3545,19 +3553,25 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
     final formats = <String>[];
     if (currentFormat == 'FLAC') {
-      formats.addAll(['ALAC', 'MP3', 'Opus']);
+      formats.addAll(['ALAC', 'AAC', 'MP3', 'Opus']);
     } else if (currentFormat == 'M4A') {
-      formats.addAll(['FLAC', 'MP3', 'Opus']);
+      formats.addAll(['FLAC', 'AAC', 'MP3', 'Opus']);
     } else if (currentFormat == 'MP3') {
-      formats.add('Opus');
+      formats.addAll(['AAC', 'Opus']);
     } else if (currentFormat == 'Opus') {
-      formats.add('MP3');
+      formats.addAll(['AAC', 'MP3']);
     } else {
-      formats.addAll(['MP3', 'Opus']);
+      formats.addAll(['AAC', 'MP3', 'Opus']);
     }
 
     String selectedFormat = formats.first;
-    String selectedBitrate = selectedFormat == 'Opus' ? '128k' : '320k';
+    String defaultBitrateForFormat(String format) {
+      if (format == 'Opus') return '128k';
+      if (format == 'AAC') return '256k';
+      return '320k';
+    }
+
+    String selectedBitrate = defaultBitrateForFormat(selectedFormat);
     bool isLosslessTarget =
         selectedFormat == 'ALAC' || selectedFormat == 'FLAC';
 
@@ -3622,9 +3636,9 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                                 isLosslessTarget =
                                     format == 'ALAC' || format == 'FLAC';
                                 if (!isLosslessTarget) {
-                                  selectedBitrate = format == 'Opus'
-                                      ? '128k'
-                                      : '320k';
+                                  selectedBitrate = defaultBitrateForFormat(
+                                    format,
+                                  );
                                 }
                               });
                             }
@@ -3717,6 +3731,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
   void _showCueSplitSheet(BuildContext context) async {
     var cuePath = cleanFilePath;
+    final unknownAlbum = context.l10n.unknownAlbum;
+    final unknownArtist = context.l10n.unknownArtist;
     final trackSuffix = RegExp(r'#track\d+$');
     if (trackSuffix.hasMatch(cuePath)) {
       cuePath = cuePath.replaceFirst(trackSuffix, '');
@@ -3737,8 +3753,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         return;
       }
 
-      final album = cueInfo['album'] as String? ?? 'Unknown Album';
-      final artist = cueInfo['artist'] as String? ?? 'Unknown Artist';
+      final album = cueInfo['album'] as String? ?? unknownAlbum;
+      final artist = cueInfo['artist'] as String? ?? unknownArtist;
       final audioPath = cueInfo['audio_path'] as String? ?? '';
       final genre = cueInfo['genre'] as String? ?? '';
       final date = cueInfo['date'] as String? ?? '';
@@ -4387,6 +4403,10 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             newExt = '.opus';
             mimeType = 'audio/opus';
             break;
+          case 'aac':
+            newExt = '.m4a';
+            mimeType = 'audio/mp4';
+            break;
           case 'alac':
             newExt = '.m4a';
             mimeType = 'audio/mp4';
@@ -4584,7 +4604,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
           if (refreshedLyrics.isNotEmpty) {
             _lyrics = _cleanLrcForDisplay(refreshedLyrics);
             _rawLyrics = refreshedLyrics;
-            _lyricsSource = 'Embedded';
+            _lyricsSource = context.l10n.trackLyricsEmbeddedSource;
             _lyricsEmbedded = true;
           } else {
             _lyrics = null;

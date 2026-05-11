@@ -380,7 +380,7 @@ class _ServiceHealthDot extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _serviceHealthColor(status);
     return Tooltip(
-      message: _serviceHealthTooltip(status),
+      message: _serviceHealthTooltip(context, status),
       child: Container(
         width: 8,
         height: 8,
@@ -404,16 +404,16 @@ Color _serviceHealthColor(String status) {
   }
 }
 
-String _serviceHealthTooltip(String status) {
+String _serviceHealthTooltip(BuildContext context, String status) {
   switch (status) {
     case 'online':
-      return 'Service online';
+      return context.l10n.extensionHealthServiceOnline;
     case 'degraded':
-      return 'Service degraded';
+      return context.l10n.extensionHealthServiceDegraded;
     case 'offline':
-      return 'Service offline';
+      return context.l10n.extensionHealthServiceOffline;
     default:
-      return 'Service status unknown';
+      return context.l10n.extensionHealthServiceUnknown;
   }
 }
 

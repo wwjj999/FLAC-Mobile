@@ -440,8 +440,8 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
                                     color: Colors.white,
                                   ),
                                   const SizedBox(width: 4),
-                                  const Text(
-                                    'Local',
+                                  Text(
+                                    context.l10n.librarySourceLocal,
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w600,
@@ -470,7 +470,9 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${_sortedTracksCache.length} tracks',
+                                    context.l10n.queueTrackCount(
+                                      _sortedTracksCache.length,
+                                    ),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w600,
@@ -1155,7 +1157,11 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     final failedCount = total - successCount;
     final summary = failedCount <= 0
         ? '${context.l10n.trackReEnrichSuccess} ($successCount/$total)'
-        : '${context.l10n.trackReEnrichSuccess} ($successCount/$total) • Failed: $failedCount';
+        : context.l10n.trackReEnrichSuccessWithFailures(
+            successCount,
+            total,
+            failedCount,
+          );
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(summary)));

@@ -1753,7 +1753,9 @@ class LibraryDatabase {
         bitrate: bitrate,
       );
 
-    if (normalizedFormat == 'mp3' || normalizedFormat == 'opus') {
+    if (normalizedFormat == 'mp3' ||
+        normalizedFormat == 'opus' ||
+        normalizedFormat == 'aac') {
       updated['bitDepth'] = null;
     }
 
@@ -2014,6 +2016,8 @@ class LibraryDatabase {
     switch (targetFormat.trim().toLowerCase()) {
       case 'alac':
         return 'm4a';
+      case 'aac':
+        return 'aac';
       case 'flac':
         return 'flac';
       case 'opus':
@@ -2030,6 +2034,7 @@ class LibraryDatabase {
     switch (targetFormat.trim().toLowerCase()) {
       case 'mp3':
       case 'opus':
+      case 'aac':
         final match = RegExp(r'(\d+)').firstMatch(bitrate);
         return match != null ? int.tryParse(match.group(1)!) : null;
       default:

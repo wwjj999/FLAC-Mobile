@@ -188,6 +188,7 @@ void main() {
       expect(settings.artistTagMode, artistTagModeJoined);
       expect(settings.autoFallback, isTrue);
       expect(settings.lyricsProviders, ['lrclib', 'apple_music']);
+      expect(settings.lyricsAppleElrcWordSync, isFalse);
       expect(settings.deduplicateDownloads, isTrue);
     });
 
@@ -203,6 +204,7 @@ void main() {
         concurrentDownloads: 4,
         embedReplayGain: true,
         lyricsProviders: ['apple_music'],
+        lyricsAppleElrcWordSync: true,
         deduplicateDownloads: false,
         clearDownloadFallbackExtensionIds: true,
         clearSearchProvider: true,
@@ -213,6 +215,7 @@ void main() {
       expect(updated.concurrentDownloads, 4);
       expect(updated.embedReplayGain, isTrue);
       expect(updated.lyricsProviders, ['apple_music']);
+      expect(updated.lyricsAppleElrcWordSync, isTrue);
       expect(updated.deduplicateDownloads, isFalse);
       expect(updated.downloadFallbackExtensionIds, isNull);
       expect(updated.searchProvider, isNull);
@@ -235,6 +238,7 @@ void main() {
         localLibraryPath: '/music',
         hasCompletedTutorial: true,
         musixmatchLanguage: 'id',
+        lyricsAppleElrcWordSync: true,
         lastSeenVersion: '4.5.0',
         deduplicateDownloads: false,
         nativeDownloadWorkerEnabled: true,
@@ -255,6 +259,7 @@ void main() {
       expect(decoded.localLibraryPath, '/music');
       expect(decoded.hasCompletedTutorial, isTrue);
       expect(decoded.musixmatchLanguage, 'id');
+      expect(decoded.lyricsAppleElrcWordSync, isTrue);
       expect(decoded.lastSeenVersion, '4.5.0');
       expect(decoded.deduplicateDownloads, isFalse);
       expect(decoded.nativeDownloadWorkerEnabled, isTrue);

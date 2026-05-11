@@ -1124,9 +1124,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(ctx.l10n.collectionDeletePlaylist),
-        content: Text(
-          'Delete $count ${count == 1 ? 'playlist' : 'playlists'}?',
-        ),
+        content: Text(ctx.l10n.collectionDeletePlaylistsMessage(count)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -1153,11 +1151,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     if (!context.mounted) return;
     _exitPlaylistSelectionMode();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '$count ${count == 1 ? 'playlist' : 'playlists'} deleted',
-        ),
-      ),
+      SnackBar(content: Text(context.l10n.collectionPlaylistsDeleted(count))),
     );
   }
 
@@ -1933,7 +1927,11 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                                 ),
                               ),
                               FilterChip(
-                                label: const Text('Missing track number'),
+                                label: Text(
+                                  context
+                                      .l10n
+                                      .libraryFilterMetadataMissingTrackNumber,
+                                ),
                                 selected:
                                     tempMetadata == 'missing-track-number',
                                 onSelected: (_) => setSheetState(
@@ -1941,21 +1939,33 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                                 ),
                               ),
                               FilterChip(
-                                label: const Text('Missing disc number'),
+                                label: Text(
+                                  context
+                                      .l10n
+                                      .libraryFilterMetadataMissingDiscNumber,
+                                ),
                                 selected: tempMetadata == 'missing-disc-number',
                                 onSelected: (_) => setSheetState(
                                   () => tempMetadata = 'missing-disc-number',
                                 ),
                               ),
                               FilterChip(
-                                label: const Text('Missing artist'),
+                                label: Text(
+                                  context
+                                      .l10n
+                                      .libraryFilterMetadataMissingArtist,
+                                ),
                                 selected: tempMetadata == 'missing-artist',
                                 onSelected: (_) => setSheetState(
                                   () => tempMetadata = 'missing-artist',
                                 ),
                               ),
                               FilterChip(
-                                label: const Text('Incorrect ISRC format'),
+                                label: Text(
+                                  context
+                                      .l10n
+                                      .libraryFilterMetadataIncorrectIsrcFormat,
+                                ),
                                 selected:
                                     tempMetadata == 'incorrect-isrc-format',
                                 onSelected: (_) => setSheetState(
@@ -1963,7 +1973,11 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                                 ),
                               ),
                               FilterChip(
-                                label: const Text('Missing label'),
+                                label: Text(
+                                  context
+                                      .l10n
+                                      .libraryFilterMetadataMissingLabel,
+                                ),
                                 selected: tempMetadata == 'missing-label',
                                 onSelected: (_) => setSheetState(
                                   () => tempMetadata = 'missing-label',
@@ -2549,8 +2563,16 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
       if (!context.mounted) return;
       final message = addedCount > 0
-          ? 'Added $addedCount ${addedCount == 1 ? 'track' : 'tracks'} to $playlistName'
-                '${alreadyCount > 0 ? ' ($alreadyCount already in playlist)' : ''}'
+          ? alreadyCount > 0
+                ? context.l10n.collectionAddedTracksToPlaylistWithExisting(
+                    addedCount,
+                    playlistName,
+                    alreadyCount,
+                  )
+                : context.l10n.collectionAddedTracksToPlaylist(
+                    addedCount,
+                    playlistName,
+                  )
           : context.l10n.collectionAlreadyInPlaylist(playlistName);
       ScaffoldMessenger.of(
         context,
@@ -3256,7 +3278,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
             ),
             Text(
-              '$count ${count == 1 ? 'item' : 'items'}',
+              context.l10n.itemCount(count),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -4757,7 +4779,11 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     final failedCount = total - successCount;
     final summary = failedCount <= 0
         ? '${context.l10n.trackReEnrichSuccess} ($successCount/$total)'
-        : '${context.l10n.trackReEnrichSuccess} ($successCount/$total) • Failed: $failedCount';
+        : context.l10n.trackReEnrichSuccessWithFailures(
+            successCount,
+            total,
+            failedCount,
+          );
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(summary)));
@@ -5582,7 +5608,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                   icon: const Icon(Icons.delete_outline),
                   label: Text(
                     selectedCount > 0
-                        ? 'Delete $selectedCount ${selectedCount == 1 ? 'track' : 'tracks'}'
+                        ? context.l10n.selectionDeleteTracksCount(selectedCount)
                         : context.l10n.selectionSelectToDelete,
                   ),
                   style: FilledButton.styleFrom(
@@ -5725,8 +5751,16 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                                                       ? '${(item.progress * 100).toStringAsFixed(0)}% • ${item.speedMBps.toStringAsFixed(1)} MB/s'
                                                       : '${(item.progress * 100).toStringAsFixed(0)}%')
                                                 : (item.speedMBps > 0
-                                                      ? 'Downloading • ${item.speedMBps.toStringAsFixed(1)} MB/s'
-                                                      : 'Starting...'))),
+                                                      ? context.l10n
+                                                            .queueDownloadSpeedStatus(
+                                                              item.speedMBps
+                                                                  .toStringAsFixed(
+                                                                    1,
+                                                                  ),
+                                                            )
+                                                      : context
+                                                            .l10n
+                                                            .queueDownloadStarting))),
                                 style: Theme.of(context).textTheme.labelSmall
                                     ?.copyWith(
                                       color: colorScheme.primary,
@@ -6154,7 +6188,9 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                 if (_isSelectionMode) ...[
                   Semantics(
                     checked: isSelected,
-                    label: isSelected ? 'Deselect track' : 'Select track',
+                    label: isSelected
+                        ? context.l10n.a11yDeselectTrack
+                        : context.l10n.a11ySelectTrack,
                     child: AnimatedSelectionCheckbox(
                       visible: true,
                       selected: isSelected,
@@ -6417,8 +6453,10 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                           return fileExists
                               ? Semantics(
                                   button: true,
-                                  label:
-                                      'Play ${item.trackName} by ${item.artistName}',
+                                  label: context.l10n.a11yPlayTrackByArtist(
+                                    item.trackName,
+                                    item.artistName,
+                                  ),
                                   child: GestureDetector(
                                     onTap: () => _openFile(
                                       item.filePath,
