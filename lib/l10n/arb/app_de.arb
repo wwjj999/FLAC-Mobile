@@ -2014,7 +2014,7 @@
   "@downloadLossyAac": {
     "description": "Tidal lossy format option - AAC in M4A container at 320kbps"
   },
-  "downloadLossyAacSubtitle": "Best mobile compatibility, M4A container",
+  "downloadLossyAacSubtitle": "Beste mobile Kompatibilität, M4A Container",
   "@downloadLossyAacSubtitle": {
     "description": "Subtitle for AAC/M4A 320kbps Tidal lossy option"
   },
@@ -3187,7 +3187,7 @@
   "@trackConvertFormat": {
     "description": "Menu item - convert audio format"
   },
-  "trackConvertFormatSubtitle": "Convert to AAC/M4A, MP3, Opus, ALAC, or FLAC",
+  "trackConvertFormatSubtitle": "Zu AAC/M4A, MP3, Opus, ALAC oder FLAC konvertieren",
   "@trackConvertFormatSubtitle": {
     "description": "Subtitle for convert format menu item"
   },
@@ -3990,11 +3990,11 @@
   "@downloadAppleElrcWordSync": {
     "description": "Setting for preserving Apple Music word-by-word eLRC timestamps"
   },
-  "downloadAppleElrcWordSyncEnabled": "Raw word-by-word timestamps preserved",
+  "downloadAppleElrcWordSyncEnabled": "Rohe Zeitstempel erhalten",
   "@downloadAppleElrcWordSyncEnabled": {
     "description": "Subtitle when Apple Music eLRC word sync is enabled"
   },
-  "downloadAppleElrcWordSyncDisabled": "Safer line-by-line Apple Music lyrics",
+  "downloadAppleElrcWordSyncDisabled": "Sichere Line-by-line Apple Music Texte",
   "@downloadAppleElrcWordSyncDisabled": {
     "description": "Subtitle when Apple Music eLRC word sync is disabled"
   },
@@ -5103,23 +5103,23 @@
   "@libraryFilterMetadataMissingTrackNumber": {
     "description": "Filter option - items missing track number"
   },
-  "libraryFilterMetadataMissingDiscNumber": "Missing disc number",
+  "libraryFilterMetadataMissingDiscNumber": "Fehlende Disc-Nummer",
   "@libraryFilterMetadataMissingDiscNumber": {
     "description": "Filter option - items missing disc number"
   },
-  "libraryFilterMetadataMissingArtist": "Missing artist",
+  "libraryFilterMetadataMissingArtist": "Fehlender Künstler",
   "@libraryFilterMetadataMissingArtist": {
     "description": "Filter option - items missing artist"
   },
-  "libraryFilterMetadataIncorrectIsrcFormat": "Incorrect ISRC format",
+  "libraryFilterMetadataIncorrectIsrcFormat": "Falsches ISRC-Format",
   "@libraryFilterMetadataIncorrectIsrcFormat": {
     "description": "Filter option - items with an invalid ISRC format"
   },
-  "libraryFilterMetadataMissingLabel": "Missing label",
+  "libraryFilterMetadataMissingLabel": "Label fehlt",
   "@libraryFilterMetadataMissingLabel": {
     "description": "Filter option - items missing record label"
   },
-  "collectionDeletePlaylistsMessage": "Delete {count} {count, plural, =1{playlist} other{playlists}}?",
+  "collectionDeletePlaylistsMessage": "Lösche {count} {count, plural, one {}=1{Playlist} other{Playlists}}?",
   "@collectionDeletePlaylistsMessage": {
     "description": "Confirmation message for deleting selected playlists",
     "placeholders": {
@@ -5128,7 +5128,7 @@
       }
     }
   },
-  "collectionPlaylistsDeleted": "{count} {count, plural, =1{playlist} other{playlists}} deleted",
+  "collectionPlaylistsDeleted": "{count} {count, plural, one {}=1{Playlist} other{Playlists}} gelöscht",
   "@collectionPlaylistsDeleted": {
     "description": "Snackbar after deleting selected playlists",
     "placeholders": {
@@ -5137,7 +5137,7 @@
       }
     }
   },
-  "collectionAddedTracksToPlaylist": "Added {count} {count, plural, =1{track} other{tracks}} to {playlistName}",
+  "collectionAddedTracksToPlaylist": "{count} {count, plural, one {}=1{Titel} other{Titel}} zu {playlistName} hinzugefügt",
   "@collectionAddedTracksToPlaylist": {
     "description": "Snackbar after adding multiple tracks to a playlist",
     "placeholders": {
@@ -5206,19 +5206,19 @@
       }
     }
   },
-  "queueDownloadStarting": "Starting...",
+  "queueDownloadStarting": "Starte...",
   "@queueDownloadStarting": {
     "description": "Queue status before download progress is available"
   },
-  "a11ySelectTrack": "Select track",
+  "a11ySelectTrack": "Titel auswählen",
   "@a11ySelectTrack": {
     "description": "Accessibility label for selecting a track"
   },
-  "a11yDeselectTrack": "Deselect track",
+  "a11yDeselectTrack": "Titel abwählen",
   "@a11yDeselectTrack": {
     "description": "Accessibility label for deselecting a track"
   },
-  "a11yPlayTrackByArtist": "Play {trackName} by {artistName}",
+  "a11yPlayTrackByArtist": "Spiele {trackName} von {artistName}",
   "@a11yPlayTrackByArtist": {
     "description": "Accessibility label for playing a local library track",
     "placeholders": {
