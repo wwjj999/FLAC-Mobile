@@ -1831,7 +1831,7 @@
   "@extensionPostProcessing": {
     "description": "Capability - post-download processing"
   },
-  "extensionHooksAvailable": "{count} hook(s) available",
+  "extensionHooksAvailable": "{count} crochet(s) disponibles",
   "@extensionHooksAvailable": {
     "description": "Post-processing hooks count",
     "placeholders": {
@@ -2146,7 +2146,7 @@
   "@albumFolderYearAlbum": {
     "description": "Album folder option with year"
   },
-  "albumFolderYearAlbumSubtitle": "Albums/[2005] Album Name/",
+  "albumFolderYearAlbumSubtitle": "Albums/[2005] Titre de l'album/",
   "@albumFolderYearAlbumSubtitle": {
     "description": "Folder structure example"
   },
@@ -3158,7 +3158,7 @@
       }
     }
   },
-  "queueFlacNoReliableMatches": "No reliable online matches found for the selection",
+  "queueFlacNoReliableMatches": "Aucun résultat pertinent n'a été trouvé en ligne pour cette sélection",
   "@queueFlacNoReliableMatches": {
     "description": "Snackbar when no safe FLAC redownload matches were found"
   },
@@ -3174,7 +3174,7 @@
       }
     }
   },
-  "trackSaveFailed": "Failed: {error}",
+  "trackSaveFailed": "Échec : {error}",
   "@trackSaveFailed": {
     "description": "Snackbar when save operation fails",
     "placeholders": {
