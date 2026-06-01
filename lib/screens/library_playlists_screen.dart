@@ -358,13 +358,10 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
     WidgetRef ref,
     String playlistId,
   ) async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.image,
-      allowMultiple: false,
-    );
-    if (result == null || result.files.isEmpty) return;
+    final picked = await FilePicker.pickFile(type: FileType.image);
+    if (picked == null) return;
 
-    final path = result.files.first.path;
+    final path = picked.path;
     if (path == null || path.isEmpty) return;
 
     await ref

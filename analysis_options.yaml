@@ -9,6 +9,9 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+plugins:
+  riverpod_lint: 3.1.4-dev.3
+
 analyzer:
   exclude:
     - build/**
@@ -19,9 +22,6 @@ analyzer:
     strict-casts: true
     strict-inference: true
     strict-raw-types: true
-  plugins:
-    - custom_lint
-
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
@@ -43,10 +43,6 @@ linter:
     type_annotate_public_apis: true
     cancel_subscriptions: true
     close_sinks: true
-
-custom_lint:
-  rules:
-    - avoid_public_notifier_properties
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

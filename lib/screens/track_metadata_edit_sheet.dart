@@ -201,30 +201,30 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
 
   Future<void> _pickCoverImage() async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
-        withData: true,
-      );
-      if (result == null || result.files.isEmpty) return;
+      final picked = await FilePicker.pickFile(type: FileType.image);
+      if (picked == null) return;
 
-      final picked = result.files.first;
-      final bytes = picked.bytes;
       final sourcePath = picked.path;
+      Uint8List? bytes;
+      final needsByteFallback =
+          !_hasValue(sourcePath) && !_hasValue(picked.extension);
+      if (needsByteFallback) {
+        bytes = await picked.readAsBytes();
+      }
       final extension = _resolveImageExtension(picked.extension, bytes);
 
       final tempDir = await Directory.systemTemp.createTemp('edit_cover_');
       final tempPath =
           '${tempDir.path}${Platform.pathSeparator}cover.$extension';
 
-      if (bytes != null && bytes.isNotEmpty) {
-        await File(tempPath).writeAsBytes(bytes, flush: true);
-      } else if (sourcePath != null && sourcePath.isNotEmpty) {
+      if (sourcePath != null && sourcePath.isNotEmpty) {
         final sourceFile = File(sourcePath);
         if (!await sourceFile.exists()) {
           throw Exception('Selected image is not accessible');
         }
         await sourceFile.copy(tempPath);
+      } else if (bytes != null && bytes.isNotEmpty) {
+        await File(tempPath).writeAsBytes(bytes, flush: true);
       } else {
         throw Exception('Unable to read selected image');
       }

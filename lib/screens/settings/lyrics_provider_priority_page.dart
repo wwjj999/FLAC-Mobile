@@ -91,9 +91,8 @@ class _LyricsProviderPriorityPageState
                   onToggle: () => _disableProvider(id),
                 );
               },
-              onReorder: (oldIndex, newIndex) {
+              onReorderItem: (oldIndex, newIndex) {
                 setState(() {
-                  if (newIndex > oldIndex) newIndex -= 1;
                   final item = _enabledProviders.removeAt(oldIndex);
                   _enabledProviders.insert(newIndex, item);
                 });

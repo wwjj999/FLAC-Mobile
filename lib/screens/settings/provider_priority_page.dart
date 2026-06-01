@@ -145,11 +145,8 @@ class _ProviderPriorityPageState extends ConsumerState<ProviderPriorityPage> {
                         .firstOrNull,
                   );
                 },
-                onReorder: (oldIndex, newIndex) {
+                onReorderItem: (oldIndex, newIndex) {
                   setState(() {
-                    if (newIndex > oldIndex) {
-                      newIndex -= 1;
-                    }
                     final item = _providers.removeAt(oldIndex);
                     _providers.insert(newIndex, item);
                     _hasChanges = true;

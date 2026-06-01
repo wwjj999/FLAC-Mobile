@@ -286,10 +286,7 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
   }
 
   Future<void> _installExtension() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.any,
-      allowMultiple: true,
-    );
+    final result = await FilePicker.pickFiles(type: FileType.any);
 
     if (result != null && result.files.isNotEmpty) {
       final selectedPaths = result.files
