@@ -27,6 +27,7 @@ import 'package:spotiflac_android/utils/string_utils.dart';
 import 'package:spotiflac_android/utils/int_utils.dart';
 import 'package:spotiflac_android/widgets/audio_analysis_widget.dart';
 import 'package:spotiflac_android/widgets/cached_cover_image.dart';
+import 'package:spotiflac_android/widgets/settings_group.dart';
 
 part 'track_metadata_edit_sheet.dart';
 
@@ -1739,6 +1740,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     return switch (normalized) {
       'flac' => 'FLAC',
       'alac' => 'ALAC',
+      'wav' || 'wave' => 'WAV',
+      'aiff' || 'aif' || 'aifc' => 'AIFF',
       'eac3' || 'ec_3' => 'EAC3',
       'ac3' || 'ac_3' => 'AC3',
       'ac4' || 'ac_4' => 'AC4',
@@ -3320,6 +3323,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
           _MetadataOption(
             icon: Icons.share_outlined,
             label: l10n.trackMetadataShare,
+            dividerAbove: true,
             onTap: () => _shareFile(screenContext),
           ),
           _MetadataOption(
@@ -3396,14 +3400,29 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                     height: 1,
                     color: colorScheme.outlineVariant.withValues(alpha: 0.5),
                   ),
-                  const SizedBox(height: 4),
-                  for (final option in options)
-                    _MetadataOptionTile(
-                      option: option,
-                      colorScheme: colorScheme,
-                      onTap: () =>
-                          _closeOptionsMenuAndRun(sheetContext, option.onTap),
-                    ),
+                  const SizedBox(height: 8),
+                  SettingsGroup(
+                    children: [
+                      for (int i = 0; i < options.length; i++) ...[
+                        if (options[i].dividerAbove && i != 0)
+                          Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: colorScheme.outlineVariant.withValues(
+                              alpha: 0.3,
+                            ),
+                          ),
+                        _MetadataOptionTile(
+                          option: options[i],
+                          colorScheme: colorScheme,
+                          onTap: () => _closeOptionsMenuAndRun(
+                            sheetContext,
+                            options[i].onTap,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                   const SizedBox(height: 16),
                 ],
               ),
@@ -3591,7 +3610,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
   String _buildConvertedQualityLabel(String targetFormat, String bitrate) {
     final upper = targetFormat.toUpperCase();
-    if (upper == 'ALAC' || upper == 'FLAC') {
+    if (isLosslessConversionTarget(targetFormat)) {
       return '$upper Lossless';
     }
     final normalizedBitrate = bitrate.trim().toLowerCase();
@@ -3664,15 +3683,19 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
   void _showConvertSheet(BuildContext context) {
     final currentFormat = _currentFileFormat;
-    final isLosslessSource = currentFormat == 'FLAC' || currentFormat == 'M4A';
+    final isLosslessSource = isLosslessConversionSource(currentFormat);
 
     final formats = <String>[];
     if (currentFormat == 'FLAC') {
-      formats.addAll(['ALAC', 'AAC', 'MP3', 'Opus']);
+      formats.addAll(['ALAC', 'WAV', 'AIFF', 'AAC', 'MP3', 'Opus']);
     } else if (currentFormat == 'ALAC') {
-      formats.addAll(['FLAC', 'AAC', 'MP3', 'Opus']);
+      formats.addAll(['FLAC', 'WAV', 'AIFF', 'AAC', 'MP3', 'Opus']);
     } else if (currentFormat == 'M4A') {
-      formats.addAll(['ALAC', 'FLAC', 'AAC', 'MP3', 'Opus']);
+      formats.addAll(['ALAC', 'FLAC', 'WAV', 'AIFF', 'AAC', 'MP3', 'Opus']);
+    } else if (currentFormat == 'WAV') {
+      formats.addAll(['FLAC', 'ALAC', 'AIFF', 'AAC', 'MP3', 'Opus']);
+    } else if (currentFormat == 'AIFF') {
+      formats.addAll(['FLAC', 'ALAC', 'WAV', 'AAC', 'MP3', 'Opus']);
     } else if (currentFormat == 'AAC') {
       formats.addAll(['MP3', 'Opus']);
     } else if (currentFormat == 'MP3') {
@@ -3691,8 +3714,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     }
 
     String selectedBitrate = defaultBitrateForFormat(selectedFormat);
-    bool isLosslessTarget =
-        selectedFormat == 'ALAC' || selectedFormat == 'FLAC';
+    bool isLosslessTarget = isLosslessConversionTarget(selectedFormat);
 
     showModalBottomSheet<void>(
       context: context,
@@ -3752,8 +3774,9 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                             if (selected) {
                               setSheetState(() {
                                 selectedFormat = format;
-                                isLosslessTarget =
-                                    format == 'ALAC' || format == 'FLAC';
+                                isLosslessTarget = isLosslessConversionTarget(
+                                  format,
+                                );
                                 if (!isLosslessTarget) {
                                   selectedBitrate = defaultBitrateForFormat(
                                     format,
@@ -4306,9 +4329,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     required String targetFormat,
     required String bitrate,
   }) {
-    final isLossless =
-        targetFormat.toUpperCase() == 'ALAC' ||
-        targetFormat.toUpperCase() == 'FLAC';
+    final isLossless = isLosslessConversionTarget(targetFormat);
     showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -4515,30 +4536,9 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         final baseName = dotIdx > 0
             ? oldFileName.substring(0, dotIdx)
             : oldFileName;
-        String newExt;
-        String mimeType;
-        switch (targetFormat.toLowerCase()) {
-          case 'opus':
-            newExt = '.opus';
-            mimeType = 'audio/opus';
-            break;
-          case 'aac':
-            newExt = '.m4a';
-            mimeType = 'audio/mp4';
-            break;
-          case 'alac':
-            newExt = '.m4a';
-            mimeType = 'audio/mp4';
-            break;
-          case 'flac':
-            newExt = '.flac';
-            mimeType = 'audio/flac';
-            break;
-          default:
-            newExt = '.mp3';
-            mimeType = 'audio/mpeg';
-            break;
-        }
+        final convTarget = convertTargetExtAndMime(targetFormat);
+        final newExt = convTarget.ext;
+        final mimeType = convTarget.mime;
         final newFileName = '$baseName$newExt';
 
         final safUri = await PlatformBridge.createSafFileFromPath(
@@ -4955,12 +4955,14 @@ class _MetadataOption {
   final String label;
   final VoidCallback onTap;
   final bool destructive;
+  final bool dividerAbove;
 
   const _MetadataOption({
     required this.icon,
     required this.label,
     required this.onTap,
     this.destructive = false,
+    this.dividerAbove = false,
   });
 }
 
@@ -4977,29 +4979,32 @@ class _MetadataOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final boxColor = option.destructive
-        ? colorScheme.errorContainer
-        : colorScheme.primaryContainer;
     final iconColor = option.destructive
-        ? colorScheme.onErrorContainer
-        : colorScheme.onPrimaryContainer;
+        ? colorScheme.error
+        : colorScheme.onSurfaceVariant;
     final titleColor = option.destructive ? colorScheme.error : null;
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: boxColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(option.icon, color: iconColor, size: 20),
-      ),
-      title: Text(
-        option.label,
-        style: TextStyle(fontWeight: FontWeight.w500, color: titleColor),
-      ),
+    return InkWell(
       onTap: onTap,
+      splashColor: colorScheme.primary.withValues(alpha: 0.12),
+      highlightColor: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Icon(option.icon, color: iconColor, size: 24),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                option.label,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: titleColor),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

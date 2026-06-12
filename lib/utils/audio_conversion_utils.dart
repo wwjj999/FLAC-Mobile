@@ -1,6 +1,8 @@
 const List<String> audioConversionTargetFormats = [
   'ALAC',
   'FLAC',
+  'WAV',
+  'AIFF',
   'AAC',
   'MP3',
   'Opus',
@@ -8,7 +10,11 @@ const List<String> audioConversionTargetFormats = [
 
 bool isLosslessConversionTarget(String targetFormat) {
   final normalized = targetFormat.trim().toLowerCase();
-  return normalized == 'alac' || normalized == 'flac';
+  return normalized == 'alac' ||
+      normalized == 'flac' ||
+      normalized == 'wav' ||
+      normalized == 'aiff' ||
+      normalized == 'aif';
 }
 
 bool isLosslessConversionSource(String sourceFormat) {
@@ -16,6 +22,9 @@ bool isLosslessConversionSource(String sourceFormat) {
     case 'FLAC':
     case 'ALAC':
     case 'M4A':
+    case 'WAV':
+    case 'AIFF':
+    case 'AIF':
       return true;
     default:
       return false;
@@ -66,6 +75,13 @@ String? _convertibleAudioFormatLabel(String? rawFormat) {
       return 'FLAC';
     case 'alac':
       return 'ALAC';
+    case 'wav':
+    case 'wave':
+      return 'WAV';
+    case 'aiff':
+    case 'aif':
+    case 'aifc':
+      return 'AIFF';
     case 'm4a':
     case 'mp4':
       return 'M4A';
@@ -93,6 +109,28 @@ String? _convertibleAudioFormatLabel(String? rawFormat) {
 
 String normalizedConvertedAudioFormat(String targetFormat) {
   return targetFormat.trim().toLowerCase();
+}
+
+/// Returns the output file extension (with dot) and MIME type for a conversion
+/// target format. Used when creating the converted file via SAF so WAV/AIFF and
+/// the other formats get the correct extension + MIME.
+({String ext, String mime}) convertTargetExtAndMime(String targetFormat) {
+  switch (targetFormat.trim().toLowerCase()) {
+    case 'opus':
+      return (ext: '.opus', mime: 'audio/opus');
+    case 'alac':
+    case 'aac':
+      return (ext: '.m4a', mime: 'audio/mp4');
+    case 'flac':
+      return (ext: '.flac', mime: 'audio/flac');
+    case 'wav':
+      return (ext: '.wav', mime: 'audio/wav');
+    case 'aiff':
+    case 'aif':
+      return (ext: '.aiff', mime: 'audio/aiff');
+    default:
+      return (ext: '.mp3', mime: 'audio/mpeg');
+  }
 }
 
 int? convertedAudioBitrateKbps({

@@ -76,6 +76,9 @@ var supportedAudioFormats = map[string]bool{
 	".ape":  true,
 	".wv":   true,
 	".mpc":  true,
+	".wav":  true,
+	".aiff": true,
+	".aif":  true,
 	".cue":  true,
 }
 
@@ -340,6 +343,10 @@ func scanAudioFileWithKnownModTimeAndDisplayNameAndCoverCacheKey(filePath, displ
 		return scanOggFile(filePath, result, displayNameHint)
 	case ".ape", ".wv", ".mpc":
 		return scanAPEFile(filePath, result, displayNameHint)
+	case ".wav":
+		return scanWAVFile(filePath, result, displayNameHint)
+	case ".aiff", ".aif", ".aifc":
+		return scanAIFFFile(filePath, result, displayNameHint)
 	default:
 		return scanFromFilename(filePath, displayNameHint, result)
 	}
@@ -479,7 +486,7 @@ func libraryFormatForM4ACodec(codec string) string {
 
 func isLosslessLibraryFormat(format string) bool {
 	switch strings.ToLower(strings.TrimSpace(format)) {
-	case "flac", "alac":
+	case "flac", "alac", "wav", "aiff", "aif", "aifc":
 		return true
 	default:
 		return false

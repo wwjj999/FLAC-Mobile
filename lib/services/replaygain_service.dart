@@ -27,6 +27,10 @@ class ReplayGainService {
     '.ape',
     '.wv',
     '.mpc',
+    '.wav',
+    '.aiff',
+    '.aif',
+    '.aifc',
   };
 
   static bool _isNativeWritableFormat(String path) {

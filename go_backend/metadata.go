@@ -906,6 +906,32 @@ func ExtractLyrics(filePath string) (string, error) {
 		return extractLyricsFromSidecarLRC(filePath)
 	}
 
+	if strings.HasSuffix(lower, ".wav") {
+		meta, err := ReadWAVTags(filePath)
+		if err == nil && meta != nil {
+			if strings.TrimSpace(meta.Lyrics) != "" {
+				return meta.Lyrics, nil
+			}
+			if looksLikeEmbeddedLyrics(meta.Comment) {
+				return meta.Comment, nil
+			}
+		}
+		return extractLyricsFromSidecarLRC(filePath)
+	}
+
+	if strings.HasSuffix(lower, ".aiff") || strings.HasSuffix(lower, ".aif") || strings.HasSuffix(lower, ".aifc") {
+		meta, err := ReadAIFFTags(filePath)
+		if err == nil && meta != nil {
+			if strings.TrimSpace(meta.Lyrics) != "" {
+				return meta.Lyrics, nil
+			}
+			if looksLikeEmbeddedLyrics(meta.Comment) {
+				return meta.Comment, nil
+			}
+		}
+		return extractLyricsFromSidecarLRC(filePath)
+	}
+
 	return extractLyricsFromSidecarLRC(filePath)
 }
 

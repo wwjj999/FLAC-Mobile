@@ -2022,6 +2022,11 @@ class LibraryDatabase {
         return 'flac';
       case 'opus':
         return 'opus';
+      case 'wav':
+        return 'wav';
+      case 'aiff':
+      case 'aif':
+        return 'aiff';
       default:
         return 'mp3';
     }

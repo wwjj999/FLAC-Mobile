@@ -9,6 +9,7 @@ import 'package:ffmpeg_kit_flutter_new_full/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter_new_full/return_code.dart';
 import 'package:ffmpeg_kit_flutter_new_full/session_state.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/artist_utils.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
@@ -281,6 +282,28 @@ class FFmpegService {
       'truehd',
       'shorten',
     }.contains(normalized);
+  }
+
+  /// Probes the source audio bit depth (bits_per_raw_sample, falling back to
+  /// bits_per_sample). Returns null when unknown.
+  static Future<int?> probeBitDepth(String filePath) async {
+    try {
+      final session = await FFprobeKit.getMediaInformation(filePath);
+      final info = session.getMediaInformation();
+      if (info == null) return null;
+      for (final stream in info.getStreams()) {
+        final props = stream.getAllProperties() ?? const <String, dynamic>{};
+        if (props['codec_type']?.toString() != 'audio') continue;
+        final raw = props['bits_per_raw_sample']?.toString();
+        final bps = props['bits_per_sample']?.toString();
+        final v = int.tryParse(raw ?? '') ?? int.tryParse(bps ?? '');
+        if (v != null && v > 0) return v;
+        return null;
+      }
+    } catch (e) {
+      _log.w('Bit depth probe failed for $filePath: $e');
+    }
+    return null;
   }
 
   /// Returns `true` when [filePath] starts with the native FLAC magic bytes
@@ -2119,8 +2142,9 @@ class FFmpegService {
   }
 
   /// Unified audio format conversion with full metadata + cover preservation.
-  /// Supports: FLAC/M4A/MP3/Opus -> AAC/M4A/MP3/Opus/ALAC/FLAC.
-  /// ALAC and FLAC targets are lossless (bitrate parameter is ignored).
+  /// Supports: FLAC/M4A/MP3/Opus -> AAC/M4A/MP3/Opus/ALAC/FLAC/WAV/AIFF.
+  /// ALAC, FLAC, WAV and AIFF targets are lossless (bitrate parameter is ignored).
+  /// [sourceBitDepth] (when known) preserves 24-bit resolution for WAV/AIFF.
   static Future<String?> convertAudioFormat({
     required String inputPath,
     required String targetFormat,
@@ -2129,9 +2153,19 @@ class FFmpegService {
     String? coverPath,
     String artistTagMode = artistTagModeJoined,
     bool deleteOriginal = true,
+    int? sourceBitDepth,
   }) async {
     final format = targetFormat.toLowerCase();
-    if (!const {'mp3', 'opus', 'aac', 'alac', 'flac'}.contains(format)) {
+    if (!const {
+      'mp3',
+      'opus',
+      'aac',
+      'alac',
+      'flac',
+      'wav',
+      'aiff',
+      'aif',
+    }.contains(format)) {
       _log.e('Unsupported target format: $targetFormat');
       return null;
     }
@@ -2150,6 +2184,16 @@ class FFmpegService {
         metadata: metadata,
         coverPath: coverPath,
         artistTagMode: artistTagMode,
+        deleteOriginal: deleteOriginal,
+      );
+    }
+    if (format == 'wav' || format == 'aiff' || format == 'aif') {
+      return _convertToPcm(
+        inputPath: inputPath,
+        metadata: metadata,
+        coverPath: coverPath,
+        container: format == 'wav' ? 'wav' : 'aiff',
+        sourceBitDepth: sourceBitDepth,
         deleteOriginal: deleteOriginal,
       );
     }
@@ -2388,6 +2432,205 @@ class FFmpegService {
     }
 
     return outputPath;
+  }
+
+  /// Convert to uncompressed PCM (WAV or AIFF), preserving bit depth when known.
+  /// Tags and cover are written natively into an embedded ID3 chunk by the Go
+  /// backend (RIFF "id3 " for WAV, "ID3 " for AIFF) for full-fidelity tagging.
+  static Future<String?> _convertToPcm({
+    required String inputPath,
+    required Map<String, String> metadata,
+    required String container, // 'wav' or 'aiff'
+    String? coverPath,
+    int? sourceBitDepth,
+    bool deleteOriginal = true,
+  }) async {
+    final isAiff = container == 'aiff';
+    final outputPath = _buildOutputPath(inputPath, isAiff ? '.aiff' : '.wav');
+    var depth = sourceBitDepth;
+    if (depth == null || depth <= 0) {
+      depth = await probeBitDepth(inputPath);
+    }
+    final use24 = depth != null && depth >= 24;
+    final codec = isAiff
+        ? (use24 ? 'pcm_s24be' : 'pcm_s16be')
+        : (use24 ? 'pcm_s24le' : 'pcm_s16le');
+
+    final arguments = <String>[
+      '-v', 'error', '-hide_banner',
+      '-i', inputPath,
+      '-map', '0:a',
+      '-c:a', codec,
+      '-map_metadata', '-1',
+      outputPath,
+      '-y',
+    ];
+
+    _log.i(
+      'Converting ${inputPath.split(Platform.pathSeparator).last} to '
+      '${container.toUpperCase()} (${use24 ? 24 : 16}-bit)',
+    );
+    final result = await _executeWithArguments(arguments);
+    if (!result.success) {
+      _log.e('${container.toUpperCase()} conversion failed: ${result.output}');
+      return null;
+    }
+
+    // Write tags + cover via the native ID3-chunk writer in the Go backend.
+    final hasMetadata = metadata.values.any((v) => v.trim().isNotEmpty);
+    final hasCover = coverPath != null && coverPath.trim().isNotEmpty;
+    if (hasMetadata || hasCover) {
+      final ok = await _embedChunkTagsNative(outputPath, metadata, coverPath);
+      if (!ok) {
+        _log.w(
+          'Native tag embed failed for $container output (file kept untagged)',
+        );
+      }
+    }
+
+    if (deleteOriginal) {
+      try {
+        await File(inputPath).delete();
+        _log.i(
+          'Deleted original: ${inputPath.split(Platform.pathSeparator).last}',
+        );
+      } catch (e) {
+        _log.w('Failed to delete original: $e');
+      }
+    }
+
+    return outputPath;
+  }
+
+  /// Writes tags + cover into a WAV/AIFF file via the Go native ID3-chunk
+  /// writer (PlatformBridge.editFileMetadata). Maps Vorbis-style metadata keys
+  /// to the lowercase field names the Go editor expects.
+  static Future<bool> _embedChunkTagsNative(
+    String path,
+    Map<String, String> vorbisMetadata,
+    String? coverPath,
+  ) async {
+    final fields = _vorbisToNativeChunkFields(vorbisMetadata);
+    if (coverPath != null && coverPath.trim().isNotEmpty) {
+      fields['cover_path'] = coverPath;
+    }
+    if (fields.isEmpty) return true;
+    try {
+      final res = await PlatformBridge.editFileMetadata(path, fields);
+      return res['error'] == null;
+    } catch (e) {
+      _log.w('editFileMetadata for $path failed: $e');
+      return false;
+    }
+  }
+
+  /// Maps Vorbis-comment style metadata (UPPERCASE keys) to the lowercase field
+  /// names consumed by the Go EditFileMetadata native WAV/AIFF tag writer.
+  static Map<String, String> _vorbisToNativeChunkFields(
+    Map<String, String> metadata,
+  ) {
+    final out = <String, String>{};
+
+    void setIndexPair(String numberKey, String totalKey, String value) {
+      final v = value.trim();
+      if (v.isEmpty || v == '0') return;
+      if (v.contains('/')) {
+        final parts = v.split('/');
+        out[numberKey] = parts[0].trim();
+        if (parts.length > 1 && parts[1].trim().isNotEmpty) {
+          out[totalKey] = parts[1].trim();
+        }
+      } else {
+        out[numberKey] = v;
+      }
+    }
+
+    for (final entry in metadata.entries) {
+      final normalizedKey = entry.key.toUpperCase().replaceAll(
+        RegExp(r'[^A-Z0-9]'),
+        '',
+      );
+      final value = entry.value;
+      if (value.trim().isEmpty) continue;
+
+      switch (normalizedKey) {
+        case 'TITLE':
+          out['title'] = value;
+          break;
+        case 'ARTIST':
+          out['artist'] = value;
+          break;
+        case 'ALBUM':
+          out['album'] = value;
+          break;
+        case 'ALBUMARTIST':
+          out['album_artist'] = value;
+          break;
+        case 'TRACKNUMBER':
+        case 'TRACK':
+        case 'TRCK':
+          setIndexPair('track_number', 'track_total', value);
+          break;
+        case 'TRACKTOTAL':
+        case 'TOTALTRACKS':
+          if (value.trim() != '0') out['track_total'] = value.trim();
+          break;
+        case 'DISCNUMBER':
+        case 'DISC':
+        case 'TPOS':
+          setIndexPair('disc_number', 'disc_total', value);
+          break;
+        case 'DISCTOTAL':
+        case 'TOTALDISCS':
+          if (value.trim() != '0') out['disc_total'] = value.trim();
+          break;
+        case 'DATE':
+          out['date'] = value;
+          break;
+        case 'YEAR':
+          if ((out['date'] ?? '').isEmpty) out['date'] = value;
+          break;
+        case 'ISRC':
+          out['isrc'] = value;
+          break;
+        case 'GENRE':
+          out['genre'] = value;
+          break;
+        case 'COMPOSER':
+          out['composer'] = value;
+          break;
+        case 'ORGANIZATION':
+        case 'LABEL':
+        case 'PUBLISHER':
+          out['label'] = value;
+          break;
+        case 'COPYRIGHT':
+          out['copyright'] = value;
+          break;
+        case 'COMMENT':
+        case 'DESCRIPTION':
+          out['comment'] = value;
+          break;
+        case 'LYRICS':
+        case 'UNSYNCEDLYRICS':
+          out['lyrics'] = value;
+          break;
+        case 'REPLAYGAINTRACKGAIN':
+          out['replaygain_track_gain'] = value;
+          break;
+        case 'REPLAYGAINTRACKPEAK':
+          out['replaygain_track_peak'] = value;
+          break;
+        case 'REPLAYGAINALBUMGAIN':
+          out['replaygain_album_gain'] = value;
+          break;
+        case 'REPLAYGAINALBUMPEAK':
+          out['replaygain_album_peak'] = value;
+          break;
+      }
+    }
+
+    return out;
   }
 
   /// Normalize metadata keys to standard Vorbis comment names, filtering out

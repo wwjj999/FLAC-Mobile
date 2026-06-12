@@ -968,8 +968,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     if (formats.isEmpty) return;
 
     String selectedFormat = formats.first;
-    bool isLosslessTarget =
-        selectedFormat == 'ALAC' || selectedFormat == 'FLAC';
+    bool isLosslessTarget = isLosslessConversionTarget(selectedFormat);
     String defaultBitrateForFormat(String format) {
       if (format == 'Opus') return '128k';
       if (format == 'AAC') return '256k';
@@ -1037,8 +1036,9 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                             if (selected) {
                               setSheetState(() {
                                 selectedFormat = format;
-                                isLosslessTarget =
-                                    format == 'ALAC' || format == 'FLAC';
+                                isLosslessTarget = isLosslessConversionTarget(
+                                  format,
+                                );
                                 if (!isLosslessTarget) {
                                   selectedBitrate = defaultBitrateForFormat(
                                     format,
@@ -1162,7 +1162,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
       return;
     }
 
-    final isLossless = targetFormat == 'ALAC' || targetFormat == 'FLAC';
+    final isLossless = isLosslessConversionTarget(targetFormat);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1198,8 +1198,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     final total = selected.length;
     final historyDb = HistoryDatabase.instance;
     final newQuality =
-        (targetFormat.toUpperCase() == 'ALAC' ||
-            targetFormat.toUpperCase() == 'FLAC')
+        isLosslessConversionTarget(targetFormat)
         ? '${targetFormat.toUpperCase()} Lossless'
         : '${targetFormat.toUpperCase()} ${bitrate.trim().toLowerCase()}';
     final settings = ref.read(settingsProvider);
@@ -1304,27 +1303,9 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
             final baseName = dotIdx > 0
                 ? oldFileName.substring(0, dotIdx)
                 : oldFileName;
-            String newExt;
-            String mimeType;
-            switch (targetFormat.toLowerCase()) {
-              case 'opus':
-                newExt = '.opus';
-                mimeType = 'audio/opus';
-                break;
-              case 'alac':
-              case 'aac':
-                newExt = '.m4a';
-                mimeType = 'audio/mp4';
-                break;
-              case 'flac':
-                newExt = '.flac';
-                mimeType = 'audio/flac';
-                break;
-              default:
-                newExt = '.mp3';
-                mimeType = 'audio/mpeg';
-                break;
-            }
+            final convTarget = convertTargetExtAndMime(targetFormat);
+            final newExt = convTarget.ext;
+            final mimeType = convTarget.mime;
             final newFileName = '$baseName$newExt';
 
             final safUri = await PlatformBridge.createSafFileFromPath(

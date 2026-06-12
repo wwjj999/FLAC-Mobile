@@ -16,6 +16,10 @@ String audioMimeTypeForPath(String filePath) {
       return 'audio/ogg';
     case 'wav':
       return 'audio/wav';
+    case 'aiff':
+    case 'aif':
+    case 'aifc':
+      return 'audio/aiff';
     case 'aac':
       return 'audio/aac';
     default:

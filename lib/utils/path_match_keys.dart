@@ -19,6 +19,8 @@ const _audioExtensions = <String>[
   '.opus',
   '.ogg',
   '.wav',
+  '.aiff',
+  '.aif',
   '.aac',
 ];
 

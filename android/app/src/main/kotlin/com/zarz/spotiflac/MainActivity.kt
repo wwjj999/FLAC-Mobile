@@ -307,6 +307,8 @@ class MainActivity: FlutterFragmentActivity() {
             ".mp3" -> "audio/mpeg"
             ".opus" -> "audio/ogg"
             ".flac" -> "audio/flac"
+            ".wav" -> "audio/wav"
+            ".aiff", ".aif", ".aifc" -> "audio/aiff"
             ".lrc" -> "application/octet-stream"
             else -> "application/octet-stream"
         }
@@ -791,6 +793,8 @@ class MainActivity: FlutterFragmentActivity() {
             "audio/mpeg" -> ".mp3"
             "audio/ogg" -> ".opus"
             "audio/flac" -> ".flac"
+            "audio/wav", "audio/x-wav", "audio/wave", "audio/vnd.wave" -> ".wav"
+            "audio/aiff", "audio/x-aiff" -> ".aiff"
             else -> ""
         }
     }

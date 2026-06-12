@@ -1160,6 +1160,8 @@ func ReadFileMetadata(filePath string) (string, error) {
 	isApe := strings.HasSuffix(lower, ".ape")
 	isWv := strings.HasSuffix(lower, ".wv")
 	isMpc := strings.HasSuffix(lower, ".mpc")
+	isWav := strings.HasSuffix(lower, ".wav")
+	isAiff := strings.HasSuffix(lower, ".aiff") || strings.HasSuffix(lower, ".aif") || strings.HasSuffix(lower, ".aifc")
 
 	result := map[string]interface{}{
 		"title":        "",
@@ -1406,6 +1408,51 @@ func ReadFileMetadata(filePath string) (string, error) {
 				result["replaygain_album_peak"] = meta.ReplayGainAlbumPeak
 			}
 		}
+	} else if isWav || isAiff {
+		var meta *AudioMetadata
+		var quality *WAVQuality
+		var qualityErr error
+		if isAiff {
+			result["format"] = "aiff"
+			result["audio_codec"] = "pcm"
+			meta, _ = ReadAIFFTags(filePath)
+			quality, qualityErr = GetAIFFQuality(filePath)
+		} else {
+			result["format"] = "wav"
+			result["audio_codec"] = "pcm"
+			meta, _ = ReadWAVTags(filePath)
+			quality, qualityErr = GetWAVQuality(filePath)
+		}
+		if meta != nil {
+			result["title"] = meta.Title
+			result["artist"] = meta.Artist
+			result["album"] = meta.Album
+			result["album_artist"] = meta.AlbumArtist
+			result["date"] = meta.Date
+			if meta.Date == "" {
+				result["date"] = meta.Year
+			}
+			result["track_number"] = meta.TrackNumber
+			result["total_tracks"] = meta.TotalTracks
+			result["disc_number"] = meta.DiscNumber
+			result["total_discs"] = meta.TotalDiscs
+			result["isrc"] = meta.ISRC
+			result["lyrics"] = meta.Lyrics
+			result["genre"] = meta.Genre
+			result["label"] = meta.Label
+			result["copyright"] = meta.Copyright
+			result["composer"] = meta.Composer
+			result["comment"] = meta.Comment
+			result["replaygain_track_gain"] = meta.ReplayGainTrackGain
+			result["replaygain_track_peak"] = meta.ReplayGainTrackPeak
+			result["replaygain_album_gain"] = meta.ReplayGainAlbumGain
+			result["replaygain_album_peak"] = meta.ReplayGainAlbumPeak
+		}
+		if qualityErr == nil && quality != nil {
+			result["bit_depth"] = quality.BitDepth
+			result["sample_rate"] = quality.SampleRate
+			result["duration"] = quality.Duration
+		}
 	} else {
 		return "", fmt.Errorf("unsupported file format: %s", filePath)
 	}
@@ -1474,6 +1521,8 @@ func EditFileMetadata(filePath, metadataJSON string) (string, error) {
 	isFlac := strings.HasSuffix(lower, ".flac")
 	isApeFile := strings.HasSuffix(lower, ".ape") || strings.HasSuffix(lower, ".wv") || strings.HasSuffix(lower, ".mpc")
 	isM4AFile := strings.HasSuffix(lower, ".m4a") || strings.HasSuffix(lower, ".mp4") || strings.HasSuffix(lower, ".m4b")
+	isWavFile := strings.HasSuffix(lower, ".wav")
+	isAiffFile := strings.HasSuffix(lower, ".aiff") || strings.HasSuffix(lower, ".aif") || strings.HasSuffix(lower, ".aifc")
 	coverPath := strings.TrimSpace(fields["cover_path"])
 
 	if hasOnlyM4AReplayGainFields(fields) && (isM4AFile || isMP4ContainerFile(filePath)) {
@@ -1498,6 +1547,24 @@ func EditFileMetadata(filePath, metadataJSON string) (string, error) {
 			"success": true,
 			"method":  "native",
 		}
+		jsonBytes, _ := json.Marshal(resp)
+		return string(jsonBytes), nil
+	}
+
+	// WAV / AIFF: write tags into an embedded ID3v2.4 chunk natively.
+	if isWavFile {
+		if err := WriteWAVTags(filePath, fields); err != nil {
+			return "", fmt.Errorf("failed to write WAV metadata: %w", err)
+		}
+		resp := map[string]any{"success": true, "method": "native_wav"}
+		jsonBytes, _ := json.Marshal(resp)
+		return string(jsonBytes), nil
+	}
+	if isAiffFile {
+		if err := WriteAIFFTags(filePath, fields); err != nil {
+			return "", fmt.Errorf("failed to write AIFF metadata: %w", err)
+		}
+		resp := map[string]any{"success": true, "method": "native_aiff"}
 		jsonBytes, _ := json.Marshal(resp)
 		return string(jsonBytes), nil
 	}
