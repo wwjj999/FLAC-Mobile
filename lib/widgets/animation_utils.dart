@@ -474,12 +474,9 @@ class GridSkeleton extends StatelessWidget {
   }
 }
 
-/// Artist screen skeleton – shown *below* the SliverAppBar header while the
-/// discography loads. Renders a cover placeholder (only when the header image
-/// isn't available yet), the "Popular" section (rank + cover 48x48 + title +
-/// badge + trailing), and the horizontal album sections. The artist name and
-/// listeners are intentionally omitted here since the header already shows them
-/// overlaid on the cover.
+/// Artist screen skeleton shown below the SliverAppBar header while the
+/// discography loads: optional cover placeholder, "Popular" section, and the
+/// horizontal album sections.
 class ArtistScreenSkeleton extends StatelessWidget {
   final int popularCount;
   final int albumCount;

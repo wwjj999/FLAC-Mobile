@@ -4,22 +4,12 @@ import 'package:spotiflac_android/utils/audio_conversion_utils.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
 /// Modern, card-based batch convert sheet shared by the queue and album
-/// screens. It mirrors the single-track convert sheet styling so format and
-/// bitrate selection look consistent across the app.
+/// screens, matching the single-track convert sheet styling.
 class BatchConvertSheet extends StatefulWidget {
-  /// Available target formats.
   final List<String> formats;
-
-  /// Sheet title.
   final String title;
-
-  /// Optional subtitle shown under the title (e.g. number of tracks).
   final String? subtitle;
-
-  /// Label for the primary action button.
   final String confirmLabel;
-
-  /// Called with the selected format and bitrate when the user confirms.
   final void Function(String format, String bitrate) onConvert;
 
   const BatchConvertSheet({

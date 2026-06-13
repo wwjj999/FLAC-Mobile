@@ -1699,9 +1699,8 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
     );
   }
 
-  /// Fill for the modern input fields. Sits one elevation step apart from the
-  /// section card so each field reads as a distinct, recessed surface in both
-  /// light and dark (including AMOLED) themes.
+  /// Fill for input fields, one step apart from the card so each field reads as
+  /// a distinct surface in light/dark/AMOLED.
   Color _fieldFill(ColorScheme cs) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return isDark
@@ -1745,8 +1744,6 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
               filled: true,
               fillColor: _fieldFill(cs),
               isDense: true,
-              // Borderless by default; definition comes from the fill contrast.
-              // A soft primary ring appears only on focus for a clean look.
               border: OutlineInputBorder(
                 borderRadius: radius,
                 borderSide: BorderSide.none,
@@ -1770,8 +1767,6 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
     );
   }
 
-  /// Shared shape for the edit sections, mirroring the bounded cards used on the
-  /// track metadata screen (rounded with a subtle outline).
   RoundedRectangleBorder _sectionCardShape(ColorScheme cs) {
     return RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(20),
@@ -1779,10 +1774,8 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
     );
   }
 
-  /// A titled section card matching the track metadata screen layout. When
-  /// [onHeaderTap] is provided the header becomes a full-width tappable row so
-  /// the ink ripple follows the card's rounded shape (clipped to the card),
-  /// and a chevron is rendered automatically based on [expanded].
+  /// Titled section card. When [onHeaderTap] is set the header is a full-width
+  /// tappable row (ripple clipped to the card) with an auto chevron.
   Widget _sectionCard({
     required IconData icon,
     required String title,

@@ -1468,8 +1468,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     );
   }
 
-  /// Shared shape for the main section cards: rounded with a subtle outline so
-  /// each section (Metadata, File Info, Lyrics, Audio Analysis) is bounded.
   RoundedRectangleBorder _sectionCardShape(ColorScheme colorScheme) {
     return RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(20),

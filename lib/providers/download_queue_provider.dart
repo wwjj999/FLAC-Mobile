@@ -6676,9 +6676,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       }
     }
 
-    // iOS has no foreground service; request a background execution window so
-    // an in-flight download can keep running for a short time after the app is
-    // backgrounded instead of being suspended immediately.
+    // iOS: request a background execution window (no foreground service).
     if (Platform.isIOS && _totalQueuedAtStart > 0) {
       await PlatformBridge.beginBackgroundDownloadTask();
     }

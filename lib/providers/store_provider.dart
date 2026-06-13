@@ -206,10 +206,7 @@ class StoreState {
 }
 
 class StoreNotifier extends Notifier<StoreState> {
-  /// Serializes extension install/upgrade operations. Running two of these at
-  /// once (e.g. updating two extensions simultaneously) races the native
-  /// extension manager's goja VM teardown/reload and can hard-crash the app, so
-  /// they must run strictly one at a time.
+  /// Serializes install/upgrade so two never race the native VM teardown/reload.
   Future<void> _mutationChain = Future<void>.value();
 
   Future<T> _runSerialized<T>(Future<T> Function() action) {

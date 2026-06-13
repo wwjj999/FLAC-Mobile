@@ -114,12 +114,8 @@ class SpotiFLACApp extends ConsumerWidget {
           scrollBehavior: scrollBehavior,
           themeAnimationDuration: const Duration(milliseconds: 300),
           themeAnimationCurve: Curves.easeInOut,
-          // Treat the display as one continuous surface. Some large/foldable
-          // devices report a full-height display feature (hinge/cutout) which
-          // makes Flutter split modal routes into a sub-screen, leaving bottom
-          // sheets and dialogs visibly off-center instead of centered on the
-          // full screen. Clearing displayFeatures keeps them centered for every
-          // modal/dialog generically, without per-sheet workarounds.
+          // Treat the display as one continuous surface so bottom sheets and
+          // dialogs stay centered on large/foldable devices.
           builder: (context, child) {
             final mediaQuery = MediaQuery.of(context);
             return MediaQuery(

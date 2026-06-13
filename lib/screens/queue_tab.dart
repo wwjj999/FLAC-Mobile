@@ -123,10 +123,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   List<UnifiedLibraryItem> _selectionOverlayItems = const [];
   double _selectionOverlayBottomPadding = 0;
 
-  /// When true, the floating selection overlays are kept hidden even though
-  /// selection mode is still active. Used while a modal sheet/dialog launched
-  /// from the selection toolbar is open, so the overlay does not reappear on
-  /// top of (or behind) the modal's open/close animation.
+  /// Keeps the selection overlays hidden while a modal launched from the
+  /// selection toolbar is open, so they don't reappear over its animation.
   bool _suppressSelectionOverlay = false;
 
   bool _isPlaylistSelectionMode = false;
@@ -4849,9 +4847,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
     var didStartConversion = false;
 
-    // Resolve localized strings up front: the builder closure must not look up
-    // Localizations via the outer (State) context, which may be deactivated by
-    // the time the root-navigator sheet rebuilds.
+    // Resolve localized strings up front; the builder must not look up
+    // Localizations via the (possibly deactivated) State context.
     final sheetTitle = context.l10n.selectionBatchConvertConfirmTitle;
     final sheetConfirmLabel = context.l10n.selectionConvertCount(
       _selectedIds.length,
@@ -4883,10 +4880,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       ),
     );
 
-    // The showModalBottomSheet future completes when the sheet begins closing,
-    // not when its exit animation finishes. Wait out the exit transition
-    // (~200ms) before restoring the selection toolbar so it does not pop in
-    // front of the still-animating sheet.
+    // Wait out the sheet's exit animation before restoring the toolbar so it
+    // doesn't pop in front of the still-closing sheet.
     await Future<void>.delayed(const Duration(milliseconds: 260));
     if (!mounted) {
       _suppressSelectionOverlay = false;
@@ -5321,8 +5316,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       return;
     }
     if (confirmed != true) {
-      // Restore after the dialog's exit animation so the toolbar does not
-      // appear in front of the closing dialog.
+      // Restore after the dialog's exit animation.
       await Future<void>.delayed(const Duration(milliseconds: 220));
       _suppressSelectionOverlay = false;
       if (!mounted) return;

@@ -20,10 +20,8 @@ import 'package:spotiflac_android/utils/logger.dart';
 final _log = AppLogger('Main');
 
 void main() {
-  // Catch uncaught errors so a failure in a provider/async path (e.g. a
-  // misbehaving extension request) is logged instead of taking the whole app
-  // down. Native (Go) fatal crashes can't be caught here, but Dart-side ones
-  // can.
+  // Catch uncaught Dart errors so a failing async path is logged, not fatal.
+  // Native (Go) crashes still can't be caught here.
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();

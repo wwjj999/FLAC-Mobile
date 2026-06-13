@@ -119,11 +119,9 @@ func (ext *loadedExtension) lockReadyVM() (*goja.Runtime, error) {
 
 type extensionManager struct {
 	mu sync.RWMutex
-	// mutationMu serializes heavy mutating operations (install / upgrade /
-	// remove). These tear down and re-extract files and rebuild goja VMs;
-	// running two at once (e.g. updating two extensions simultaneously) races
-	// the non-thread-safe goja runtime and can hard-crash the process. Always
-	// acquired before m.mu; internal "*Locked" helpers assume it is held.
+	// mutationMu serializes install/upgrade/remove (heavy FS + goja VM
+	// teardown/reload), which are not safe to run concurrently. Acquired before
+	// m.mu; "*Locked" helpers assume it is held.
 	mutationMu    sync.Mutex
 	extensions    map[string]*loadedExtension
 	extensionsDir string

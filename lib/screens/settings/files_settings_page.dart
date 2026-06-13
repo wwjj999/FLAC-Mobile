@@ -712,10 +712,6 @@ class _FilesSettingsPageState extends ConsumerState<FilesSettingsPage> {
     final save =
         onSave ?? ref.read(settingsProvider.notifier).setFilenameFormat;
 
-    // The controller is owned by a StatefulWidget so it is disposed in its
-    // State.dispose() (after the subtree is removed), instead of in
-    // whenComplete which fires while the closing/keyboard-hide animations can
-    // still rebuild the TextField and touch a disposed controller.
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -938,12 +934,8 @@ class _FolderOption extends StatelessWidget {
 }
 
 
-/// Bottom sheet body for editing a filename format. Owns its
-/// [TextEditingController] and disposes it in [dispose], which runs only after
-/// the sheet's subtree has been removed from the tree. This avoids the
-/// "TextEditingController used after being disposed" crash that happens when
-/// the controller is torn down in `whenComplete` while the closing and
-/// keyboard-hide animations are still rebuilding the field.
+/// Bottom sheet for editing a filename format. Owns its controller and disposes
+/// it in [dispose] to avoid use-after-dispose during the close animation.
 class _FilenameFormatEditorSheet extends StatefulWidget {
   final String initialText;
   final void Function(String) onSave;
