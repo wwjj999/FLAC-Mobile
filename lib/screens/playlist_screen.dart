@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' show ImageFilter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
@@ -299,14 +300,17 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
               fit: StackFit.expand,
               children: [
                 if (_coverUrl != null)
-                  CachedCoverImage(
-                    imageUrl: _highResCoverUrl(_coverUrl) ?? _coverUrl!,
-                    fit: BoxFit.cover,
-                    memCacheWidth: cacheWidth,
-                    placeholder: (_, _) =>
-                        Container(color: colorScheme.surface),
-                    errorWidget: (_, _, _) =>
-                        Container(color: colorScheme.surface),
+                  ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+                    child: CachedCoverImage(
+                      imageUrl: _highResCoverUrl(_coverUrl) ?? _coverUrl!,
+                      fit: BoxFit.cover,
+                      memCacheWidth: cacheWidth,
+                      placeholder: (_, _) =>
+                          Container(color: colorScheme.surface),
+                      errorWidget: (_, _, _) =>
+                          Container(color: colorScheme.surface),
+                    ),
                   )
                 else
                   Container(
@@ -317,91 +321,148 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: expandedHeight * 0.65,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.85),
-                        ],
+                Container(color: Colors.black.withValues(alpha: 0.35)),
+                if (_coverUrl != null)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: expandedHeight * 0.65,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.6),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Positioned(
-                  left: 20,
-                  right: 20,
-                  bottom: 40,
+                Positioned.fill(
                   child: AnimatedOpacity(
                     duration: const Duration(milliseconds: 150),
                     opacity: showContent ? 1.0 : 0.0,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _playlistName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (_tracks.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.playlist_play,
-                                  size: 14,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  context.l10n.tracksCount(_tracks.length),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        20,
+                        kToolbarHeight + 8,
+                        20,
+                        28,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          if (_coverUrl != null) ...[
+                            Builder(
+                              builder: (context) {
+                                final coverSize =
+                                    (constraints.maxWidth * 0.5).clamp(
+                                      140.0,
+                                      220.0,
+                                    );
+                                return Container(
+                                  width: coverSize,
+                                  height: coverSize,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.45,
+                                        ),
+                                        blurRadius: 24,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
                                   ),
-                                ),
+                                  child: CachedCoverImage(
+                                    imageUrl:
+                                        _highResCoverUrl(_coverUrl) ??
+                                        _coverUrl!,
+                                    fit: BoxFit.cover,
+                                    memCacheWidth: cacheWidth,
+                                    borderRadius: BorderRadius.circular(16),
+                                    placeholder: (_, _) => Container(
+                                      decoration: BoxDecoration(
+                                        color:
+                                            colorScheme.surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    errorWidget: (_, _, _) => Container(
+                                      decoration: BoxDecoration(
+                                        color:
+                                            colorScheme.surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                          Text(
+                            _playlistName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              height: 1.2,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (_tracks.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.playlist_play,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    context.l10n.tracksCount(_tracks.length),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildLoveAllButton(),
+                                const SizedBox(width: 12),
+                                _buildDownloadAllCenterButton(context),
+                                const SizedBox(width: 12),
+                                _buildAddToPlaylistButton(context),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildLoveAllButton(),
-                              const SizedBox(width: 12),
-                              _buildDownloadAllCenterButton(context),
-                              const SizedBox(width: 12),
-                              _buildAddToPlaylistButton(context),
-                            ],
-                          ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
