@@ -3200,6 +3200,68 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     }
   }
 
+  Future<void> _showDownloadErrorDialog(
+    BuildContext context,
+    DownloadItem item,
+  ) async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isRateLimit = item.errorType == DownloadErrorType.rateLimit;
+    final title = isRateLimit
+        ? context.l10n.queueRateLimitTitle
+        : context.l10n.updateDownloadFailed;
+    final message = isRateLimit
+        ? context.l10n.queueRateLimitMessage
+        : (item.errorMessage.trim().isNotEmpty
+              ? item.errorMessage
+              : context.l10n.updateDownloadFailed);
+    final action = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                item.track.name,
+                style: Theme.of(
+                  ctx,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 10),
+              SelectableText(
+                message,
+                style: Theme.of(ctx).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop('remove'),
+            style: TextButton.styleFrom(foregroundColor: colorScheme.error),
+            child: Text(context.l10n.dialogRemove),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(context.l10n.dialogCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop('retry'),
+            child: Text(context.l10n.dialogRetry),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (action == 'retry') {
+      ref.read(downloadQueueProvider.notifier).retryItem(item.id);
+    } else if (action == 'remove') {
+      ref.read(downloadQueueProvider.notifier).removeItem(item.id);
+    }
+  }
+
   Widget _buildDownloadGridItem(
     BuildContext context,
     DownloadItem item,
@@ -3227,7 +3289,9 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             child: Icon(Icons.music_note, color: colorScheme.onSurfaceVariant),
           );
 
-    final onTap = isFailed || item.status == DownloadStatus.skipped
+    final onTap = isFailed
+        ? () => _showDownloadErrorDialog(context, item)
+        : item.status == DownloadStatus.skipped
         ? () => ref.read(downloadQueueProvider.notifier).removeItem(item.id)
         : () => _confirmCancelDownload(context, item);
 
@@ -6068,7 +6132,11 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: isCompleted ? () => _navigateToMetadataScreen(item) : null,
+            onTap: isCompleted
+                ? () => _navigateToMetadataScreen(item)
+                : item.status == DownloadStatus.failed
+                ? () => _showDownloadErrorDialog(context, item)
+                : null,
             borderRadius: BorderRadius.circular(12),
             child: Stack(
               children: [
