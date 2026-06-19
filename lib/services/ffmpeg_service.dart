@@ -1240,8 +1240,22 @@ class FFmpegService {
     );
   }
 
-  /// Write album ReplayGain tags to a non-FLAC file (MP3/Opus) using FFmpeg.
-  /// Preserves all existing metadata and adds/overwrites album gain fields.
+  /// Convert a ReplayGain gain value (dB, referenced to -18 LUFS) into an Opus
+  /// R128 gain tag value (Q7.8 fixed point integer, referenced to -23 LUFS).
+  ///
+  /// Opus players read `R128_TRACK_GAIN` / `R128_ALBUM_GAIN` per RFC 7845, not
+  /// the `REPLAYGAIN_*` dB strings. The reference levels differ by exactly 5 dB
+  /// (-18 vs -23 LUFS), so the R128 gain equals the ReplayGain value minus 5 dB,
+  /// stored as `round(dB * 256)`.
+  static String? replayGainDbToR128(String replayGainDb) {
+    final match = RegExp(r'-?\d+\.?\d*').firstMatch(replayGainDb);
+    if (match == null) return null;
+    final rgDb = double.tryParse(match.group(0) ?? '');
+    if (rgDb == null) return null;
+    final r128Db = rgDb - 5.0;
+    return (r128Db * 256).round().toString();
+  }
+
   /// Write album ReplayGain tags to a file via FFmpeg.
   ///
   /// For local files, replaces the file in-place and returns `true`.
@@ -1277,9 +1291,20 @@ class FFmpegService {
       'REPLAYGAIN_ALBUM_GAIN=$albumGain',
       '-metadata',
       'REPLAYGAIN_ALBUM_PEAK=$albumPeak',
-      tempOutput,
-      '-y',
     ];
+
+    if (ext.toLowerCase() == '.opus') {
+      final r128 = replayGainDbToR128(albumGain);
+      if (r128 != null) {
+        arguments
+          ..add('-metadata')
+          ..add('R128_ALBUM_GAIN=$r128');
+      }
+    }
+
+    arguments
+      ..add(tempOutput)
+      ..add('-y');
 
     _log.d('Writing album ReplayGain tags via FFmpeg');
     final result = await _executeWithArguments(arguments);
@@ -1347,9 +1372,20 @@ class FFmpegService {
       'REPLAYGAIN_TRACK_GAIN=$trackGain',
       '-metadata',
       'REPLAYGAIN_TRACK_PEAK=$trackPeak',
-      tempOutput,
-      '-y',
     ];
+
+    if (ext.toLowerCase() == '.opus') {
+      final r128 = replayGainDbToR128(trackGain);
+      if (r128 != null) {
+        arguments
+          ..add('-metadata')
+          ..add('R128_TRACK_GAIN=$r128');
+      }
+    }
+
+    arguments
+      ..add(tempOutput)
+      ..add('-y');
 
     _log.d('Writing track ReplayGain tags via FFmpeg');
     final result = await _executeWithArguments(arguments);
@@ -2724,6 +2760,12 @@ class FFmpegService {
           break;
         case 'REPLAYGAINALBUMPEAK':
           vorbis['REPLAYGAIN_ALBUM_PEAK'] = value;
+          break;
+        case 'R128TRACKGAIN':
+          vorbis['R128_TRACK_GAIN'] = value;
+          break;
+        case 'R128ALBUMGAIN':
+          vorbis['R128_ALBUM_GAIN'] = value;
           break;
       }
     }

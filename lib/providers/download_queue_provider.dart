@@ -4860,6 +4860,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             scannedReplayGain = rgResult;
             metadata['REPLAYGAIN_TRACK_GAIN'] = rgResult.trackGain;
             metadata['REPLAYGAIN_TRACK_PEAK'] = rgResult.trackPeak;
+            if (format == 'opus') {
+              final r128 = FFmpegService.replayGainDbToR128(rgResult.trackGain);
+              if (r128 != null) metadata['R128_TRACK_GAIN'] = r128;
+            }
             _log.d(
               'ReplayGain for $format: gain=${rgResult.trackGain}, peak=${rgResult.trackPeak}',
             );
