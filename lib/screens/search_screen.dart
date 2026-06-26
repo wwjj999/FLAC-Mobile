@@ -202,6 +202,7 @@ class _SearchTrackTile extends ConsumerWidget {
             artistName: track.artistName,
             artistId: track.artistId,
             coverUrl: track.coverUrl,
+            extensionId: track.source,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(color: colorScheme.onSurfaceVariant),

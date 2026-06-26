@@ -6188,6 +6188,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                           artistName: item.track.artistName,
                           artistId: item.track.artistId,
                           coverUrl: item.track.coverUrl,
+                          extensionId: item.track.source,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall
@@ -6790,6 +6791,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                       ClickableArtistName(
                         artistName: item.artistName,
                         coverUrl: item.coverUrl,
+                        extensionId: item.historyItem?.service,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -7092,6 +7094,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               ClickableArtistName(
                 artistName: item.artistName,
                 coverUrl: item.coverUrl,
+                extensionId: item.historyItem?.service,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(

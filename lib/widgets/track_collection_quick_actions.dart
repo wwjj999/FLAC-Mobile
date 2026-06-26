@@ -142,6 +142,7 @@ class _TrackOptionsSheet extends ConsumerWidget {
                                 artistName: track.artistName,
                                 artistId: track.artistId,
                                 coverUrl: track.coverUrl,
+                                extensionId: track.source,
                                 style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(
                                       color: colorScheme.onSurfaceVariant,

@@ -157,7 +157,7 @@ Future<void> navigateToArtist(
       context,
       artistName,
       filter: 'artist',
-      limit: 3,
+      limit: 20,
       sourceProviderId: extensionId,
     );
     if (!context.mounted) return;
@@ -169,16 +169,11 @@ Future<void> navigateToArtist(
       return;
     }
 
-    Map<String, dynamic>? bestMatch;
-    final lowerName = artistName.toLowerCase().trim();
-    for (final a in artistList) {
-      final name = (a['name'] as String? ?? '').toLowerCase().trim();
-      if (name == lowerName) {
-        bestMatch = a;
-        break;
-      }
+    final bestMatch = _pickBestResultByName(artistList, artistName);
+    if (bestMatch == null) {
+      _showUnavailable(context, context.l10n.trackArtist);
+      return;
     }
-    bestMatch ??= artistList.first;
 
     final resolvedId = bestMatch['id'] as String? ?? '';
     final resolvedName = bestMatch['name'] as String? ?? artistName;
@@ -240,7 +235,7 @@ Future<void> navigateToAlbum(
       context,
       query,
       filter: 'album',
-      limit: 5,
+      limit: 20,
       sourceProviderId: extensionId,
     );
     if (!context.mounted) return;
@@ -252,16 +247,11 @@ Future<void> navigateToAlbum(
       return;
     }
 
-    Map<String, dynamic>? bestMatch;
-    final lowerName = albumName.toLowerCase().trim();
-    for (final a in albumList) {
-      final name = (a['name'] as String? ?? '').toLowerCase().trim();
-      if (name == lowerName) {
-        bestMatch = a;
-        break;
-      }
+    final bestMatch = _pickBestResultByName(albumList, albumName);
+    if (bestMatch == null) {
+      _showUnavailable(context, 'Album');
+      return;
     }
-    bestMatch ??= albumList.first;
 
     final resolvedId = bestMatch['id'] as String? ?? '';
     final resolvedName = bestMatch['name'] as String? ?? albumName;
@@ -579,34 +569,33 @@ List<_ArtistTapTarget> _buildArtistTapTargets(
   }
 
   final parsedIds = _parseArtistIds(rawArtistIds);
-  if (parsedIds.length == uniqueNames.length) {
-    return List<_ArtistTapTarget>.generate(
-      uniqueNames.length,
-      (index) => _ArtistTapTarget(
-        name: uniqueNames[index],
-        artistId: parsedIds[index],
-      ),
-      growable: false,
-    );
+  if (parsedIds.isEmpty || !parsedIds.any((id) => id != null)) {
+    return uniqueNames
+        .map((name) => _ArtistTapTarget(name: name))
+        .toList(growable: false);
   }
 
-  return uniqueNames
-      .map((name) => _ArtistTapTarget(name: name))
-      .toList(growable: false);
+  // Providers may return one id per artist (aligned with the names) or only
+  // the primary artist's id. Map ids to names positionally, preserving empty
+  // slots as null, so each tapped artist navigates by its own id when known.
+  return List<_ArtistTapTarget>.generate(
+    uniqueNames.length,
+    (index) => _ArtistTapTarget(
+      name: uniqueNames[index],
+      artistId: index < parsedIds.length ? parsedIds[index] : null,
+    ),
+    growable: false,
+  );
 }
 
-List<String> _parseArtistIds(String? rawArtistIds) {
+List<String?> _parseArtistIds(String? rawArtistIds) {
   final raw = rawArtistIds?.trim();
   if (raw == null || raw.isEmpty) return const [];
 
-  final parsed = <String>[];
-  for (final part in raw.split(RegExp(r'\s*,\s*'))) {
-    final normalized = _normalizeArtistId(part);
-    if (normalized != null) {
-      parsed.add(normalized);
-    }
-  }
-  return parsed;
+  return raw
+      .split(RegExp(r'\s*,\s*'))
+      .map(_normalizeArtistId)
+      .toList(growable: false);
 }
 
 String? _normalizeArtistId(String? artistId) {
@@ -642,6 +631,90 @@ bool _canNavigateArtistDirectly({
 }) {
   if (extensionId != null) return true;
   return _spotifyArtistIdPattern.hasMatch(artistId);
+}
+
+/// Selects the result whose name best matches [query] instead of blindly
+/// trusting the provider's first result. This prevents tapping an artist like
+/// "creo" from opening a completely unrelated artist (e.g. "Tyler, the
+/// Creator") just because the provider ranked it first.
+Map<String, dynamic>? _pickBestResultByName(
+  List<Map<String, dynamic>> results,
+  String query,
+) {
+  if (results.isEmpty) return null;
+
+  final normalizedQuery = _normalizeForMatch(query);
+  if (normalizedQuery.isEmpty) return results.first;
+
+  Map<String, dynamic>? best;
+  double bestScore = -1;
+  for (final result in results) {
+    final name = result['name'] as String? ?? '';
+    final normalizedName = _normalizeForMatch(name);
+    if (normalizedName.isEmpty) continue;
+
+    if (normalizedName == normalizedQuery) {
+      return result;
+    }
+
+    final score = _nameMatchScore(normalizedQuery, normalizedName);
+    if (score > bestScore) {
+      bestScore = score;
+      best = result;
+    }
+  }
+
+  // Accept a fuzzy match only when it is reasonably close. Otherwise fall back
+  // to the provider's own top result so we never crash on an empty match.
+  if (best != null && bestScore >= 0.5) {
+    if (bestScore < 0.85) {
+      _log.w(
+        'No exact match for "$query"; using closest result '
+        '"${best['name']}" (score ${bestScore.toStringAsFixed(2)})',
+      );
+    }
+    return best;
+  }
+
+  _log.w(
+    'No close match for "$query" among ${results.length} results; '
+    'falling back to first result "${results.first['name']}"',
+  );
+  return results.first;
+}
+
+String _normalizeForMatch(String value) {
+  return value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^\p{L}\p{N}\s]', unicode: true), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+}
+
+/// Returns a similarity score in [0, 1] between two normalized names.
+double _nameMatchScore(String query, String candidate) {
+  if (query == candidate) return 1.0;
+
+  final queryTokens = query.split(' ').where((t) => t.isNotEmpty).toSet();
+  final candidateTokens = candidate
+      .split(' ')
+      .where((t) => t.isNotEmpty)
+      .toSet();
+  if (queryTokens.isEmpty || candidateTokens.isEmpty) return 0;
+
+  final intersection = queryTokens.intersection(candidateTokens).length;
+  final union = queryTokens.union(candidateTokens).length;
+  final jaccard = union == 0 ? 0.0 : intersection / union;
+
+  // Reward full substring containment of the (shorter) query in the candidate.
+  double containment = 0;
+  if (candidate.contains(query) || query.contains(candidate)) {
+    final shorter = query.length < candidate.length ? query : candidate;
+    final longer = query.length < candidate.length ? candidate : query;
+    containment = longer.isEmpty ? 0 : shorter.length / longer.length;
+  }
+
+  return jaccard > containment ? jaccard : containment;
 }
 
 final RegExp _spotifyArtistIdPattern = RegExp(r'^[A-Za-z0-9]{22}$');
