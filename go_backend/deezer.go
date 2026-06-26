@@ -3,6 +3,7 @@ package gobackend
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -1266,16 +1267,7 @@ func (c *DeezerClient) getJSON(ctx context.Context, endpoint string, dst interfa
 		}
 
 		lastErr = err
-		errStr := err.Error()
-
-		isRetryable := strings.Contains(errStr, "timeout") ||
-			strings.Contains(errStr, "connection reset") ||
-			strings.Contains(errStr, "connection refused") ||
-			strings.Contains(errStr, "EOF") ||
-			strings.Contains(errStr, "status 5") ||
-			strings.Contains(errStr, "status 429")
-
-		if !isRetryable {
+		if !isDeezerRetryableError(err) {
 			return err
 		}
 
@@ -1283,6 +1275,26 @@ func (c *DeezerClient) getJSON(ctx context.Context, endpoint string, dst interfa
 	}
 
 	return fmt.Errorf("all %d attempts failed: %w", deezerMaxRetries+1, lastErr)
+}
+
+type deezerAPIError struct {
+	StatusCode int
+	Body       string
+}
+
+func (e *deezerAPIError) Error() string {
+	return fmt.Sprintf("deezer API returned status %d: %s", e.StatusCode, e.Body)
+}
+
+func isDeezerRetryableError(err error) bool {
+	if isConnectivityFailure(err) || errors.Is(err, io.ErrUnexpectedEOF) {
+		return true
+	}
+	var apiErr *deezerAPIError
+	if errors.As(err, &apiErr) {
+		return apiErr.StatusCode == http.StatusTooManyRequests || apiErr.StatusCode >= http.StatusInternalServerError
+	}
+	return false
 }
 
 func (c *DeezerClient) doGetJSON(ctx context.Context, endpoint string, dst interface{}) error {
@@ -1305,7 +1317,7 @@ func (c *DeezerClient) doGetJSON(ctx context.Context, endpoint string, dst inter
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("deezer API returned status %d: %s", resp.StatusCode, string(body))
+		return &deezerAPIError{StatusCode: resp.StatusCode, Body: string(body)}
 	}
 
 	return json.Unmarshal(body, dst)

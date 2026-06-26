@@ -16,6 +16,7 @@ const (
 	extensionHealthDefaultTimeout = 4 * time.Second
 	extensionHealthMaxBodyBytes   = 64 * 1024
 	extensionHealthDefaultCache   = 60 * time.Second
+	extensionHealthUnknownCache   = 20 * time.Second
 )
 
 type ExtensionHealthResult struct {
@@ -86,6 +87,9 @@ func CheckExtensionHealthCached(ext *loadedExtension) ExtensionHealthResult {
 
 	result := CheckExtensionHealth(ext)
 	ttl := extensionHealthCacheTTL(ext.Manifest.ServiceHealth)
+	if result.Status == "unknown" && ttl > extensionHealthUnknownCache {
+		ttl = extensionHealthUnknownCache
+	}
 
 	extensionHealthCacheMu.Lock()
 	extensionHealthCache[cacheKey] = cachedExtensionHealthResult{
@@ -226,7 +230,11 @@ func runExtensionHealthCheck(manifest *ExtensionManifest, check ExtensionHealthC
 	resp, err := NewMetadataHTTPClient(timeout).Do(req)
 	result.LatencyMs = time.Since(start).Milliseconds()
 	if err != nil {
-		result.Status = "offline"
+		if isTransientExtensionHealthError(err) {
+			result.Status = "unknown"
+		} else {
+			result.Status = "offline"
+		}
 		result.Error = err.Error()
 		return result
 	}
@@ -260,6 +268,10 @@ func runExtensionHealthCheck(manifest *ExtensionManifest, check ExtensionHealthC
 		result.Message = message
 	}
 	return result
+}
+
+func isTransientExtensionHealthError(err error) bool {
+	return isTransientNetworkError(err)
 }
 
 func classifyExtensionHealthBody(body []byte, serviceKey string) (string, string) {
