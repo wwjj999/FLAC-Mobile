@@ -376,6 +376,7 @@ class _TrackItemWithStatus extends ConsumerWidget {
                     ],
                   ),
                 ),
+                PreviewButton(track: track),
                 TrackCollectionQuickActions(track: track),
               ],
             ),
@@ -992,6 +993,9 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
   String? _artistName;
   String? _albumType;
   int? _albumTotalTracks;
+  String? _headerVideoUrl;
+  String? _headerImageUrl;
+  List<String> _audioTraits = const [];
 
   @override
   void initState() {
@@ -1036,6 +1040,11 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
           _albumType;
       final totalTracks =
           albumInfo['total_tracks'] as int? ?? _albumTotalTracks;
+      final headerVideo = albumInfo['header_video']?.toString();
+      final headerImage = albumInfo['header_image']?.toString();
+      final audioTraits = (albumInfo['audio_traits'] as List?)
+          ?.map((e) => e.toString())
+          .toList();
       final tracks = trackList
           .map(
             (t) => _parseTrack(
@@ -1052,6 +1061,15 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
         _artistName = artistName;
         _albumType = albumType;
         _albumTotalTracks = totalTracks;
+        _headerVideoUrl = (headerVideo != null && headerVideo.isNotEmpty)
+            ? headerVideo
+            : _headerVideoUrl;
+        _headerImageUrl = (headerImage != null && headerImage.isNotEmpty)
+            ? headerImage
+            : _headerImageUrl;
+        _audioTraits = (audioTraits != null && audioTraits.isNotEmpty)
+            ? audioTraits
+            : _audioTraits;
         _isLoading = false;
       });
     } catch (e) {
@@ -1107,6 +1125,7 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
       source: widget.extensionId,
       audioQuality: data['audio_quality']?.toString(),
       audioModes: data['audio_modes']?.toString(),
+      previewUrl: data['preview_url']?.toString(),
     );
   }
 
@@ -1153,6 +1172,9 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
       albumId: widget.albumId,
       albumName: widget.albumName,
       coverUrl: widget.coverUrl,
+      headerVideoUrl: _headerVideoUrl,
+      headerImageUrl: _headerImageUrl,
+      audioTraits: _audioTraits,
       tracks: _tracks,
       extensionId: widget.extensionId,
       artistId: _artistId,
@@ -1186,6 +1208,7 @@ class _ExtensionPlaylistScreenState
   List<Track>? _tracks;
   bool _isLoading = true;
   String? _error;
+  String? _headerVideoUrl;
 
   @override
   void initState() {
@@ -1222,8 +1245,14 @@ class _ExtensionPlaylistScreenState
           .map((t) => _parseTrack(t as Map<String, dynamic>))
           .toList();
 
+      final playlistInfo = result['playlist_info'] as Map<String, dynamic>?;
+      final headerVideo = playlistInfo?['header_video']?.toString();
+
       setState(() {
         _tracks = tracks;
+        _headerVideoUrl = (headerVideo != null && headerVideo.isNotEmpty)
+            ? headerVideo
+            : _headerVideoUrl;
         _isLoading = false;
       });
     } catch (e) {
@@ -1266,6 +1295,7 @@ class _ExtensionPlaylistScreenState
       source: widget.extensionId,
       audioQuality: data['audio_quality']?.toString(),
       audioModes: data['audio_modes']?.toString(),
+      previewUrl: data['preview_url']?.toString(),
     );
   }
 
@@ -1308,6 +1338,7 @@ class _ExtensionPlaylistScreenState
     return PlaylistScreen(
       playlistName: widget.playlistName,
       coverUrl: widget.coverUrl,
+      headerVideoUrl: _headerVideoUrl,
       tracks: _tracks!,
       recommendedService: widget.extensionId,
     );
@@ -1337,6 +1368,7 @@ class _ExtensionArtistScreenState extends ConsumerState<ExtensionArtistScreen> {
   List<ArtistAlbum>? _albums;
   List<Track>? _topTracks;
   String? _headerImageUrl;
+  String? _headerVideoUrl;
   int? _monthlyListeners;
   bool _isLoading = true;
   String? _error;
@@ -1383,6 +1415,9 @@ class _ExtensionArtistScreenState extends ConsumerState<ExtensionArtistScreen> {
           artistInfo['header_image'] as String? ??
           artistInfo['cover_url'] as String? ??
           result['header_image'] as String?;
+      final headerVideo =
+          artistInfo['header_video'] as String? ??
+          result['header_video'] as String?;
       final listeners =
           artistInfo['listeners'] as int? ?? result['listeners'] as int?;
 
@@ -1390,6 +1425,7 @@ class _ExtensionArtistScreenState extends ConsumerState<ExtensionArtistScreen> {
         _albums = albums;
         _topTracks = topTracks;
         _headerImageUrl = headerImage;
+        _headerVideoUrl = headerVideo;
         _monthlyListeners = listeners;
         _isLoading = false;
       });
@@ -1446,6 +1482,7 @@ class _ExtensionArtistScreenState extends ConsumerState<ExtensionArtistScreen> {
       totalTracks: data['total_tracks'] as int?,
       composer: data['composer']?.toString(),
       source: (data['provider_id'] ?? widget.extensionId).toString(),
+      previewUrl: data['preview_url']?.toString(),
     );
   }
 
@@ -1485,6 +1522,7 @@ class _ExtensionArtistScreenState extends ConsumerState<ExtensionArtistScreen> {
       artistName: widget.artistName,
       coverUrl: widget.coverUrl,
       headerImageUrl: _headerImageUrl,
+      headerVideoUrl: _headerVideoUrl,
       monthlyListeners: _monthlyListeners,
       albums: _albums,
       topTracks: _topTracks,

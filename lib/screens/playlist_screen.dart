@@ -20,10 +20,13 @@ import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
 import 'package:spotiflac_android/widgets/animation_utils.dart';
 import 'package:spotiflac_android/widgets/audio_quality_badges.dart';
 import 'package:spotiflac_android/widgets/cached_cover_image.dart';
+import 'package:spotiflac_android/widgets/motion_header_banner.dart';
+import 'package:spotiflac_android/widgets/preview_button.dart';
 
 class PlaylistScreen extends ConsumerStatefulWidget {
   final String playlistName;
   final String? coverUrl;
+  final String? headerVideoUrl;
   final List<Track> tracks;
   final String? playlistId;
   final String? recommendedService;
@@ -32,6 +35,7 @@ class PlaylistScreen extends ConsumerStatefulWidget {
     super.key,
     required this.playlistName,
     this.coverUrl,
+    this.headerVideoUrl,
     required this.tracks,
     this.playlistId,
     this.recommendedService,
@@ -49,10 +53,13 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   String? _error;
   String? _resolvedPlaylistName;
   String? _resolvedCoverUrl;
+  String? _resolvedHeaderVideoUrl;
 
   List<Track> get _tracks => _fetchedTracks ?? widget.tracks;
   String get _playlistName => _resolvedPlaylistName ?? widget.playlistName;
   String? get _coverUrl => _resolvedCoverUrl ?? widget.coverUrl;
+  String? get _headerVideoUrl =>
+      _resolvedHeaderVideoUrl ?? widget.headerVideoUrl;
 
   String? _legacyProviderIdFromResourceId(String value) {
     if (value.startsWith('deezer:')) return 'deezer';
@@ -165,12 +172,18 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
           .map((t) => _parseTrack(t as Map<String, dynamic>))
           .toList();
 
+      final headerVideo = playlistInfo?['header_video']?.toString();
+
       setState(() {
         _fetchedTracks = tracks;
         _resolvedPlaylistName = (playlistInfo?['name'] ?? owner?['name'])
             ?.toString();
         _resolvedCoverUrl = (playlistInfo?['images'] ?? owner?['images'])
             ?.toString();
+        _resolvedHeaderVideoUrl =
+            (headerVideo != null && headerVideo.isNotEmpty)
+            ? headerVideo
+            : _resolvedHeaderVideoUrl;
         _isLoading = false;
       });
     } catch (e) {
@@ -212,6 +225,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       composer: data['composer']?.toString(),
       audioQuality: data['audio_quality']?.toString(),
       audioModes: data['audio_modes']?.toString(),
+      previewUrl: data['preview_url']?.toString(),
     );
   }
 
@@ -255,6 +269,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
           _buildAppBar(context, colorScheme),
           _buildInfoCard(context, colorScheme),
           _buildTrackList(context, colorScheme),
+          _buildPlaylistFooter(context, colorScheme),
           SliverToBoxAdapter(
             child: SizedBox(height: 32 + context.navBarBottomInset),
           ),
@@ -293,13 +308,33 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
               (expandedHeight - kToolbarHeight);
           final showContent = collapseRatio > 0.3;
           final cacheWidth = coverCacheWidthForViewport(context);
+          final motionUrl = _headerVideoUrl;
+          final hasMotion =
+              motionUrl != null &&
+              motionUrl.trim().isNotEmpty &&
+              Uri.tryParse(motionUrl)?.hasAuthority == true;
 
           return FlexibleSpaceBar(
             collapseMode: CollapseMode.pin,
             background: Stack(
               fit: StackFit.expand,
               children: [
-                if (_coverUrl != null)
+                if (hasMotion)
+                  MotionHeaderBanner(
+                    videoUrl: motionUrl,
+                    fallback: _coverUrl != null
+                        ? CachedCoverImage(
+                            imageUrl: _highResCoverUrl(_coverUrl) ?? _coverUrl!,
+                            fit: BoxFit.cover,
+                            memCacheWidth: cacheWidth,
+                            placeholder: (_, _) =>
+                                Container(color: colorScheme.surface),
+                            errorWidget: (_, _, _) =>
+                                Container(color: colorScheme.surface),
+                          )
+                        : Container(color: colorScheme.surface),
+                  )
+                else if (_coverUrl != null)
                   ImageFiltered(
                     imageFilter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
                     child: CachedCoverImage(
@@ -353,10 +388,12 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                         28,
                       ),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: hasMotion
+                            ? MainAxisAlignment.end
+                            : MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          if (_coverUrl != null) ...[
+                          if (_coverUrl != null && !hasMotion) ...[
                             Builder(
                               builder: (context) {
                                 final coverSize =
@@ -455,7 +492,9 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                               children: [
                                 _buildLoveAllButton(),
                                 const SizedBox(width: 12),
-                                _buildDownloadAllCenterButton(context),
+                                Flexible(
+                                  child: _buildDownloadAllCenterButton(context),
+                                ),
                                 const SizedBox(width: 12),
                                 _buildAddToPlaylistButton(context),
                               ],
@@ -489,6 +528,69 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
 
   Widget _buildInfoCard(BuildContext context, ColorScheme colorScheme) {
     return const SliverToBoxAdapter(child: SizedBox.shrink());
+  }
+
+  String _formatReleaseDate(String date) {
+    if (date.length >= 10) {
+      final parts = date.substring(0, 10).split('-');
+      if (parts.length == 3) {
+        return '${parts[2]}/${parts[1]}/${parts[0]}';
+      }
+    } else if (date.length >= 7) {
+      final parts = date.split('-');
+      if (parts.length >= 2) {
+        return '${parts[1]}/${parts[0]}';
+      }
+    }
+    return date;
+  }
+
+  Widget _buildPlaylistFooter(BuildContext context, ColorScheme colorScheme) {
+    final tracks = _tracks;
+    if (tracks.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    final releaseDate = tracks.first.releaseDate;
+    final totalSeconds = tracks.fold<int>(
+      0,
+      (sum, t) => sum + (t.duration > 0 ? t.duration : 0),
+    );
+    final totalMinutes = (totalSeconds / 60).round();
+
+    final lines = <String>[];
+    if (releaseDate != null &&
+        releaseDate.isNotEmpty &&
+        !releaseDate.startsWith('1970')) {
+      lines.add(_formatReleaseDate(releaseDate));
+    }
+    final countText = context.l10n.tracksCount(tracks.length);
+    lines.add(
+      totalMinutes > 0 ? '$countText • $totalMinutes min' : countText,
+    );
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final line in lines)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(
+                  line,
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildTrackList(BuildContext context, ColorScheme colorScheme) {
@@ -693,7 +795,11 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     return FilledButton.icon(
       onPressed: _tracks.isEmpty ? null : () => _confirmDownloadAll(context),
       icon: const Icon(Icons.download_rounded, size: 18),
-      label: Text(context.l10n.downloadAllCount(_tracks.length)),
+      label: Text(
+        context.l10n.downloadAllCount(_tracks.length),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
       style: FilledButton.styleFrom(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
@@ -1004,7 +1110,13 @@ class _PlaylistTrackItem extends ConsumerWidget {
               ],
             ],
           ),
-          trailing: TrackCollectionQuickActions(track: track),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PreviewButton(track: track),
+              TrackCollectionQuickActions(track: track),
+            ],
+          ),
           onTap: () => _handleTap(context, ref, isQueued: isQueued),
           onLongPress: () => TrackCollectionQuickActions.showTrackOptionsSheet(
             context,

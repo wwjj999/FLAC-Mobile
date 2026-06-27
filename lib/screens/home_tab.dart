@@ -32,6 +32,7 @@ import 'package:spotiflac_android/widgets/animation_utils.dart';
 import 'package:spotiflac_android/utils/clickable_metadata.dart';
 import 'package:spotiflac_android/widgets/audio_quality_badges.dart';
 import 'package:spotiflac_android/widgets/cached_cover_image.dart';
+import 'package:spotiflac_android/widgets/preview_button.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
 part 'home_tab_helpers.dart';
@@ -820,6 +821,8 @@ class _HomeTabState extends ConsumerState<HomeTab>
             artistId: trackState.artistId!,
             artistName: trackState.artistName!,
             coverUrl: trackState.coverUrl,
+            headerImageUrl: trackState.headerImageUrl,
+            headerVideoUrl: trackState.headerVideoUrl,
             albums: trackState.artistAlbums!,
             extensionId: extensionId,
           ),

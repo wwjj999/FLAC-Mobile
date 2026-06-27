@@ -29,6 +29,7 @@ type ExtTrackMetadata struct {
 	ExternalURL string `json:"external_urls,omitempty"`
 	DurationMS  int    `json:"duration_ms"`
 	CoverURL    string `json:"cover_url,omitempty"`
+	PreviewURL  string `json:"preview_url,omitempty"`
 	Images      string `json:"images,omitempty"`
 	ReleaseDate string `json:"release_date,omitempty"`
 	TrackNumber int    `json:"track_number,omitempty"`
@@ -68,9 +69,12 @@ type ExtAlbumMetadata struct {
 	Artists     string             `json:"artists"`
 	ArtistID    string             `json:"artist_id,omitempty"`
 	CoverURL    string             `json:"cover_url,omitempty"`
+	HeaderImage string             `json:"header_image,omitempty"`
+	HeaderVideo string             `json:"header_video,omitempty"`
 	ReleaseDate string             `json:"release_date,omitempty"`
 	TotalTracks int                `json:"total_tracks"`
 	AlbumType   string             `json:"album_type,omitempty"`
+	AudioTraits []string           `json:"audio_traits,omitempty"`
 	Tracks      []ExtTrackMetadata `json:"tracks"`
 	ProviderID  string             `json:"provider_id"`
 }
@@ -80,6 +84,7 @@ type ExtArtistMetadata struct {
 	Name        string             `json:"name"`
 	ImageURL    string             `json:"image_url,omitempty"`
 	HeaderImage string             `json:"header_image,omitempty"`
+	HeaderVideo string             `json:"header_video,omitempty"`
 	Listeners   int                `json:"listeners,omitempty"`
 	Albums      []ExtAlbumMetadata `json:"albums,omitempty"`
 	Releases    []ExtAlbumMetadata `json:"releases,omitempty"`
@@ -737,6 +742,32 @@ func gojaObjectStringMap(vm *goja.Runtime, obj *goja.Object, keys ...string) map
 	return result
 }
 
+func gojaObjectStringSlice(obj *goja.Object, keys ...string) []string {
+	value := gojaObjectValue(obj, keys...)
+	if gojaValueIsEmpty(value) {
+		return nil
+	}
+	exported, ok := value.Export().([]interface{})
+	if !ok || len(exported) == 0 {
+		return nil
+	}
+	result := make([]string, 0, len(exported))
+	for _, item := range exported {
+		str, ok := item.(string)
+		if !ok {
+			continue
+		}
+		str = strings.TrimSpace(str)
+		if str != "" {
+			result = append(result, str)
+		}
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
 func gojaArrayLength(value goja.Value, vm *goja.Runtime) (int, error) {
 	if gojaValueIsEmpty(value) {
 		return 0, nil
@@ -767,6 +798,7 @@ func parseExtensionTrackValue(vm *goja.Runtime, value goja.Value) ExtTrackMetada
 		ExternalURL:   gojaObjectString(obj, "external_urls", "externalUrls", "external_url", "externalUrl", "url"),
 		DurationMS:    gojaObjectInt(obj, "duration_ms", "durationMs"),
 		CoverURL:      gojaObjectString(obj, "cover_url", "coverUrl"),
+		PreviewURL:    gojaObjectString(obj, "preview_url", "previewUrl"),
 		Images:        gojaObjectString(obj, "images"),
 		ReleaseDate:   gojaObjectString(obj, "release_date", "releaseDate"),
 		TrackNumber:   gojaObjectInt(obj, "track_number", "trackNumber"),
@@ -833,9 +865,12 @@ func parseExtensionAlbumValue(vm *goja.Runtime, value goja.Value) (ExtAlbumMetad
 		Artists:     gojaObjectString(obj, "artists"),
 		ArtistID:    gojaObjectString(obj, "artist_id", "artistId"),
 		CoverURL:    gojaObjectString(obj, "cover_url", "coverUrl", "images"),
+		HeaderImage: gojaObjectString(obj, "header_image", "headerImage"),
+		HeaderVideo: gojaObjectString(obj, "header_video", "headerVideo"),
 		ReleaseDate: gojaObjectString(obj, "release_date", "releaseDate"),
 		TotalTracks: gojaObjectInt(obj, "total_tracks", "totalTracks"),
 		AlbumType:   gojaObjectString(obj, "album_type", "albumType"),
+		AudioTraits: gojaObjectStringSlice(obj, "audio_traits", "audioTraits"),
 		Tracks:      tracks,
 		ProviderID:  gojaObjectString(obj, "provider_id", "providerId"),
 	}, nil
@@ -904,6 +939,7 @@ func parseExtensionArtistValue(vm *goja.Runtime, value goja.Value) (ExtArtistMet
 		Name:        gojaObjectString(obj, "name"),
 		ImageURL:    gojaObjectString(obj, "image_url", "imageUrl"),
 		HeaderImage: gojaObjectString(obj, "header_image", "headerImage"),
+		HeaderVideo: gojaObjectString(obj, "header_video", "headerVideo"),
 		Listeners:   gojaObjectInt(obj, "listeners"),
 		Albums:      albums,
 		Releases:    releases,
@@ -996,9 +1032,11 @@ func parseExtensionDownloadResultValue(vm *goja.Runtime, value goja.Value) ExtDo
 func parseExtensionURLHandleValue(vm *goja.Runtime, value goja.Value) (ExtURLHandleResult, error) {
 	obj := value.ToObject(vm)
 	handleResult := ExtURLHandleResult{
-		Type:     gojaObjectString(obj, "type"),
-		Name:     gojaObjectString(obj, "name"),
-		CoverURL: gojaObjectString(obj, "cover_url", "coverUrl"),
+		Type:        gojaObjectString(obj, "type"),
+		Name:        gojaObjectString(obj, "name"),
+		CoverURL:    gojaObjectString(obj, "cover_url", "coverUrl"),
+		HeaderImage: gojaObjectString(obj, "header_image", "headerImage"),
+		HeaderVideo: gojaObjectString(obj, "header_video", "headerVideo"),
 	}
 
 	if trackValue := gojaObjectValue(obj, "track"); !gojaValueIsEmpty(trackValue) {
@@ -2702,22 +2740,22 @@ func buildOutputPath(req DownloadRequest) string {
 	}
 
 	metadata := map[string]interface{}{
-		"title":        req.TrackName,
-		"artist":       req.ArtistName,
-		"album":        req.AlbumName,
-		"album_artist": req.AlbumArtist,
-		"track":        req.TrackNumber,
-		"track_number": req.TrackNumber,
-		"total_tracks": req.TotalTracks,
+		"title":             req.TrackName,
+		"artist":            req.ArtistName,
+		"album":             req.AlbumName,
+		"album_artist":      req.AlbumArtist,
+		"track":             req.TrackNumber,
+		"track_number":      req.TrackNumber,
+		"total_tracks":      req.TotalTracks,
 		"playlist_position": req.PlaylistPosition,
-		"disc":         req.DiscNumber,
-		"disc_number":  req.DiscNumber,
-		"total_discs":  req.TotalDiscs,
-		"year":         extractYear(req.ReleaseDate),
-		"date":         req.ReleaseDate,
-		"release_date": req.ReleaseDate,
-		"isrc":         req.ISRC,
-		"composer":     req.Composer,
+		"disc":              req.DiscNumber,
+		"disc_number":       req.DiscNumber,
+		"total_discs":       req.TotalDiscs,
+		"year":              extractYear(req.ReleaseDate),
+		"date":              req.ReleaseDate,
+		"release_date":      req.ReleaseDate,
+		"isrc":              req.ISRC,
+		"composer":          req.Composer,
 	}
 
 	filename := buildFilenameFromTemplate(req.FilenameFormat, metadata)
@@ -2762,22 +2800,22 @@ func buildOutputPathForExtension(req DownloadRequest, ext *loadedExtension) stri
 	AddAllowedDownloadDir(tempDir)
 
 	metadata := map[string]interface{}{
-		"title":        req.TrackName,
-		"artist":       req.ArtistName,
-		"album":        req.AlbumName,
-		"album_artist": req.AlbumArtist,
-		"track":        req.TrackNumber,
-		"track_number": req.TrackNumber,
-		"total_tracks": req.TotalTracks,
+		"title":             req.TrackName,
+		"artist":            req.ArtistName,
+		"album":             req.AlbumName,
+		"album_artist":      req.AlbumArtist,
+		"track":             req.TrackNumber,
+		"track_number":      req.TrackNumber,
+		"total_tracks":      req.TotalTracks,
 		"playlist_position": req.PlaylistPosition,
-		"disc":         req.DiscNumber,
-		"disc_number":  req.DiscNumber,
-		"total_discs":  req.TotalDiscs,
-		"year":         extractYear(req.ReleaseDate),
-		"date":         req.ReleaseDate,
-		"release_date": req.ReleaseDate,
-		"isrc":         req.ISRC,
-		"composer":     req.Composer,
+		"disc":              req.DiscNumber,
+		"disc_number":       req.DiscNumber,
+		"total_discs":       req.TotalDiscs,
+		"year":              extractYear(req.ReleaseDate),
+		"date":              req.ReleaseDate,
+		"release_date":      req.ReleaseDate,
+		"isrc":              req.ISRC,
+		"composer":          req.Composer,
 	}
 
 	filename := buildFilenameFromTemplate(req.FilenameFormat, metadata)
@@ -2934,13 +2972,15 @@ func (p *extensionProviderWrapper) customSearch(query string, options map[string
 }
 
 type ExtURLHandleResult struct {
-	Type     string             `json:"type"`
-	Track    *ExtTrackMetadata  `json:"track,omitempty"`
-	Tracks   []ExtTrackMetadata `json:"tracks,omitempty"`
-	Album    *ExtAlbumMetadata  `json:"album,omitempty"`
-	Artist   *ExtArtistMetadata `json:"artist,omitempty"`
-	Name     string             `json:"name,omitempty"`
-	CoverURL string             `json:"cover_url,omitempty"`
+	Type        string             `json:"type"`
+	Track       *ExtTrackMetadata  `json:"track,omitempty"`
+	Tracks      []ExtTrackMetadata `json:"tracks,omitempty"`
+	Album       *ExtAlbumMetadata  `json:"album,omitempty"`
+	Artist      *ExtArtistMetadata `json:"artist,omitempty"`
+	Name        string             `json:"name,omitempty"`
+	CoverURL    string             `json:"cover_url,omitempty"`
+	HeaderImage string             `json:"header_image,omitempty"`
+	HeaderVideo string             `json:"header_video,omitempty"`
 }
 
 func (p *extensionProviderWrapper) HandleURL(url string) (*ExtURLHandleResult, error) {

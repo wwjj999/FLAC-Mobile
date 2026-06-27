@@ -24,6 +24,7 @@ import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
 import 'package:spotiflac_android/widgets/animation_utils.dart';
 import 'package:spotiflac_android/utils/clickable_metadata.dart';
 import 'package:spotiflac_android/widgets/cached_cover_image.dart';
+import 'package:spotiflac_android/widgets/motion_header_banner.dart';
 import 'package:spotiflac_android/widgets/cross_extension_share_sheet.dart';
 
 class _ArtistCache {
@@ -46,6 +47,7 @@ class _ArtistCache {
     List<ArtistAlbum>? releases,
     List<Track>? topTracks,
     String? headerImageUrl,
+    String? headerVideoUrl,
     int? monthlyListeners,
   }) {
     _cache[artistId] = _CacheEntry(
@@ -53,6 +55,7 @@ class _ArtistCache {
       releases: releases,
       topTracks: topTracks,
       headerImageUrl: headerImageUrl,
+      headerVideoUrl: headerVideoUrl,
       monthlyListeners: monthlyListeners,
       expiresAt: DateTime.now().add(_ttl),
     );
@@ -64,6 +67,7 @@ class _CacheEntry {
   final List<ArtistAlbum>? releases;
   final List<Track>? topTracks;
   final String? headerImageUrl;
+  final String? headerVideoUrl;
   final int? monthlyListeners;
   final DateTime expiresAt;
 
@@ -72,6 +76,7 @@ class _CacheEntry {
     this.releases,
     this.topTracks,
     this.headerImageUrl,
+    this.headerVideoUrl,
     this.monthlyListeners,
     required this.expiresAt,
   });
@@ -82,6 +87,7 @@ class ArtistScreen extends ConsumerStatefulWidget {
   final String artistName;
   final String? coverUrl;
   final String? headerImageUrl;
+  final String? headerVideoUrl;
   final int? monthlyListeners;
   final List<ArtistAlbum>? albums;
   final List<Track>? topTracks;
@@ -93,6 +99,7 @@ class ArtistScreen extends ConsumerStatefulWidget {
     required this.artistName,
     this.coverUrl,
     this.headerImageUrl,
+    this.headerVideoUrl,
     this.monthlyListeners,
     this.albums,
     this.topTracks,
@@ -109,6 +116,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
   List<ArtistAlbum>? _releases;
   List<Track>? _topTracks;
   String? _headerImageUrl;
+  String? _headerVideoUrl;
   int? _monthlyListeners;
   String? _error;
 
@@ -217,6 +225,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       _albums = widget.albums;
       _topTracks = widget.topTracks;
       _headerImageUrl = widget.headerImageUrl;
+      _headerVideoUrl = widget.headerVideoUrl;
       _monthlyListeners = widget.monthlyListeners;
 
       if ((_albums == null || _albums!.isEmpty) ||
@@ -232,6 +241,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       _albums = widget.albums;
       _topTracks = widget.topTracks;
       _headerImageUrl = widget.headerImageUrl;
+      _headerVideoUrl = widget.headerVideoUrl;
       _monthlyListeners = widget.monthlyListeners;
 
       if (_topTracks == null || _topTracks!.isEmpty) {
@@ -242,6 +252,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       _releases = cached.releases;
       _topTracks = cached.topTracks;
       _headerImageUrl = cached.headerImageUrl;
+      _headerVideoUrl = cached.headerVideoUrl;
       _monthlyListeners = cached.monthlyListeners;
 
       if (_topTracks == null || _topTracks!.isEmpty) {
@@ -274,6 +285,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       List<ArtistAlbum>? releases;
       List<Track>? topTracks;
       String? headerImage;
+      String? headerVideo;
       int? listeners;
 
       if (_directMetadataProviderId() != null) {
@@ -310,6 +322,9 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
             artistData['header_image'] as String? ??
             artistData['cover_url'] as String? ??
             artistData['image_url'] as String?;
+        headerVideo =
+            artistInfo?['header_video'] as String? ??
+            artistData['header_video'] as String?;
         listeners =
             artistInfo?['listeners'] as int? ?? artistData['listeners'] as int?;
       } else {
@@ -332,6 +347,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
           }
 
           headerImage = artistData['header_image'] as String?;
+          headerVideo = artistData['header_video'] as String?;
           listeners = artistData['listeners'] as int?;
         } else {
           throw StateError('Failed to load artist metadata from extension');
@@ -340,6 +356,8 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
 
       final finalHeaderImage =
           headerImage ?? _headerImageUrl ?? widget.headerImageUrl;
+      final finalHeaderVideo =
+          headerVideo ?? _headerVideoUrl ?? widget.headerVideoUrl;
       final finalListeners =
           listeners ?? _monthlyListeners ?? widget.monthlyListeners;
 
@@ -349,6 +367,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
         releases: releases,
         topTracks: topTracks,
         headerImageUrl: finalHeaderImage,
+        headerVideoUrl: finalHeaderVideo,
         monthlyListeners: finalListeners,
       );
 
@@ -358,6 +377,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
           _releases = releases;
           _topTracks = topTracks;
           _headerImageUrl = finalHeaderImage;
+          _headerVideoUrl = finalHeaderVideo;
           _monthlyListeners = finalListeners;
           _isLoadingDiscography = false;
         });
@@ -410,6 +430,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       totalTracks: data['total_tracks'] as int? ?? album?.totalTracks,
       composer: data['composer']?.toString(),
       source: data['provider_id']?.toString() ?? widget.extensionId,
+      previewUrl: data['preview_url']?.toString(),
     );
   }
 
@@ -1127,6 +1148,15 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
         imageUrl.isNotEmpty &&
         Uri.tryParse(imageUrl)?.hasAuthority == true;
 
+    String? headerVideoUrl = _headerVideoUrl;
+    if (headerVideoUrl == null || headerVideoUrl.isEmpty) {
+      headerVideoUrl = widget.headerVideoUrl;
+    }
+    final hasMotionBanner =
+        headerVideoUrl != null &&
+        headerVideoUrl.isNotEmpty &&
+        Uri.tryParse(headerVideoUrl)?.hasAuthority == true;
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     String? listenersText;
@@ -1174,7 +1204,37 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            if (hasValidImage)
+            if (hasMotionBanner)
+              MotionHeaderBanner(
+                videoUrl: headerVideoUrl!,
+                fallback: hasValidImage
+                    ? CachedCoverImage(
+                        imageUrl: imageUrl!,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                        memCacheWidth: 800,
+                        placeholder: (context, url) => Container(
+                          color: colorScheme.surfaceContainerHighest,
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            Icons.person,
+                            size: 80,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      )
+                    : Container(
+                        color: colorScheme.surfaceContainerHighest,
+                        child: Icon(
+                          Icons.person,
+                          size: 80,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+              )
+            else if (hasValidImage)
               CachedCoverImage(
                 imageUrl: imageUrl,
                 fit: BoxFit.cover,

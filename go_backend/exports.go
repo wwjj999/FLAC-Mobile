@@ -2077,6 +2077,7 @@ func normalizeExtensionTrackMetadataMap(
 		"duration_ms":   track.DurationMS,
 		"images":        coverURL,
 		"cover_url":     coverURL,
+		"preview_url":   track.PreviewURL,
 		"release_date":  track.ReleaseDate,
 		"track_number":  trackNum,
 		"total_tracks":  track.TotalTracks,
@@ -2105,9 +2106,12 @@ func normalizeExtensionAlbumInfoMap(album *ExtAlbumMetadata) map[string]interfac
 		"artist_id":    album.ArtistID,
 		"images":       album.CoverURL,
 		"cover_url":    album.CoverURL,
+		"header_image": album.HeaderImage,
+		"header_video": album.HeaderVideo,
 		"release_date": album.ReleaseDate,
 		"total_tracks": album.TotalTracks,
 		"album_type":   album.AlbumType,
+		"audio_traits": album.AudioTraits,
 		"provider_id":  album.ProviderID,
 	}
 }
@@ -2192,11 +2196,13 @@ func getExtensionProviderMetadataResponse(
 
 		return map[string]interface{}{
 			"playlist_info": map[string]interface{}{
-				"id":          playlist.ID,
-				"name":        playlist.Name,
-				"images":      playlist.CoverURL,
-				"cover_url":   playlist.CoverURL,
-				"provider_id": playlist.ProviderID,
+				"id":           playlist.ID,
+				"name":         playlist.Name,
+				"images":       playlist.CoverURL,
+				"cover_url":    playlist.CoverURL,
+				"header_image": playlist.HeaderImage,
+				"header_video": playlist.HeaderVideo,
+				"provider_id":  playlist.ProviderID,
 				"owner": map[string]interface{}{
 					"name":   playlist.Artists,
 					"images": playlist.CoverURL,
@@ -2225,6 +2231,7 @@ func getExtensionProviderMetadataResponse(
 				"images":       firstNonEmptyTrimmed(artist.HeaderImage, artist.ImageURL),
 				"cover_url":    artist.ImageURL,
 				"header_image": artist.HeaderImage,
+				"header_video": artist.HeaderVideo,
 				"provider_id":  artist.ProviderID,
 			},
 			"albums": albums,
@@ -3448,6 +3455,7 @@ func CustomSearchWithExtensionJSONWithRequestID(extensionID, query string, optio
 			"album_artist":  track.AlbumArtist,
 			"duration_ms":   track.DurationMS,
 			"images":        track.ResolvedCoverURL(),
+			"preview_url":   track.PreviewURL,
 			"release_date":  track.ReleaseDate,
 			"track_number":  track.TrackNumber,
 			"total_tracks":  track.TotalTracks,
@@ -3513,6 +3521,8 @@ func HandleURLWithExtensionJSON(url string) (string, error) {
 		"extension_id": extensionID,
 		"name":         result.Name,
 		"cover_url":    result.CoverURL,
+		"header_image": result.HeaderImage,
+		"header_video": result.HeaderVideo,
 	}
 
 	if result.Track != nil {
@@ -3524,6 +3534,7 @@ func HandleURLWithExtensionJSON(url string) (string, error) {
 			"album_artist": result.Track.AlbumArtist,
 			"duration_ms":  result.Track.DurationMS,
 			"images":       result.Track.ResolvedCoverURL(),
+			"preview_url":  result.Track.PreviewURL,
 			"release_date": result.Track.ReleaseDate,
 			"track_number": result.Track.TrackNumber,
 			"total_tracks": result.Track.TotalTracks,
@@ -3546,6 +3557,7 @@ func HandleURLWithExtensionJSON(url string) (string, error) {
 				"album_artist": track.AlbumArtist,
 				"duration_ms":  track.DurationMS,
 				"images":       track.ResolvedCoverURL(),
+				"preview_url":  track.PreviewURL,
 				"release_date": track.ReleaseDate,
 				"track_number": track.TrackNumber,
 				"total_tracks": track.TotalTracks,
@@ -3567,6 +3579,9 @@ func HandleURLWithExtensionJSON(url string) (string, error) {
 			"name":         result.Album.Name,
 			"artists":      result.Album.Artists,
 			"cover_url":    result.Album.CoverURL,
+			"header_image": result.Album.HeaderImage,
+			"header_video": result.Album.HeaderVideo,
+			"audio_traits": result.Album.AudioTraits,
 			"release_date": result.Album.ReleaseDate,
 			"total_tracks": result.Album.TotalTracks,
 			"album_type":   result.Album.AlbumType,
@@ -3580,6 +3595,7 @@ func HandleURLWithExtensionJSON(url string) (string, error) {
 			"name":         result.Artist.Name,
 			"image_url":    result.Artist.ImageURL,
 			"header_image": result.Artist.HeaderImage,
+			"header_video": result.Artist.HeaderVideo,
 			"listeners":    result.Artist.Listeners,
 			"provider_id":  result.Artist.ProviderID,
 		}
@@ -3639,6 +3655,7 @@ func HandleURLWithExtensionJSON(url string) (string, error) {
 					"album_artist": track.AlbumArtist,
 					"duration_ms":  track.DurationMS,
 					"images":       track.ResolvedCoverURL(),
+					"preview_url":  track.PreviewURL,
 					"release_date": track.ReleaseDate,
 					"track_number": track.TrackNumber,
 					"total_tracks": track.TotalTracks,

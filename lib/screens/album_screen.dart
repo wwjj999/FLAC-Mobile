@@ -1,3 +1,4 @@
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -23,6 +24,8 @@ import 'package:spotiflac_android/widgets/playlist_picker_sheet.dart';
 import 'package:spotiflac_android/utils/clickable_metadata.dart';
 import 'package:spotiflac_android/widgets/audio_quality_badges.dart';
 import 'package:spotiflac_android/widgets/cross_extension_share_sheet.dart';
+import 'package:spotiflac_android/widgets/preview_button.dart';
+import 'package:spotiflac_android/widgets/motion_header_banner.dart';
 
 class _AlbumCache {
   static final Map<String, _CacheEntry> _cache = {};
@@ -53,6 +56,9 @@ class AlbumScreen extends ConsumerStatefulWidget {
   final String albumId;
   final String albumName;
   final String? coverUrl;
+  final String? headerVideoUrl;
+  final String? headerImageUrl;
+  final List<String>? audioTraits;
   final List<Track>? tracks;
   final String? extensionId;
   final String? artistId;
@@ -63,6 +69,9 @@ class AlbumScreen extends ConsumerStatefulWidget {
     required this.albumId,
     required this.albumName,
     this.coverUrl,
+    this.headerVideoUrl,
+    this.headerImageUrl,
+    this.audioTraits,
     this.tracks,
     this.extensionId,
     this.artistId,
@@ -81,6 +90,10 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   String? _artistId;
   String? _albumType;
   int? _albumTotalTracks;
+  String? _headerVideoUrl;
+  String? _headerImageUrl;
+  List<String> _audioTraits = const [];
+  bool _tallHeader = false;
   final ScrollController _scrollController = ScrollController();
 
   String _legacyProviderIdFromResourceId(String value) {
@@ -139,6 +152,9 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     _artistId = widget.artistId;
     _albumType = _tracks?.firstOrNull?.albumType;
     _albumTotalTracks = _tracks?.firstOrNull?.totalTracks;
+    _headerVideoUrl = widget.headerVideoUrl;
+    _headerImageUrl = widget.headerImageUrl;
+    _audioTraits = widget.audioTraits ?? const [];
 
     if (_tracks == null || _tracks!.isEmpty) {
       _fetchTracks();
@@ -153,7 +169,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   }
 
   void _onScroll() {
-    final expandedHeight = _calculateExpandedHeight(context);
+    final expandedHeight = _calculateExpandedHeight(context, tall: _tallHeader);
     final shouldShow =
         _scrollController.offset > (expandedHeight - kToolbarHeight - 20);
     if (shouldShow != _showTitleInAppBar) {
@@ -161,9 +177,12 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     }
   }
 
-  double _calculateExpandedHeight(BuildContext context) {
+  double _calculateExpandedHeight(BuildContext context, {bool tall = false}) {
     final mediaSize = MediaQuery.of(context).size;
-    return (mediaSize.height * 0.55).clamp(360.0, 520.0);
+    if (tall) {
+      return (mediaSize.height * 0.68).clamp(440.0, 660.0);
+    }
+    return (mediaSize.height * 0.6).clamp(400.0, 580.0);
   }
 
   String? _highResCoverUrl(String? url) {
@@ -214,6 +233,11 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           albumInfo?['album_type']?.toString(),
         );
         final totalTracks = albumInfo?['total_tracks'] as int?;
+        final headerVideo = albumInfo?['header_video']?.toString();
+        final headerImage = albumInfo?['header_image']?.toString();
+        final audioTraits = (albumInfo?['audio_traits'] as List?)
+            ?.map((e) => e.toString())
+            .toList();
         final tracks = trackList
             .map(
               (t) => _parseTrack(
@@ -232,6 +256,17 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
             _artistId = artistId;
             _albumType = albumType;
             _albumTotalTracks = totalTracks;
+            _headerVideoUrl =
+                (headerVideo != null && headerVideo.isNotEmpty)
+                ? headerVideo
+                : _headerVideoUrl;
+            _headerImageUrl =
+                (headerImage != null && headerImage.isNotEmpty)
+                ? headerImage
+                : _headerImageUrl;
+            _audioTraits = (audioTraits != null && audioTraits.isNotEmpty)
+                ? audioTraits
+                : _audioTraits;
             _isLoading = false;
           });
         }
@@ -251,6 +286,14 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           albumInfo?['album_type']?.toString(),
         );
         final totalTracks = albumInfo?['total_tracks'] as int?;
+        final headerVideo =
+            (albumInfo?['header_video'] ?? result['header_video'])?.toString();
+        final headerImage =
+            (albumInfo?['header_image'] ?? result['header_image'])?.toString();
+        final audioTraits =
+            ((albumInfo?['audio_traits'] ?? result['audio_traits']) as List?)
+                ?.map((e) => e.toString())
+                .toList();
         final tracks = trackList
             .map(
               (t) => _parseTrack(
@@ -269,6 +312,17 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
             _artistId = artistId;
             _albumType = albumType;
             _albumTotalTracks = totalTracks;
+            _headerVideoUrl =
+                (headerVideo != null && headerVideo.isNotEmpty)
+                ? headerVideo
+                : _headerVideoUrl;
+            _headerImageUrl =
+                (headerImage != null && headerImage.isNotEmpty)
+                ? headerImage
+                : _headerImageUrl;
+            _audioTraits = (audioTraits != null && audioTraits.isNotEmpty)
+                ? audioTraits
+                : _audioTraits;
             _isLoading = false;
           });
         }
@@ -291,6 +345,98 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
 
   String _metadataResourceId(String providerId) {
     return _stripPrefixedResourceId(widget.albumId);
+  }
+
+  double _albumTitleFontSize() {
+    final length = widget.albumName.trim().length;
+    if (length > 45) return 18;
+    if (length > 30) return 21;
+    return 24;
+  }
+
+  Widget _metaInlineItem(IconData? icon, String label) {
+    const textStyle = TextStyle(
+      color: Colors.white,
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+    );
+    if (icon == null) {
+      return Text(label, style: textStyle);
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 15, color: Colors.white),
+        const SizedBox(width: 4),
+        Text(label, style: textStyle),
+      ],
+    );
+  }
+
+  List<Widget> _audioTraitInline() {
+    final traits = _audioTraits
+        .map((t) => t.toLowerCase().trim())
+        .where((t) => t.isNotEmpty)
+        .toSet();
+    if (traits.isEmpty) return const [];
+
+    bool has(List<String> keys) => keys.any(traits.contains);
+
+    final items = <Widget>[];
+    if (has(['atmos', 'dolby_atmos', 'dolby-atmos'])) {
+      items.add(_metaInlineItem(Icons.surround_sound, 'Dolby Atmos'));
+    } else if (has(['spatial'])) {
+      items.add(_metaInlineItem(Icons.surround_sound, 'Spatial Audio'));
+    }
+
+    if (has(['hi-res-lossless', 'hi_res_lossless', 'hires-lossless'])) {
+      items.add(_metaInlineItem(Icons.graphic_eq, 'Hi-Res Lossless'));
+    } else if (has(['lossless'])) {
+      items.add(_metaInlineItem(Icons.graphic_eq, 'Lossless'));
+    }
+
+    return items;
+  }
+
+  Widget _buildHeaderMeta(BuildContext context, String? releaseDate) {
+    final items = <Widget>[];
+
+    void add(Widget widget) {
+      if (items.isNotEmpty) {
+        items.add(
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              '•',
+              style: TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+          ),
+        );
+      }
+      items.add(widget);
+    }
+
+    final year = _releaseYear(releaseDate);
+    if (year != null) {
+      add(_metaInlineItem(null, year));
+    }
+    for (final trait in _audioTraitInline()) {
+      add(trait);
+    }
+
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 0,
+      runSpacing: 4,
+      children: items,
+    );
+  }
+
+  String? _releaseYear(String? date) {
+    if (date == null || date.isEmpty) return null;
+    final match = RegExp(r'(\d{4})').firstMatch(date);
+    return match?.group(1);
   }
 
   Track _parseTrack(
@@ -325,6 +471,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       composer: data['composer']?.toString(),
       audioQuality: data['audio_quality']?.toString(),
       audioModes: data['audio_modes']?.toString(),
+      previewUrl: data['preview_url']?.toString(),
     );
   }
 
@@ -362,6 +509,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
             ),
           if (!_isLoading && _error == null && tracks.isNotEmpty) ...[
             _buildTrackList(context, colorScheme, tracks),
+            _buildAlbumFooter(context, colorScheme, tracks),
           ],
           SliverToBoxAdapter(child: SizedBox(height: 32 + bottomInset)),
         ],
@@ -374,7 +522,6 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     ColorScheme colorScheme,
     Color pageBackgroundColor,
   ) {
-    final expandedHeight = _calculateExpandedHeight(context);
     final tracks = _tracks ?? [];
     final artistName =
         widget.artistName ??
@@ -382,6 +529,16 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
             ? (tracks.first.albumArtist ?? tracks.first.artistName)
             : null);
     final releaseDate = tracks.isNotEmpty ? tracks.first.releaseDate : null;
+
+    final motionUrl = _headerVideoUrl ?? widget.headerVideoUrl;
+    final hasMotion =
+        motionUrl != null &&
+        motionUrl.trim().isNotEmpty &&
+        Uri.tryParse(motionUrl)?.hasAuthority == true;
+    final coverThumbUrl = widget.coverUrl ?? _headerImageUrl;
+    final showSquareCover = !hasMotion && coverThumbUrl != null;
+    _tallHeader = false;
+    final expandedHeight = _calculateExpandedHeight(context);
 
     return SliverAppBar(
       expandedHeight: expandedHeight,
@@ -410,33 +567,46 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
               (expandedHeight - kToolbarHeight);
           final showContent = collapseRatio > 0.3;
           final cacheWidth = coverCacheWidthForViewport(context);
+          final headerBgUrl =
+              _headerImageUrl ?? widget.headerImageUrl ?? widget.coverUrl;
+          final Widget headerBgImage = headerBgUrl != null
+              ? CachedNetworkImage(
+                  imageUrl: _highResCoverUrl(headerBgUrl) ?? headerBgUrl,
+                  fit: BoxFit.cover,
+                  memCacheWidth: cacheWidth,
+                  cacheManager: CoverCacheManager.instance,
+                  placeholder: (_, _) => Container(color: colorScheme.surface),
+                  errorWidget: (_, _, _) =>
+                      Container(color: colorScheme.surface),
+                )
+              : Container(
+                  color: colorScheme.surfaceContainerHighest,
+                  child: Icon(
+                    Icons.album,
+                    size: 80,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                );
 
           return FlexibleSpaceBar(
             collapseMode: CollapseMode.pin,
             background: Stack(
               fit: StackFit.expand,
               children: [
-                if (widget.coverUrl != null)
-                  CachedNetworkImage(
-                    imageUrl:
-                        _highResCoverUrl(widget.coverUrl) ?? widget.coverUrl!,
-                    fit: BoxFit.cover,
-                    memCacheWidth: cacheWidth,
-                    cacheManager: CoverCacheManager.instance,
-                    placeholder: (_, _) =>
-                        Container(color: colorScheme.surface),
-                    errorWidget: (_, _, _) =>
-                        Container(color: colorScheme.surface),
+                if (hasMotion)
+                  MotionHeaderBanner(
+                    videoUrl: motionUrl,
+                    fallback: headerBgImage,
+                  )
+                else if (showSquareCover)
+                  ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+                    child: headerBgImage,
                   )
                 else
-                  Container(
-                    color: colorScheme.surfaceContainerHighest,
-                    child: Icon(
-                      Icons.album,
-                      size: 80,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+                  headerBgImage,
+                if (showSquareCover)
+                  Container(color: Colors.black.withValues(alpha: 0.35)),
                 Positioned(
                   left: 0,
                   right: 0,
@@ -466,11 +636,61 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (showSquareCover) ...[
+                          Builder(
+                            builder: (context) {
+                              final coverSize = (constraints.maxWidth * 0.5)
+                                  .clamp(150.0, 210.0)
+                                  .toDouble();
+                              return Container(
+                                width: coverSize,
+                                height: coverSize,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.45,
+                                      ),
+                                      blurRadius: 24,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: CachedNetworkImage(
+                                    imageUrl:
+                                        _highResCoverUrl(coverThumbUrl) ??
+                                        coverThumbUrl,
+                                    fit: BoxFit.cover,
+                                    width: coverSize,
+                                    height: coverSize,
+                                    memCacheWidth: cacheWidth,
+                                    cacheManager: CoverCacheManager.instance,
+                                    placeholder: (_, _) => Container(
+                                      color: colorScheme.surfaceContainerHighest,
+                                    ),
+                                    errorWidget: (_, _, _) => Container(
+                                      color: colorScheme.surfaceContainerHighest,
+                                      child: Icon(
+                                        Icons.album,
+                                        size: 48,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                        ],
                         Text(
                           widget.albumName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
-                            fontSize: 24,
+                            fontSize: _albumTitleFontSize(),
                             fontWeight: FontWeight.bold,
                             height: 1.2,
                           ),
@@ -497,72 +717,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                         ],
                         if (tracks.isNotEmpty) ...[
                           const SizedBox(height: 12),
-                          Wrap(
-                            alignment: WrapAlignment.center,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.music_note,
-                                      size: 14,
-                                      color: Colors.white,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      context.l10n.tracksCount(tracks.length),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (releaseDate != null && releaseDate.isNotEmpty)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.calendar_today,
-                                        size: 14,
-                                        color: Colors.white,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        _formatReleaseDate(releaseDate),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
+                          _buildHeaderMeta(context, releaseDate),
                           const SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -639,6 +794,51 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
 
   Widget _buildInfoCard(BuildContext context, ColorScheme colorScheme) {
     return const SliverToBoxAdapter(child: SizedBox.shrink());
+  }
+
+  Widget _buildAlbumFooter(
+    BuildContext context,
+    ColorScheme colorScheme,
+    List<Track> tracks,
+  ) {
+    final releaseDate = tracks.isNotEmpty ? tracks.first.releaseDate : null;
+    final totalSeconds = tracks.fold<int>(
+      0,
+      (sum, t) => sum + (t.duration > 0 ? t.duration : 0),
+    );
+    final totalMinutes = (totalSeconds / 60).round();
+
+    final lines = <String>[];
+    if (releaseDate != null && releaseDate.isNotEmpty) {
+      lines.add(_formatReleaseDate(releaseDate));
+    }
+    final countText = context.l10n.tracksCount(tracks.length);
+    lines.add(
+      totalMinutes > 0 ? '$countText • $totalMinutes min' : countText,
+    );
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final line in lines)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(
+                  line,
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildTrackList(
@@ -1117,7 +1317,13 @@ class _AlbumTrackItem extends ConsumerWidget {
               ],
             ],
           ),
-          trailing: TrackCollectionQuickActions(track: track),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PreviewButton(track: track),
+              TrackCollectionQuickActions(track: track),
+            ],
+          ),
           onTap: () => _handleTap(context, ref, isQueued: isQueued),
           onLongPress: () => TrackCollectionQuickActions.showTrackOptionsSheet(
             context,
