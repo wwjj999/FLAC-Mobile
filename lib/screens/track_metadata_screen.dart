@@ -13,6 +13,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/providers/playback_provider.dart';
+import 'package:spotiflac_android/providers/music_player_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/services/ffmpeg_service.dart';
@@ -1195,6 +1196,31 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _enqueueThis(WidgetRef ref, {required bool playNext}) async {
+    final controller = ref.read(musicPlayerControllerProvider);
+    final item = widget.item;
+    final localItem = widget.localItem;
+    if (item != null) {
+      if (playNext) {
+        await controller.playNextHistory(item);
+      } else {
+        await controller.addToQueueHistory(item);
+      }
+    } else if (localItem != null) {
+      if (playNext) {
+        await controller.playNextLocal(localItem);
+      } else {
+        await controller.addToQueueLocal(localItem);
+      }
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(playNext ? 'Playing next' : 'Added to queue'),
       ),
     );
   }
@@ -3325,9 +3351,22 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         final l10n = sheetContext.l10n;
 
         final options = <_MetadataOption>[
+          if (_fileExists)
+            _MetadataOption(
+              icon: Icons.playlist_play,
+              label: 'Play next',
+              onTap: () => _enqueueThis(ref, playNext: true),
+            ),
+          if (_fileExists)
+            _MetadataOption(
+              icon: Icons.queue_music,
+              label: 'Add to queue',
+              onTap: () => _enqueueThis(ref, playNext: false),
+            ),
           _MetadataOption(
             icon: Icons.copy_outlined,
             label: l10n.trackCopyFilePath,
+            dividerAbove: _fileExists,
             onTap: () => _copyToClipboard(screenContext, cleanFilePath),
           ),
           if (_fileExists)

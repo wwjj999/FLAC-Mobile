@@ -274,27 +274,12 @@ class TrackListSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
     return ShimmerLoading(
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
         child: Column(
           children: [
-            if (showCoverHeader) ...[
-              SkeletonBox(
-                width: screenWidth,
-                height: screenWidth * 0.75,
-                borderRadius: 0,
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: SkeletonBox(width: 180, height: 20, borderRadius: 4),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 20),
-                child: SkeletonBox(width: 110, height: 14, borderRadius: 4),
-              ),
-            ],
+            if (showCoverHeader) const _CollectionHeaderSkeleton(),
             ...List.generate(itemCount, (index) {
               return Padding(
                 padding: const EdgeInsets.symmetric(
@@ -303,26 +288,37 @@ class TrackListSkeleton extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const SkeletonBox(width: 48, height: 48),
+                    const SkeletonBox(width: 48, height: 48, borderRadius: 8),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SkeletonBox(
-                            width: 140 + (index % 3) * 30,
-                            height: 14,
+                            width: 150 + (index % 3) * 30,
+                            height: 15,
                             borderRadius: 4,
                           ),
-                          const SizedBox(height: 6),
-                          SkeletonBox(
-                            width: 90 + (index % 2) * 20,
-                            height: 12,
-                            borderRadius: 4,
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              SkeletonBox(
+                                width: 90 + (index % 2) * 20,
+                                height: 12,
+                                borderRadius: 4,
+                              ),
+                              const SizedBox(width: 8),
+                              const SkeletonBox(
+                                width: 38,
+                                height: 12,
+                                borderRadius: 6,
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(width: 8),
                     const SkeletonBox(width: 24, height: 24, borderRadius: 12),
                   ],
                 ),
@@ -351,32 +347,17 @@ class AlbumTrackListSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
     return ShimmerLoading(
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
         child: Column(
           children: [
-            if (showCoverHeader) ...[
-              SkeletonBox(
-                width: screenWidth,
-                height: screenWidth * 0.75,
-                borderRadius: 0,
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: SkeletonBox(width: 180, height: 20, borderRadius: 4),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 20),
-                child: SkeletonBox(width: 110, height: 14, borderRadius: 4),
-              ),
-            ],
+            if (showCoverHeader) const _CollectionHeaderSkeleton(),
             ...List.generate(itemCount, (index) {
               return Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 6,
+                  vertical: 10,
                 ),
                 child: Row(
                   children: [
@@ -384,38 +365,106 @@ class AlbumTrackListSkeleton extends StatelessWidget {
                       width: 32,
                       child: Center(
                         child: SkeletonBox(
-                          width: 14,
+                          width: 16,
                           height: 14,
                           borderRadius: 4,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SkeletonBox(
-                            width: 120 + (index % 4) * 35,
-                            height: 14,
+                            width: 130 + (index % 4) * 35,
+                            height: 15,
                             borderRadius: 4,
                           ),
-                          const SizedBox(height: 6),
-                          SkeletonBox(
-                            width: 70 + (index % 3) * 20,
-                            height: 12,
-                            borderRadius: 4,
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              SkeletonBox(
+                                width: 70 + (index % 3) * 20,
+                                height: 12,
+                                borderRadius: 4,
+                              ),
+                              const SizedBox(width: 8),
+                              const SkeletonBox(
+                                width: 38,
+                                height: 12,
+                                borderRadius: 6,
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    const SkeletonBox(width: 20, height: 20, borderRadius: 10),
+                    const SizedBox(width: 8),
+                    const SkeletonBox(width: 24, height: 24, borderRadius: 12),
                   ],
                 ),
               );
             }),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Header skeleton matching the redesigned album/playlist header: a blurred
+/// backdrop block with a centered square cover, title/subtitle bars, a meta
+/// line (year + quality badges) and the action button row.
+class _CollectionHeaderSkeleton extends StatelessWidget {
+  const _CollectionHeaderSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final coverSize = (screenWidth * 0.5).clamp(150.0, 210.0).toDouble();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+      child: Column(
+        children: [
+          SkeletonBox(
+            width: coverSize,
+            height: coverSize,
+            borderRadius: 16,
+          ),
+          const SizedBox(height: 20),
+          SkeletonBox(width: screenWidth * 0.6, height: 22, borderRadius: 6),
+          const SizedBox(height: 10),
+          SkeletonBox(width: screenWidth * 0.35, height: 15, borderRadius: 4),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              SkeletonBox(width: 44, height: 14, borderRadius: 6),
+              SizedBox(width: 10),
+              SkeletonBox(width: 70, height: 14, borderRadius: 6),
+              SizedBox(width: 10),
+              SkeletonBox(width: 60, height: 14, borderRadius: 6),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SkeletonBox(width: 48, height: 48, borderRadius: 24),
+              const SizedBox(width: 16),
+              SkeletonBox(
+                width: screenWidth * 0.45,
+                height: 48,
+                borderRadius: 24,
+              ),
+              const SizedBox(width: 16),
+              const SkeletonBox(width: 48, height: 48, borderRadius: 24),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }

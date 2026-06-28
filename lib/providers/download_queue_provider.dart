@@ -481,6 +481,8 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
   static const _startupSafRepairCursorKey =
       'history_startup_saf_repair_cursor_v1';
   static const _startupOrphanCursorKey = 'history_startup_orphan_cursor_v1';
+  static const _startupOrphanSuspectPrefix =
+      'history_startup_orphan_suspect_v1_';
   static const _startupAudioCursorKey = 'history_startup_audio_cursor_v1';
   final HistoryDatabase _db = HistoryDatabase.instance;
   bool _isLoaded = false;
@@ -1541,24 +1543,39 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
     }
 
     final result = await _inspectOrphanedEntries(entries);
+    final confirmedOrphanIds = <String>[];
+    for (final id in result.orphanedIds) {
+      final key = '$_startupOrphanSuspectPrefix$id';
+      if (prefs.getBool(key) == true) {
+        confirmedOrphanIds.add(id);
+        await prefs.remove(key);
+      } else {
+        await prefs.setBool(key, true);
+        _historyLog.d(
+          'Deferring orphan removal until next pass: $id (${result.pathById[id] ?? ''})',
+        );
+      }
+    }
     for (final replacement in result.replacementPaths.entries) {
       await _db.updateFilePath(replacement.key, replacement.value);
+      await prefs.remove('$_startupOrphanSuspectPrefix${replacement.key}');
     }
 
-    final deletedCount = result.orphanedIds.isEmpty
+    final deletedCount = confirmedOrphanIds.isEmpty
         ? 0
-        : await _db.deleteByIds(result.orphanedIds);
+        : await _db.deleteByIds(confirmedOrphanIds);
 
     _applyHistoryPathAndDeletionChanges(
-      deletedIds: result.orphanedIds,
+      deletedIds: confirmedOrphanIds,
       replacementPaths: result.replacementPaths,
     );
 
     if (entries.length < maxItems) {
       await prefs.remove(_startupOrphanCursorKey);
     } else {
-      final nextCursor =
-          safeCursor + entries.length - result.orphanedIds.length;
+      final nextCursor = result.orphanedIds.isNotEmpty
+          ? safeCursor
+          : safeCursor + entries.length;
       await prefs.setInt(_startupOrphanCursorKey, nextCursor);
     }
 
@@ -3823,7 +3840,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     final newItems = tracks.asMap().entries.map((entry) {
       final track = entry.value;
       final index = entry.key;
-      final explicitPosition = playlistPositions != null &&
+      final explicitPosition =
+          playlistPositions != null &&
               index < playlistPositions.length &&
               (playlistPositions[index] ?? 0) > 0
           ? playlistPositions[index]
@@ -3838,7 +3856,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         qualityOverride: qualityOverride,
         playlistName: playlistName,
         playlistPosition:
-            explicitPosition ?? (shouldAssignPlaylistPositions ? index + 1 : null),
+            explicitPosition ??
+            (shouldAssignPlaylistPositions ? index + 1 : null),
       );
     }).toList();
 

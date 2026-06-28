@@ -26,6 +26,7 @@ import 'package:spotiflac_android/widgets/app_announcement_dialog.dart';
 import 'package:spotiflac_android/widgets/update_dialog.dart';
 import 'package:spotiflac_android/widgets/animation_utils.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
+import 'package:spotiflac_android/widgets/mini_player.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
 final _log = AppLogger('MainShell');
@@ -300,6 +301,9 @@ class _MainShellState extends ConsumerState<MainShell>
       final previousIndex = _currentIndex;
       final isNonAdjacentJump = (previousIndex - index).abs() > 1;
       HapticFeedback.selectionClick();
+      // Stop any preview snippet when leaving the current tab. (_onPageChanged
+      // cannot do this because _currentIndex is already updated below.)
+      ref.read(previewPlayerProvider.notifier).stop();
       setState(() => _currentIndex = index);
       final showStore = ref.read(
         settingsProvider.select((s) => s.showExtensionStore),
@@ -597,28 +601,34 @@ class _MainShellState extends ConsumerState<MainShell>
         bottomNavigationBar: ClipRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: DecoratedBox(
-              position: DecorationPosition.foreground,
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: Theme.of(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const MiniPlayer(),
+                DecoratedBox(
+                  position: DecorationPosition.foreground,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+                  child: NavigationBar(
+                    selectedIndex: _currentIndex.clamp(0, maxIndex),
+                    onDestinationSelected: _onNavTap,
+                    animationDuration: const Duration(milliseconds: 500),
+                    elevation: 0,
+                    height: 64,
+                    backgroundColor: settingsGroupColor(
                       context,
-                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    ).withValues(alpha: 0.72),
+                    destinations: destinations,
                   ),
                 ),
-              ),
-              child: NavigationBar(
-                selectedIndex: _currentIndex.clamp(0, maxIndex),
-                onDestinationSelected: _onNavTap,
-                animationDuration: const Duration(milliseconds: 500),
-                elevation: 0,
-                height: 64,
-                backgroundColor: settingsGroupColor(
-                  context,
-                ).withValues(alpha: 0.72),
-                destinations: destinations,
-              ),
+              ],
             ),
           ),
         ),

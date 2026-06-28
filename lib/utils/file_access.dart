@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:spotiflac_android/services/music_player_service.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/mime_utils.dart';
 
@@ -279,11 +280,13 @@ Future<void> deleteFile(String? path) async {
   if (isCueVirtualPath(path)) return;
   if (isContentUri(path)) {
     await PlatformBridge.safDelete(path);
+    await musicPlayerHandler?.onSourceDeleted(path);
     return;
   }
   try {
     await File(path).delete();
   } catch (_) {}
+  await musicPlayerHandler?.onSourceDeleted(path);
 }
 
 Future<FileAccessStat?> fileStat(String? path) async {

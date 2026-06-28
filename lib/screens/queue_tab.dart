@@ -24,6 +24,8 @@ import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/providers/playback_provider.dart';
+import 'package:spotiflac_android/providers/music_player_provider.dart';
+import 'package:spotiflac_android/services/music_player_service.dart';
 import 'package:spotiflac_android/services/library_database.dart';
 import 'package:spotiflac_android/services/local_track_redownload_service.dart';
 import 'package:spotiflac_android/services/history_database.dart';
@@ -233,6 +235,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   _queueLibraryCountsCache = {};
   final Map<_QueueLibraryPageRequest, _QueueLibraryPageData>
   _queueLibraryPageDataCache = {};
+  DateTime? _lastBlankLibraryRepairAt;
 
   double _effectiveTextScale() {
     final textScale = MediaQuery.textScalerOf(context).scale(1.0);
@@ -371,6 +374,11 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     _QueueLibraryPageRequest request,
   ) {
     if (value != null) {
+      final liveData = value.asData?.value;
+      if (liveData != null) {
+        _queueLibraryPageDataCache[request] = liveData;
+        _trimQueueLibraryPageDataCache(protectedRequest: request);
+      }
       value.whenOrNull(
         data: (data) {
           _queueLibraryPageDataCache[request] = data;
@@ -398,6 +406,40 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     }
 
     return _QueueLibraryPageData.combine(pages);
+  }
+
+  void _invalidateLibraryDataCaches() {
+    _queueLibraryCountsCache.clear();
+    _queueLibraryPageDataCache.clear();
+    _unifiedItemsCache.clear();
+    _invalidateFilterContentCache();
+  }
+
+  void _scheduleBlankLibraryRepair({
+    required bool hasQueueItems,
+    required bool hasLibraryContent,
+    required bool hasAnyLibraryItems,
+    required bool isLibraryPageLoading,
+  }) {
+    if (!hasQueueItems ||
+        hasLibraryContent ||
+        hasAnyLibraryItems ||
+        isLibraryPageLoading) {
+      return;
+    }
+    final now = DateTime.now();
+    final last = _lastBlankLibraryRepairAt;
+    if (last != null && now.difference(last) < const Duration(seconds: 8)) {
+      return;
+    }
+    _lastBlankLibraryRepairAt = now;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _invalidateLibraryDataCaches();
+      ref.read(downloadHistoryProvider.notifier).reloadFromStorage();
+      ref.read(localLibraryProvider.notifier).reloadFromStorage();
+      setState(() {});
+    });
   }
 
   void _trimQueueLibraryCountsCache() {
@@ -2181,6 +2223,68 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     }
   }
 
+  /// Plays [item] and queues the rest of the merged library (downloaded + local
+  /// in display order) so playback continues to the next track. Honors player
+  /// mode and shuffle.
+  Future<void> _playLibraryItem(
+    UnifiedLibraryItem item,
+    List<UnifiedLibraryItem> libraryItems,
+  ) async {
+    final playableItems = libraryItems
+        .where(
+          (u) => u.filePath.trim().isNotEmpty && !isCueVirtualPath(u.filePath),
+        )
+        .toList();
+    if (playableItems.isEmpty) return;
+
+    var start = playableItems.indexWhere((u) => u.id == item.id);
+    if (start < 0) start = 0;
+
+    try {
+      await ref
+          .read(playbackProvider.notifier)
+          .playMediaQueue(
+            playableItems.map(_toPlayableMedia),
+            startIndex: start,
+            externalPath: item.filePath,
+          );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.snackbarCannotOpenFile(e.toString())),
+          ),
+        );
+      }
+    }
+  }
+
+  PlayableMedia _toPlayableMedia(UnifiedLibraryItem item) {
+    final history = item.historyItem;
+    if (history != null) return playableFromHistory(history);
+    final local = item.localItem;
+    if (local != null) return playableFromLocal(local);
+
+    final cover = item.coverUrl ?? item.localCoverPath ?? '';
+    String? art;
+    if (cover.isNotEmpty) {
+      art =
+          (cover.startsWith('http') ||
+              cover.startsWith('content://') ||
+              cover.startsWith('file://'))
+          ? cover
+          : Uri.file(cover).toString();
+    }
+    return PlayableMedia(
+      id: item.id,
+      source: item.filePath,
+      title: item.trackName,
+      artist: item.artistName,
+      album: item.albumName,
+      artUri: art,
+    );
+  }
+
   void _precacheCover(String? url) {
     if (url == null || url.isEmpty) return;
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -2682,6 +2786,24 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         }
       }
     });
+    ref.listen<int>(
+      downloadHistoryProvider.select((state) => state.loadedIndexVersion),
+      (previous, next) {
+        if (previous == null || previous == next) return;
+        _invalidateLibraryDataCaches();
+        _resetLibraryPaging();
+        if (mounted) setState(() {});
+      },
+    );
+    ref.listen<int>(
+      localLibraryProvider.select((state) => state.loadedIndexVersion),
+      (previous, next) {
+        if (previous == null || previous == next) return;
+        _invalidateLibraryDataCaches();
+        _resetLibraryPaging();
+        if (mounted) setState(() {});
+      },
+    );
 
     final hasQueueItems = ref.watch(
       downloadQueueLookupProvider.select((lookup) => lookup.itemIds.isNotEmpty),
@@ -2793,6 +2915,12 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         _searchQuery.isNotEmpty || _searchController.text.trim().isNotEmpty;
     final shouldShowLibraryControls =
         hasLibraryContent || hasAnyLibraryItems || hasActiveSearch;
+    _scheduleBlankLibraryRepair(
+      hasQueueItems: hasQueueItems,
+      hasLibraryContent: hasLibraryContent,
+      hasAnyLibraryItems: hasAnyLibraryItems,
+      isLibraryPageLoading: isLibraryPageLoading,
+    );
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final bottomInset = context.navBarBottomInset;
@@ -4378,6 +4506,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                               localNavigationItems: localNavigationItems,
                               localNavigationIndex:
                                   localNavigationIndexByUnifiedId[item.id],
+                              libraryItems: filteredUnifiedItems,
                             ),
                           ),
                           child: _buildUnifiedGridItem(
@@ -4391,6 +4520,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                             localNavigationItems: localNavigationItems,
                             localNavigationIndex:
                                 localNavigationIndexByUnifiedId[item.id],
+                            libraryItems: filteredUnifiedItems,
                           ),
                         ),
                       );
@@ -4444,6 +4574,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                             localNavigationItems: localNavigationItems,
                             localNavigationIndex:
                                 localNavigationIndexByUnifiedId[item.id],
+                            libraryItems: filteredUnifiedItems,
                           ),
                         ),
                         child: _buildUnifiedLibraryItem(
@@ -4456,6 +4587,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                           localNavigationItems: localNavigationItems,
                           localNavigationIndex:
                               localNavigationIndexByUnifiedId[item.id],
+                          libraryItems: filteredUnifiedItems,
                         ),
                       ),
                     );
@@ -4527,6 +4659,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                           localNavigationItems: localNavigationItems,
                           localNavigationIndex:
                               localNavigationIndexByUnifiedId[item.id],
+                          libraryItems: filteredUnifiedItems,
                         ),
                       );
                     }, childCount: leadCount + filteredUnifiedItems.length),
@@ -4550,6 +4683,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                         localNavigationItems: localNavigationItems,
                         localNavigationIndex:
                             localNavigationIndexByUnifiedId[item.id],
+                        libraryItems: filteredUnifiedItems,
                       ),
                     );
                   }, childCount: leadCount + filteredUnifiedItems.length),
@@ -6755,6 +6889,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     required int? downloadedNavigationIndex,
     required List<LocalLibraryItem> localNavigationItems,
     required int? localNavigationIndex,
+    required List<UnifiedLibraryItem> libraryItems,
   }) {
     final fileExistsListenable = _fileExistsListenable(item.filePath);
     final isSelected = _selectedIds.contains(item.id);
@@ -6933,14 +7068,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                         children: [
                           if (fileExists)
                             IconButton(
-                              onPressed: () => _openFile(
-                                item.filePath,
-                                title: item.trackName,
-                                artist: item.artistName,
-                                album: item.albumName,
-                                coverUrl:
-                                    item.coverUrl ?? item.localCoverPath ?? '',
-                              ),
+                              onPressed: () =>
+                                  _playLibraryItem(item, libraryItems),
                               icon: Icon(
                                 Icons.play_arrow,
                                 color: colorScheme.primary,
@@ -6977,6 +7106,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     required int? downloadedNavigationIndex,
     required List<LocalLibraryItem> localNavigationItems,
     required int? localNavigationIndex,
+    required List<UnifiedLibraryItem> libraryItems,
   }) {
     final fileExistsListenable = _fileExistsListenable(item.filePath);
     final isSelected = _selectedIds.contains(item.id);
@@ -7085,16 +7215,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                                     item.artistName,
                                   ),
                                   child: GestureDetector(
-                                    onTap: () => _openFile(
-                                      item.filePath,
-                                      title: item.trackName,
-                                      artist: item.artistName,
-                                      album: item.albumName,
-                                      coverUrl:
-                                          item.coverUrl ??
-                                          item.localCoverPath ??
-                                          '',
-                                    ),
+                                    onTap: () =>
+                                        _playLibraryItem(item, libraryItems),
                                     child: Container(
                                       padding: const EdgeInsets.all(6),
                                       decoration: BoxDecoration(

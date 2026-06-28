@@ -580,6 +580,7 @@ class _FileExistsListenableCache {
   static const int _maxCacheSize = 500;
 
   final Map<String, bool> _cache = {};
+  final Map<String, int> _missCounts = {};
   final Map<String, ValueNotifier<bool>> _notifiers = {};
   final ValueNotifier<bool> _alwaysMissingNotifier = ValueNotifier(false);
   final Set<String> _pendingChecks = {};
@@ -627,12 +628,34 @@ class _FileExistsListenableCache {
 
     _pendingChecks.add(cleanPath);
     Future.microtask(() async {
-      final exists = await fileExists(cleanPath);
+      bool exists;
+      try {
+        exists = await fileExists(cleanPath);
+      } catch (_) {
+        _pendingChecks.remove(cleanPath);
+        Timer(const Duration(milliseconds: 700), () => _startCheck(cleanPath));
+        return;
+      }
       _pendingChecks.remove(cleanPath);
-      _cache[cleanPath] = exists;
+      if (exists) {
+        _missCounts.remove(cleanPath);
+        _cache[cleanPath] = true;
+      } else {
+        final misses = (_missCounts[cleanPath] ?? 0) + 1;
+        _missCounts[cleanPath] = misses;
+        if (misses < 2) {
+          Timer(
+            const Duration(milliseconds: 700),
+            () => _startCheck(cleanPath),
+          );
+          return;
+        }
+        _cache[cleanPath] = false;
+      }
       final notifier = _notifiers[cleanPath];
-      if (notifier != null && notifier.value != exists) {
-        notifier.value = exists;
+      final value = _cache[cleanPath] ?? true;
+      if (notifier != null && notifier.value != value) {
+        notifier.value = value;
       }
     });
   }
@@ -642,6 +665,7 @@ class _FileExistsListenableCache {
       notifier.dispose();
     }
     _notifiers.clear();
+    _missCounts.clear();
     _alwaysMissingNotifier.dispose();
   }
 }
