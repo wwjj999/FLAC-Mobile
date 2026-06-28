@@ -1670,7 +1670,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
     }
   }
 
-  List<Extension> get enabledExtensions {
+  List<Extension> enabledExtensions() {
     return state.extensions.where((ext) => ext.enabled).toList();
   }
 
@@ -1747,7 +1747,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
     return result;
   }
 
-  List<Extension> get searchProviders {
+  List<Extension> searchProviders() {
     return state.extensions
         .where((ext) => ext.enabled && ext.hasCustomSearch)
         .toList();
@@ -1761,9 +1761,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
     void scan(Object? settingsList) {
       if (settingsList is! List) return;
       for (final entry in settingsList) {
-        if (entry is Map &&
-            entry['secret'] == true &&
-            entry['key'] is String) {
+        if (entry is Map && entry['secret'] == true && entry['key'] is String) {
           keys.add(entry['key'] as String);
         }
       }

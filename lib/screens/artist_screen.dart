@@ -1206,10 +1206,10 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
           children: [
             if (hasMotionBanner)
               MotionHeaderBanner(
-                videoUrl: headerVideoUrl!,
+                videoUrl: headerVideoUrl,
                 fallback: hasValidImage
                     ? CachedCoverImage(
-                        imageUrl: imageUrl!,
+                        imageUrl: imageUrl,
                         fit: BoxFit.cover,
                         alignment: Alignment.topCenter,
                         memCacheWidth: 800,

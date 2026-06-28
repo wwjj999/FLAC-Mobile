@@ -25,11 +25,13 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   late TextEditingController _searchController;
+  late PreviewPlayerController _previewPlayerController;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.query);
+    _previewPlayerController = ref.read(previewPlayerProvider.notifier);
     if (widget.query.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(trackProvider.notifier).search(widget.query);
@@ -39,7 +41,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   void dispose() {
-    ref.read(previewPlayerProvider.notifier).stop();
+    _previewPlayerController.stop();
     _searchController.dispose();
     super.dispose();
   }
