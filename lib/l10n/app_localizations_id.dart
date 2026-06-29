@@ -4439,4 +4439,253 @@ class AppLocalizationsId extends AppLocalizations {
   String shareSheetLinkCopied(Object service) {
     return '$service link copied';
   }
+
+  @override
+  String get libraryPlayback => 'Pemutaran';
+
+  @override
+  String get libraryExternalPlayer => 'Pemutar eksternal';
+
+  @override
+  String get libraryExternalPlayerSubtitle =>
+      'Disarankan untuk mendengarkan, kualitas terbaik, pemutaran tanpa jeda, EQ, dan dukungan format lebih luas';
+
+  @override
+  String get libraryBuiltInPreviewPlayer => 'Pemutar pratinjau bawaan';
+
+  @override
+  String get libraryBuiltInPreviewPlayerSubtitle =>
+      'Hanya untuk pratinjau lokal cepat di dalam SpotiFLAC Mobile, tidak disarankan untuk mendengarkan secara rutin';
+
+  @override
+  String get libraryBuiltInPlayerInfo =>
+      'Pemutar bawaan adalah alat pratinjau untuk memeriksa trek lokal dengan cepat. Gunakan pemutar musik eksternal untuk mendengarkan sebenarnya.';
+
+  @override
+  String get nowPlayingTitle => 'Sedang Diputar';
+
+  @override
+  String get nowPlayingNothingPlaying => 'Tidak ada yang diputar';
+
+  @override
+  String get nowPlayingMinimize => 'Minimalkan';
+
+  @override
+  String get nowPlayingUpNext => 'Berikutnya';
+
+  @override
+  String get nowPlayingDetails => 'Detail';
+
+  @override
+  String get nowPlayingOpenInExternalPlayer => 'Buka di pemutar eksternal';
+
+  @override
+  String get nowPlayingTabPlayer => 'Pemutar';
+
+  @override
+  String get nowPlayingTabLyrics => 'Lirik';
+
+  @override
+  String get nowPlayingNoLyrics => 'Tidak ada lirik di file ini';
+
+  @override
+  String get nowPlayingLibraryEmpty => 'Perpustakaan Anda kosong';
+
+  @override
+  String nowPlayingShuffleLibraryFailed(String error) {
+    return 'Tidak dapat mengacak perpustakaan: $error';
+  }
+
+  @override
+  String get nowPlayingShuffleOn => 'Acak aktif';
+
+  @override
+  String get nowPlayingPlayInOrder => 'Putar berurutan';
+
+  @override
+  String get nowPlayingShuffleLibrary => 'Acak perpustakaan';
+
+  @override
+  String get nowPlayingQueueEmpty => 'Antrean kosong';
+
+  @override
+  String get nowPlayingNoMetadata => 'Metadata tidak tersedia';
+
+  @override
+  String get announcementUnableToOpenLink =>
+      'Tidak dapat membuka tautan. Silakan coba lagi.';
+
+  @override
+  String trackConvertLosslessOutputWithCap(String quality) {
+    return 'Output lossless dengan batas $quality';
+  }
+
+  @override
+  String trackConvertConfirmMessageLosslessCapped(
+    String sourceFormat,
+    String targetFormat,
+    String quality,
+  ) {
+    return 'Konversi dari $sourceFormat ke $targetFormat ($quality)?\n\nOutput tetap codec lossless, tetapi kedalaman bit/sample rate akan dibatasi. File asli akan dihapus setelah konversi.';
+  }
+
+  @override
+  String selectionBatchConvertConfirmMessageLosslessCapped(
+    int count,
+    String format,
+    String quality,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'trek',
+      one: 'trek',
+    );
+    return 'Konversi $count $_temp0 ke $format ($quality)?\n\nOutput tetap codec lossless, tetapi kedalaman bit/sample rate akan dibatasi. File asli akan dihapus setelah konversi.';
+  }
+
+  @override
+  String trackConvertActionLabelLossless(
+    String sourceFormat,
+    String targetFormat,
+    String quality,
+  ) {
+    return '$sourceFormat → $targetFormat ($quality)';
+  }
+
+  @override
+  String trackConvertActionLabelLossy(
+    String sourceFormat,
+    String targetFormat,
+    String bitrate,
+  ) {
+    return '$sourceFormat → $targetFormat @ $bitrate';
+  }
+
+  @override
+  String get aboutPaxsenixSubtitle =>
+      'Proxy lirik untuk Musixmatch, Netease, Apple Music, QQ Music, Spotify, Deezer, YouTube, Kugou, dan Genius';
+
+  @override
+  String get snackbarPlayingNext => 'Memutar berikutnya';
+
+  @override
+  String get snackbarAddedToQueueGeneric => 'Ditambahkan ke antrean';
+
+  @override
+  String selectionDeletePlaylistsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'playlist',
+      one: 'playlist',
+    );
+    return 'Hapus $count $_temp0';
+  }
+
+  @override
+  String get actionShuffle => 'Acak';
+
+  @override
+  String get downloadPrimaryArtistOnlyOn => 'Hanya utama: Aktif';
+
+  @override
+  String get downloadPrimaryArtistOnlyOff => 'Hanya utama: Nonaktif';
+
+  @override
+  String get downloadAlbumArtistMetadataPrimaryOnly =>
+      'Metadata Album Artist: Hanya utama';
+
+  @override
+  String get downloadAlbumArtistMetadataFull =>
+      'Metadata Album Artist: Lengkap';
+
+  @override
+  String get trackConvertOriginal => 'Asli';
+
+  @override
+  String get trackConvertOriginalQuality => 'Kualitas asli';
+
+  @override
+  String get trackConvertLosslessSuffix => 'Lossless';
+
+  @override
+  String get updateSeeReleaseNotes => 'Lihat catatan rilis untuk detail.';
+
+  @override
+  String get unknownTitle => 'Judul tidak diketahui';
+
+  @override
+  String get trackPlayNext => 'Putar berikutnya';
+
+  @override
+  String get trackAddToQueue => 'Tambah ke antrean';
+
+  @override
+  String snackbarExtensionInstalledEnable(String extensionName) {
+    return '$extensionName terpasang. Aktifkan di Pengaturan > Ekstensi';
+  }
+
+  @override
+  String snackbarExtensionUpdatedVersion(String extensionName, String version) {
+    return '$extensionName diperbarui ke v$version';
+  }
+
+  @override
+  String snackbarFailedToInstallNamed(String extensionName) {
+    return 'Gagal memasang $extensionName';
+  }
+
+  @override
+  String snackbarFailedToUpdateNamed(String extensionName) {
+    return 'Gagal memperbarui $extensionName';
+  }
+
+  @override
+  String get releaseTypeEp => 'EP';
+
+  @override
+  String get releaseTypeSingle => 'Single';
+
+  @override
+  String get trackCoverOnline => 'Sampul daring';
+
+  @override
+  String get regionCountryUS => 'Amerika Serikat';
+
+  @override
+  String get regionCountryGB => 'Britania Raya';
+
+  @override
+  String get regionCountryFR => 'Prancis';
+
+  @override
+  String get regionCountryDE => 'Jerman';
+
+  @override
+  String get regionCountryJP => 'Jepang';
+
+  @override
+  String get regionCountryKR => 'Korea Selatan';
+
+  @override
+  String get regionCountryIN => 'India';
+
+  @override
+  String get regionCountryID => 'Indonesia';
+
+  @override
+  String get regionCountryBR => 'Brasil';
+
+  @override
+  String get regionCountryMX => 'Meksiko';
+
+  @override
+  String get regionCountryAU => 'Australia';
+
+  @override
+  String get regionCountryCA => 'Kanada';
+
+  @override
+  String get regionCountryXK => 'Kosovo';
 }

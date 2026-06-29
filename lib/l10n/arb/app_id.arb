@@ -5630,5 +5630,343 @@
   "artistReleases": "Releases",
   "@artistReleases": {
     "description": "Section header for all artist releases"
+  },
+  "libraryPlayback": "Pemutaran",
+  "@libraryPlayback": {
+    "description": "Section header for playback settings in library settings"
+  },
+  "libraryExternalPlayer": "Pemutar eksternal",
+  "@libraryExternalPlayer": {
+    "description": "Setting option to use an external music player"
+  },
+  "libraryExternalPlayerSubtitle": "Disarankan untuk mendengarkan, kualitas terbaik, pemutaran tanpa jeda, EQ, dan dukungan format lebih luas",
+  "@libraryExternalPlayerSubtitle": {
+    "description": "Subtitle for external player option"
+  },
+  "libraryBuiltInPreviewPlayer": "Pemutar pratinjau bawaan",
+  "@libraryBuiltInPreviewPlayer": {
+    "description": "Setting option to use the built-in preview player"
+  },
+  "libraryBuiltInPreviewPlayerSubtitle": "Hanya untuk pratinjau lokal cepat di dalam SpotiFLAC Mobile, tidak disarankan untuk mendengarkan secara rutin",
+  "@libraryBuiltInPreviewPlayerSubtitle": {
+    "description": "Subtitle for built-in preview player option"
+  },
+  "libraryBuiltInPlayerInfo": "Pemutar bawaan adalah alat pratinjau untuk memeriksa trek lokal dengan cepat. Gunakan pemutar musik eksternal untuk mendengarkan sebenarnya.",
+  "@libraryBuiltInPlayerInfo": {
+    "description": "Info note explaining the built-in player is for previews only"
+  },
+  "nowPlayingTitle": "Sedang Diputar",
+  "@nowPlayingTitle": {
+    "description": "Title for the now playing screen"
+  },
+  "nowPlayingNothingPlaying": "Tidak ada yang diputar",
+  "@nowPlayingNothingPlaying": {
+    "description": "Empty state when no track is currently playing"
+  },
+  "nowPlayingMinimize": "Minimalkan",
+  "@nowPlayingMinimize": {
+    "description": "Tooltip for minimizing the now playing screen"
+  },
+  "nowPlayingUpNext": "Berikutnya",
+  "@nowPlayingUpNext": {
+    "description": "Title for the playback queue sheet"
+  },
+  "nowPlayingDetails": "Detail",
+  "@nowPlayingDetails": {
+    "description": "Menu item and section title for track metadata details"
+  },
+  "nowPlayingOpenInExternalPlayer": "Buka di pemutar eksternal",
+  "@nowPlayingOpenInExternalPlayer": {
+    "description": "Menu item to open the current track in an external player"
+  },
+  "nowPlayingTabPlayer": "Pemutar",
+  "@nowPlayingTabPlayer": {
+    "description": "Tab label for the player view"
+  },
+  "nowPlayingTabLyrics": "Lirik",
+  "@nowPlayingTabLyrics": {
+    "description": "Tab label for the lyrics view"
+  },
+  "nowPlayingNoLyrics": "Tidak ada lirik di file ini",
+  "@nowPlayingNoLyrics": {
+    "description": "Empty state when the playing file has no embedded lyrics"
+  },
+  "nowPlayingLibraryEmpty": "Perpustakaan Anda kosong",
+  "@nowPlayingLibraryEmpty": {
+    "description": "Snackbar when shuffle library is requested but library has no tracks"
+  },
+  "nowPlayingShuffleLibraryFailed": "Tidak dapat mengacak perpustakaan: {error}",
+  "@nowPlayingShuffleLibraryFailed": {
+    "description": "Snackbar when shuffling the library fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "nowPlayingShuffleOn": "Acak aktif",
+  "@nowPlayingShuffleOn": {
+    "description": "Tooltip when shuffle mode is enabled"
+  },
+  "nowPlayingPlayInOrder": "Putar berurutan",
+  "@nowPlayingPlayInOrder": {
+    "description": "Tooltip when shuffle mode is disabled"
+  },
+  "nowPlayingShuffleLibrary": "Acak perpustakaan",
+  "@nowPlayingShuffleLibrary": {
+    "description": "Button label to shuffle and play the entire local library"
+  },
+  "nowPlayingQueueEmpty": "Antrean kosong",
+  "@nowPlayingQueueEmpty": {
+    "description": "Empty state when the playback queue has no items"
+  },
+  "nowPlayingNoMetadata": "Metadata tidak tersedia",
+  "@nowPlayingNoMetadata": {
+    "description": "Empty state when track metadata cannot be loaded"
+  },
+  "announcementUnableToOpenLink": "Tidak dapat membuka tautan. Silakan coba lagi.",
+  "@announcementUnableToOpenLink": {
+    "description": "Snackbar shown when an announcement CTA link cannot be opened"
+  },
+  "trackConvertLosslessOutputWithCap": "Output lossless dengan batas {quality}",
+  "@trackConvertLosslessOutputWithCap": {
+    "description": "Hint shown when lossless conversion will cap bit depth or sample rate",
+    "placeholders": {
+      "quality": {
+        "type": "String"
+      }
+    }
+  },
+  "trackConvertConfirmMessageLosslessCapped": "Konversi dari {sourceFormat} ke {targetFormat} ({quality})?\n\nOutput tetap codec lossless, tetapi kedalaman bit/sample rate akan dibatasi. File asli akan dihapus setelah konversi.",
+  "@trackConvertConfirmMessageLosslessCapped": {
+    "description": "Confirmation dialog message for capped lossless conversion of a single file",
+    "placeholders": {
+      "sourceFormat": {
+        "type": "String"
+      },
+      "targetFormat": {
+        "type": "String"
+      },
+      "quality": {
+        "type": "String"
+      }
+    }
+  },
+  "selectionBatchConvertConfirmMessageLosslessCapped": "Konversi {count} {count, plural, =1{trek} other{trek}} ke {format} ({quality})?\n\nOutput tetap codec lossless, tetapi kedalaman bit/sample rate akan dibatasi. File asli akan dihapus setelah konversi.",
+  "@selectionBatchConvertConfirmMessageLosslessCapped": {
+    "description": "Confirmation dialog message for capped lossless batch conversion",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "format": {
+        "type": "String"
+      },
+      "quality": {
+        "type": "String"
+      }
+    }
+  },
+  "trackConvertActionLabelLossless": "{sourceFormat} → {targetFormat} ({quality})",
+  "@trackConvertActionLabelLossless": {
+    "description": "Convert button label for lossless conversion with quality cap",
+    "placeholders": {
+      "sourceFormat": {
+        "type": "String"
+      },
+      "targetFormat": {
+        "type": "String"
+      },
+      "quality": {
+        "type": "String"
+      }
+    }
+  },
+  "trackConvertActionLabelLossy": "{sourceFormat} → {targetFormat} @ {bitrate}",
+  "@trackConvertActionLabelLossy": {
+    "description": "Convert button label for lossy conversion",
+    "placeholders": {
+      "sourceFormat": {
+        "type": "String"
+      },
+      "targetFormat": {
+        "type": "String"
+      },
+      "bitrate": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutPaxsenixSubtitle": "Proxy lirik untuk Musixmatch, Netease, Apple Music, QQ Music, Spotify, Deezer, YouTube, Kugou, dan Genius",
+  "@aboutPaxsenixSubtitle": {
+    "description": "Subtitle for Paxsenix special thanks entry on the about page"
+  },
+  "snackbarPlayingNext": "Memutar berikutnya",
+  "@snackbarPlayingNext": {
+    "description": "Snackbar when a track is inserted as the next queue item"
+  },
+  "snackbarAddedToQueueGeneric": "Ditambahkan ke antrean",
+  "@snackbarAddedToQueueGeneric": {
+    "description": "Snackbar when a track is added to the playback queue without naming it"
+  },
+  "selectionDeletePlaylistsCount": "Hapus {count} {count, plural, =1{playlist} other{playlist}}",
+  "@selectionDeletePlaylistsCount": {
+    "description": "Button label for deleting multiple selected playlists",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actionShuffle": "Acak",
+  "@actionShuffle": {
+    "description": "Tooltip for shuffle playback action"
+  },
+  "downloadPrimaryArtistOnlyOn": "Hanya utama: Aktif",
+  "@downloadPrimaryArtistOnlyOn": {
+    "description": "Status label when primary-artist-only folder naming is enabled"
+  },
+  "downloadPrimaryArtistOnlyOff": "Hanya utama: Nonaktif",
+  "@downloadPrimaryArtistOnlyOff": {
+    "description": "Status label when primary-artist-only folder naming is disabled"
+  },
+  "downloadAlbumArtistMetadataPrimaryOnly": "Metadata Album Artist: Hanya utama",
+  "@downloadAlbumArtistMetadataPrimaryOnly": {
+    "description": "Status label when album-artist folder filtering uses primary artist only"
+  },
+  "downloadAlbumArtistMetadataFull": "Metadata Album Artist: Lengkap",
+  "@downloadAlbumArtistMetadataFull": {
+    "description": "Status label when album-artist folder filtering uses full metadata"
+  },
+  "trackConvertOriginal": "Asli",
+  "@trackConvertOriginal": {
+    "description": "Label for keeping original bit depth or sample rate during conversion"
+  },
+  "trackConvertOriginalQuality": "Kualitas asli",
+  "@trackConvertOriginalQuality": {
+    "description": "Label when no bit depth or sample rate cap is applied during lossless conversion"
+  },
+  "trackConvertLosslessSuffix": "Lossless",
+  "@trackConvertLosslessSuffix": {
+    "description": "Suffix used in converted lossless quality labels"
+  },
+  "updateSeeReleaseNotes": "Lihat catatan rilis untuk detail.",
+  "@updateSeeReleaseNotes": {
+    "description": "Fallback changelog text when release notes cannot be parsed"
+  },
+  "unknownTitle": "Judul tidak diketahui",
+  "@unknownTitle": {
+    "description": "Fallback track title when metadata is missing"
+  },
+  "trackPlayNext": "Putar berikutnya",
+  "@trackPlayNext": {
+    "description": "Menu action to play a track as the next queue item"
+  },
+  "trackAddToQueue": "Tambah ke antrean",
+  "@trackAddToQueue": {
+    "description": "Menu action to add a track to the playback queue"
+  },
+  "snackbarExtensionInstalledEnable": "{extensionName} terpasang. Aktifkan di Pengaturan > Ekstensi",
+  "@snackbarExtensionInstalledEnable": {
+    "description": "Snackbar after installing an extension from the repo tab",
+    "placeholders": {
+      "extensionName": {
+        "type": "String"
+      }
+    }
+  },
+  "snackbarExtensionUpdatedVersion": "{extensionName} diperbarui ke v{version}",
+  "@snackbarExtensionUpdatedVersion": {
+    "description": "Snackbar after updating an extension from the repo tab",
+    "placeholders": {
+      "extensionName": {
+        "type": "String"
+      },
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "snackbarFailedToInstallNamed": "Gagal memasang {extensionName}",
+  "@snackbarFailedToInstallNamed": {
+    "description": "Snackbar when extension install fails in the repo tab",
+    "placeholders": {
+      "extensionName": {
+        "type": "String"
+      }
+    }
+  },
+  "snackbarFailedToUpdateNamed": "Gagal memperbarui {extensionName}",
+  "@snackbarFailedToUpdateNamed": {
+    "description": "Snackbar when extension update fails in the repo tab",
+    "placeholders": {
+      "extensionName": {
+        "type": "String"
+      }
+    }
+  },
+  "releaseTypeEp": "EP",
+  "@releaseTypeEp": {
+    "description": "Badge label for EP releases"
+  },
+  "releaseTypeSingle": "Single",
+  "@releaseTypeSingle": {
+    "description": "Badge label for single releases"
+  },
+  "trackCoverOnline": "Sampul daring",
+  "@trackCoverOnline": {
+    "description": "Label shown when metadata autofill downloaded cover art from the internet"
+  },
+  "regionCountryUS": "Amerika Serikat",
+  "@regionCountryUS": {
+    "description": "Country name for SongLink region picker"
+  },
+  "regionCountryGB": "Britania Raya",
+  "@regionCountryGB": {
+    "description": "Country name for SongLink region picker"
+  },
+  "regionCountryFR": "Prancis",
+  "@regionCountryFR": {
+    "description": "Country name for SongLink region picker"
+  },
+  "regionCountryDE": "Jerman",
+  "@regionCountryDE": {
+    "description": "Country name for SongLink region picker"
+  },
+  "regionCountryJP": "Jepang",
+  "@regionCountryJP": {
+    "description": "Country name for SongLink region picker"
+  },
+  "regionCountryKR": "Korea Selatan",
+  "@regionCountryKR": {
+    "description": "Country name for SongLink region picker"
+  },
+  "regionCountryIN": "India",
+  "@regionCountryIN": {
+    "description": "Country name for SongLink region picker"
+  },
+  "regionCountryID": "Indonesia",
+  "@regionCountryID": {
+    "description": "Country name for SongLink region picker"
+  },
+  "regionCountryBR": "Brasil",
+  "@regionCountryBR": {
+    "description": "Country name for SongLink region picker"
+  },
+  "regionCountryMX": "Meksiko",
+  "@regionCountryMX": {
+    "description": "Country name for SongLink region picker"
+  },
+  "regionCountryAU": "Australia",
+  "@regionCountryAU": {
+    "description": "Country name for SongLink region picker"
+  },
+  "regionCountryCA": "Kanada",
+  "@regionCountryCA": {
+    "description": "Country name for SongLink region picker"
+  },
+  "regionCountryXK": "Kosovo",
+  "@regionCountryXK": {
+    "description": "Country name for SongLink region picker"
   }
 }

@@ -7350,6 +7350,406 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{service} link copied'**
   String shareSheetLinkCopied(Object service);
+
+  /// Section header for playback settings in library settings
+  ///
+  /// In en, this message translates to:
+  /// **'Playback'**
+  String get libraryPlayback;
+
+  /// Setting option to use an external music player
+  ///
+  /// In en, this message translates to:
+  /// **'External player'**
+  String get libraryExternalPlayer;
+
+  /// Subtitle for external player option
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended for listening, best quality, gapless playback, EQ, and wider format support'**
+  String get libraryExternalPlayerSubtitle;
+
+  /// Setting option to use the built-in preview player
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in preview player'**
+  String get libraryBuiltInPreviewPlayer;
+
+  /// Subtitle for built-in preview player option
+  ///
+  /// In en, this message translates to:
+  /// **'Only for quick local previews inside SpotiFLAC Mobile, not recommended for regular listening'**
+  String get libraryBuiltInPreviewPlayerSubtitle;
+
+  /// Info note explaining the built-in player is for previews only
+  ///
+  /// In en, this message translates to:
+  /// **'The built-in player is a preview tool for checking local tracks quickly. Use an external music player for actual listening.'**
+  String get libraryBuiltInPlayerInfo;
+
+  /// Title for the now playing screen
+  ///
+  /// In en, this message translates to:
+  /// **'Now Playing'**
+  String get nowPlayingTitle;
+
+  /// Empty state when no track is currently playing
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is playing'**
+  String get nowPlayingNothingPlaying;
+
+  /// Tooltip for minimizing the now playing screen
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize'**
+  String get nowPlayingMinimize;
+
+  /// Title for the playback queue sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Up next'**
+  String get nowPlayingUpNext;
+
+  /// Menu item and section title for track metadata details
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get nowPlayingDetails;
+
+  /// Menu item to open the current track in an external player
+  ///
+  /// In en, this message translates to:
+  /// **'Open in external player'**
+  String get nowPlayingOpenInExternalPlayer;
+
+  /// Tab label for the player view
+  ///
+  /// In en, this message translates to:
+  /// **'Player'**
+  String get nowPlayingTabPlayer;
+
+  /// Tab label for the lyrics view
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics'**
+  String get nowPlayingTabLyrics;
+
+  /// Empty state when the playing file has no embedded lyrics
+  ///
+  /// In en, this message translates to:
+  /// **'No lyrics in this file'**
+  String get nowPlayingNoLyrics;
+
+  /// Snackbar when shuffle library is requested but library has no tracks
+  ///
+  /// In en, this message translates to:
+  /// **'Your library is empty'**
+  String get nowPlayingLibraryEmpty;
+
+  /// Snackbar when shuffling the library fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not shuffle library: {error}'**
+  String nowPlayingShuffleLibraryFailed(String error);
+
+  /// Tooltip when shuffle mode is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle on'**
+  String get nowPlayingShuffleOn;
+
+  /// Tooltip when shuffle mode is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Play in order'**
+  String get nowPlayingPlayInOrder;
+
+  /// Button label to shuffle and play the entire local library
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle library'**
+  String get nowPlayingShuffleLibrary;
+
+  /// Empty state when the playback queue has no items
+  ///
+  /// In en, this message translates to:
+  /// **'Queue is empty'**
+  String get nowPlayingQueueEmpty;
+
+  /// Empty state when track metadata cannot be loaded
+  ///
+  /// In en, this message translates to:
+  /// **'No metadata available'**
+  String get nowPlayingNoMetadata;
+
+  /// Snackbar shown when an announcement CTA link cannot be opened
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open link. Please try again.'**
+  String get announcementUnableToOpenLink;
+
+  /// Hint shown when lossless conversion will cap bit depth or sample rate
+  ///
+  /// In en, this message translates to:
+  /// **'Lossless output with {quality} cap'**
+  String trackConvertLosslessOutputWithCap(String quality);
+
+  /// Confirmation dialog message for capped lossless conversion of a single file
+  ///
+  /// In en, this message translates to:
+  /// **'Convert from {sourceFormat} to {targetFormat} ({quality})?\n\nThe output stays in a lossless codec, but bit depth/sample rate will be capped. Original file will be deleted after conversion.'**
+  String trackConvertConfirmMessageLosslessCapped(
+    String sourceFormat,
+    String targetFormat,
+    String quality,
+  );
+
+  /// Confirmation dialog message for capped lossless batch conversion
+  ///
+  /// In en, this message translates to:
+  /// **'Convert {count} {count, plural, =1{track} other{tracks}} to {format} ({quality})?\n\nThe output stays in a lossless codec, but bit depth/sample rate will be capped. Original files will be deleted after conversion.'**
+  String selectionBatchConvertConfirmMessageLosslessCapped(
+    int count,
+    String format,
+    String quality,
+  );
+
+  /// Convert button label for lossless conversion with quality cap
+  ///
+  /// In en, this message translates to:
+  /// **'{sourceFormat} → {targetFormat} ({quality})'**
+  String trackConvertActionLabelLossless(
+    String sourceFormat,
+    String targetFormat,
+    String quality,
+  );
+
+  /// Convert button label for lossy conversion
+  ///
+  /// In en, this message translates to:
+  /// **'{sourceFormat} → {targetFormat} @ {bitrate}'**
+  String trackConvertActionLabelLossy(
+    String sourceFormat,
+    String targetFormat,
+    String bitrate,
+  );
+
+  /// Subtitle for Paxsenix special thanks entry on the about page
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics proxy for Musixmatch, Netease, Apple Music, QQ Music, Spotify, Deezer, YouTube, Kugou, and Genius'**
+  String get aboutPaxsenixSubtitle;
+
+  /// Snackbar when a track is inserted as the next queue item
+  ///
+  /// In en, this message translates to:
+  /// **'Playing next'**
+  String get snackbarPlayingNext;
+
+  /// Snackbar when a track is added to the playback queue without naming it
+  ///
+  /// In en, this message translates to:
+  /// **'Added to queue'**
+  String get snackbarAddedToQueueGeneric;
+
+  /// Button label for deleting multiple selected playlists
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} {count, plural, =1{playlist} other{playlists}}'**
+  String selectionDeletePlaylistsCount(int count);
+
+  /// Tooltip for shuffle playback action
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle'**
+  String get actionShuffle;
+
+  /// Status label when primary-artist-only folder naming is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Primary only: On'**
+  String get downloadPrimaryArtistOnlyOn;
+
+  /// Status label when primary-artist-only folder naming is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Primary only: Off'**
+  String get downloadPrimaryArtistOnlyOff;
+
+  /// Status label when album-artist folder filtering uses primary artist only
+  ///
+  /// In en, this message translates to:
+  /// **'Album Artist metadata: Primary only'**
+  String get downloadAlbumArtistMetadataPrimaryOnly;
+
+  /// Status label when album-artist folder filtering uses full metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Album Artist metadata: Full'**
+  String get downloadAlbumArtistMetadataFull;
+
+  /// Label for keeping original bit depth or sample rate during conversion
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get trackConvertOriginal;
+
+  /// Label when no bit depth or sample rate cap is applied during lossless conversion
+  ///
+  /// In en, this message translates to:
+  /// **'Original quality'**
+  String get trackConvertOriginalQuality;
+
+  /// Suffix used in converted lossless quality labels
+  ///
+  /// In en, this message translates to:
+  /// **'Lossless'**
+  String get trackConvertLosslessSuffix;
+
+  /// Fallback changelog text when release notes cannot be parsed
+  ///
+  /// In en, this message translates to:
+  /// **'See release notes for details.'**
+  String get updateSeeReleaseNotes;
+
+  /// Fallback track title when metadata is missing
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown title'**
+  String get unknownTitle;
+
+  /// Menu action to play a track as the next queue item
+  ///
+  /// In en, this message translates to:
+  /// **'Play next'**
+  String get trackPlayNext;
+
+  /// Menu action to add a track to the playback queue
+  ///
+  /// In en, this message translates to:
+  /// **'Add to queue'**
+  String get trackAddToQueue;
+
+  /// Snackbar after installing an extension from the repo tab
+  ///
+  /// In en, this message translates to:
+  /// **'{extensionName} installed. Enable it in Settings > Extensions'**
+  String snackbarExtensionInstalledEnable(String extensionName);
+
+  /// Snackbar after updating an extension from the repo tab
+  ///
+  /// In en, this message translates to:
+  /// **'{extensionName} updated to v{version}'**
+  String snackbarExtensionUpdatedVersion(String extensionName, String version);
+
+  /// Snackbar when extension install fails in the repo tab
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to install {extensionName}'**
+  String snackbarFailedToInstallNamed(String extensionName);
+
+  /// Snackbar when extension update fails in the repo tab
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update {extensionName}'**
+  String snackbarFailedToUpdateNamed(String extensionName);
+
+  /// Badge label for EP releases
+  ///
+  /// In en, this message translates to:
+  /// **'EP'**
+  String get releaseTypeEp;
+
+  /// Badge label for single releases
+  ///
+  /// In en, this message translates to:
+  /// **'Single'**
+  String get releaseTypeSingle;
+
+  /// Label shown when metadata autofill downloaded cover art from the internet
+  ///
+  /// In en, this message translates to:
+  /// **'Online cover'**
+  String get trackCoverOnline;
+
+  /// Country name for SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'United States'**
+  String get regionCountryUS;
+
+  /// Country name for SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'United Kingdom'**
+  String get regionCountryGB;
+
+  /// Country name for SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'France'**
+  String get regionCountryFR;
+
+  /// Country name for SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'Germany'**
+  String get regionCountryDE;
+
+  /// Country name for SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'Japan'**
+  String get regionCountryJP;
+
+  /// Country name for SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'South Korea'**
+  String get regionCountryKR;
+
+  /// Country name for SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'India'**
+  String get regionCountryIN;
+
+  /// Country name for SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'Indonesia'**
+  String get regionCountryID;
+
+  /// Country name for SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'Brazil'**
+  String get regionCountryBR;
+
+  /// Country name for SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'Mexico'**
+  String get regionCountryMX;
+
+  /// Country name for SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'Australia'**
+  String get regionCountryAU;
+
+  /// Country name for SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'Canada'**
+  String get regionCountryCA;
+
+  /// Country name for SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'Kosovo'**
+  String get regionCountryXK;
 }
 
 class _AppLocalizationsDelegate

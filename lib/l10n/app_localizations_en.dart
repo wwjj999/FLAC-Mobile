@@ -4456,4 +4456,252 @@ class AppLocalizationsEn extends AppLocalizations {
   String shareSheetLinkCopied(Object service) {
     return '$service link copied';
   }
+
+  @override
+  String get libraryPlayback => 'Playback';
+
+  @override
+  String get libraryExternalPlayer => 'External player';
+
+  @override
+  String get libraryExternalPlayerSubtitle =>
+      'Recommended for listening, best quality, gapless playback, EQ, and wider format support';
+
+  @override
+  String get libraryBuiltInPreviewPlayer => 'Built-in preview player';
+
+  @override
+  String get libraryBuiltInPreviewPlayerSubtitle =>
+      'Only for quick local previews inside SpotiFLAC Mobile, not recommended for regular listening';
+
+  @override
+  String get libraryBuiltInPlayerInfo =>
+      'The built-in player is a preview tool for checking local tracks quickly. Use an external music player for actual listening.';
+
+  @override
+  String get nowPlayingTitle => 'Now Playing';
+
+  @override
+  String get nowPlayingNothingPlaying => 'Nothing is playing';
+
+  @override
+  String get nowPlayingMinimize => 'Minimize';
+
+  @override
+  String get nowPlayingUpNext => 'Up next';
+
+  @override
+  String get nowPlayingDetails => 'Details';
+
+  @override
+  String get nowPlayingOpenInExternalPlayer => 'Open in external player';
+
+  @override
+  String get nowPlayingTabPlayer => 'Player';
+
+  @override
+  String get nowPlayingTabLyrics => 'Lyrics';
+
+  @override
+  String get nowPlayingNoLyrics => 'No lyrics in this file';
+
+  @override
+  String get nowPlayingLibraryEmpty => 'Your library is empty';
+
+  @override
+  String nowPlayingShuffleLibraryFailed(String error) {
+    return 'Could not shuffle library: $error';
+  }
+
+  @override
+  String get nowPlayingShuffleOn => 'Shuffle on';
+
+  @override
+  String get nowPlayingPlayInOrder => 'Play in order';
+
+  @override
+  String get nowPlayingShuffleLibrary => 'Shuffle library';
+
+  @override
+  String get nowPlayingQueueEmpty => 'Queue is empty';
+
+  @override
+  String get nowPlayingNoMetadata => 'No metadata available';
+
+  @override
+  String get announcementUnableToOpenLink =>
+      'Unable to open link. Please try again.';
+
+  @override
+  String trackConvertLosslessOutputWithCap(String quality) {
+    return 'Lossless output with $quality cap';
+  }
+
+  @override
+  String trackConvertConfirmMessageLosslessCapped(
+    String sourceFormat,
+    String targetFormat,
+    String quality,
+  ) {
+    return 'Convert from $sourceFormat to $targetFormat ($quality)?\n\nThe output stays in a lossless codec, but bit depth/sample rate will be capped. Original file will be deleted after conversion.';
+  }
+
+  @override
+  String selectionBatchConvertConfirmMessageLosslessCapped(
+    int count,
+    String format,
+    String quality,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'tracks',
+      one: 'track',
+    );
+    return 'Convert $count $_temp0 to $format ($quality)?\n\nThe output stays in a lossless codec, but bit depth/sample rate will be capped. Original files will be deleted after conversion.';
+  }
+
+  @override
+  String trackConvertActionLabelLossless(
+    String sourceFormat,
+    String targetFormat,
+    String quality,
+  ) {
+    return '$sourceFormat → $targetFormat ($quality)';
+  }
+
+  @override
+  String trackConvertActionLabelLossy(
+    String sourceFormat,
+    String targetFormat,
+    String bitrate,
+  ) {
+    return '$sourceFormat → $targetFormat @ $bitrate';
+  }
+
+  @override
+  String get aboutPaxsenixSubtitle =>
+      'Lyrics proxy for Musixmatch, Netease, Apple Music, QQ Music, Spotify, Deezer, YouTube, Kugou, and Genius';
+
+  @override
+  String get snackbarPlayingNext => 'Playing next';
+
+  @override
+  String get snackbarAddedToQueueGeneric => 'Added to queue';
+
+  @override
+  String selectionDeletePlaylistsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'playlists',
+      one: 'playlist',
+    );
+    return 'Delete $count $_temp0';
+  }
+
+  @override
+  String get actionShuffle => 'Shuffle';
+
+  @override
+  String get downloadPrimaryArtistOnlyOn => 'Primary only: On';
+
+  @override
+  String get downloadPrimaryArtistOnlyOff => 'Primary only: Off';
+
+  @override
+  String get downloadAlbumArtistMetadataPrimaryOnly =>
+      'Album Artist metadata: Primary only';
+
+  @override
+  String get downloadAlbumArtistMetadataFull => 'Album Artist metadata: Full';
+
+  @override
+  String get trackConvertOriginal => 'Original';
+
+  @override
+  String get trackConvertOriginalQuality => 'Original quality';
+
+  @override
+  String get trackConvertLosslessSuffix => 'Lossless';
+
+  @override
+  String get updateSeeReleaseNotes => 'See release notes for details.';
+
+  @override
+  String get unknownTitle => 'Unknown title';
+
+  @override
+  String get trackPlayNext => 'Play next';
+
+  @override
+  String get trackAddToQueue => 'Add to queue';
+
+  @override
+  String snackbarExtensionInstalledEnable(String extensionName) {
+    return '$extensionName installed. Enable it in Settings > Extensions';
+  }
+
+  @override
+  String snackbarExtensionUpdatedVersion(String extensionName, String version) {
+    return '$extensionName updated to v$version';
+  }
+
+  @override
+  String snackbarFailedToInstallNamed(String extensionName) {
+    return 'Failed to install $extensionName';
+  }
+
+  @override
+  String snackbarFailedToUpdateNamed(String extensionName) {
+    return 'Failed to update $extensionName';
+  }
+
+  @override
+  String get releaseTypeEp => 'EP';
+
+  @override
+  String get releaseTypeSingle => 'Single';
+
+  @override
+  String get trackCoverOnline => 'Online cover';
+
+  @override
+  String get regionCountryUS => 'United States';
+
+  @override
+  String get regionCountryGB => 'United Kingdom';
+
+  @override
+  String get regionCountryFR => 'France';
+
+  @override
+  String get regionCountryDE => 'Germany';
+
+  @override
+  String get regionCountryJP => 'Japan';
+
+  @override
+  String get regionCountryKR => 'South Korea';
+
+  @override
+  String get regionCountryIN => 'India';
+
+  @override
+  String get regionCountryID => 'Indonesia';
+
+  @override
+  String get regionCountryBR => 'Brazil';
+
+  @override
+  String get regionCountryMX => 'Mexico';
+
+  @override
+  String get regionCountryAU => 'Australia';
+
+  @override
+  String get regionCountryCA => 'Canada';
+
+  @override
+  String get regionCountryXK => 'Kosovo';
 }
