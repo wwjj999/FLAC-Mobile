@@ -1943,6 +1943,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   // then computes and writes album gain/peak to every track in the album.
   final Map<String, _AlbumRgAccumulator> _albumRgData = {};
 
+  String _verificationRetryKey(String itemId, String service) =>
+      '$itemId::${service.trim().toLowerCase()}';
+
   double _normalizeProgressForUi(double value) {
     final clamped = value.clamp(0.0, 1.0).toDouble();
     if (clamped <= 0) return 0;
@@ -2105,10 +2108,15 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   Future<bool> _handleVerificationRequiredDownload(
     DownloadItem item,
     String errorMsg,
+    String? verificationService,
   ) async {
-    if (_verificationRetriedItemIds.contains(item.id)) {
+    final targetService = (verificationService ?? '').trim().isNotEmpty
+        ? verificationService!.trim()
+        : item.service;
+    final verificationRetryKey = _verificationRetryKey(item.id, targetService);
+    if (_verificationRetriedItemIds.contains(verificationRetryKey)) {
       _log.e(
-        'Verification was already completed once for ${item.track.name}; not opening another challenge',
+        'Verification was already completed once for ${item.track.name} on $targetService; not opening another challenge',
       );
       updateItemStatus(
         item.id,
@@ -2119,10 +2127,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       _failedInSession++;
       return true;
     }
-    _verificationRetriedItemIds.add(item.id);
+    _verificationRetriedItemIds.add(verificationRetryKey);
 
     _log.i(
-      'Download for ${item.track.name} requires verification; waiting for ${item.service} grant',
+      'Download for ${item.track.name} requires verification; waiting for $targetService grant',
     );
     updateItemStatus(
       item.id,
@@ -2131,7 +2139,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       errorType: DownloadErrorType.verificationRequired,
     );
 
-    final verified = await _openVerificationAndWait(item.service);
+    final verified = await _openVerificationAndWait(targetService);
     final current = _findItemById(item.id);
     if (current == null || _isLocallyCancelled(item.id, item: current)) {
       _log.i('Verification completed after item was removed or cancelled');
@@ -2140,7 +2148,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
     if (verified) {
       _log.i(
-        'Verification complete for ${item.service}; retrying ${item.track.name}',
+        'Verification complete for $targetService; retrying ${item.track.name}',
       );
       updateItemStatus(
         item.id,
@@ -2154,7 +2162,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       return true;
     }
 
-    _log.e('Verification did not complete for ${item.service}');
+    _log.e('Verification did not complete for $targetService');
     updateItemStatus(
       item.id,
       DownloadStatus.failed,
@@ -4223,7 +4231,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
     _log.i('Retrying item: ${item.track.name} (id: $id)');
     _locallyCancelledItemIds.remove(id);
-    _verificationRetriedItemIds.remove(id);
+    _verificationRetriedItemIds.removeWhere(
+      (retryKey) => retryKey == id || retryKey.startsWith('$id::'),
+    );
     _rateLimitRetriedItemIds.remove(id);
 
     // Purge stale ReplayGain entry for this track so a re-scan doesn't
@@ -7220,7 +7230,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     final remainingIds = state.items.map((item) => item.id).toSet();
     _locallyCancelledItemIds.removeWhere((id) => !remainingIds.contains(id));
     _pausePendingItemIds.removeWhere((id) => !remainingIds.contains(id));
-    _verificationRetriedItemIds.removeWhere((id) => !remainingIds.contains(id));
+    _verificationRetriedItemIds.removeWhere((retryKey) {
+      final itemId = retryKey.split('::').first;
+      return !remainingIds.contains(itemId);
+    });
     _rateLimitRetriedItemIds.removeWhere((id) => !remainingIds.contains(id));
   }
 
@@ -9138,7 +9151,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         }
 
         if (errorType == DownloadErrorType.verificationRequired) {
-          await _handleVerificationRequiredDownload(item, errorMsg);
+          await _handleVerificationRequiredDownload(
+            item,
+            errorMsg,
+            result['service'] as String?,
+          );
           return;
         }
         if (errorType == DownloadErrorType.rateLimit &&
@@ -9202,7 +9219,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       }
 
       if (errorType == DownloadErrorType.verificationRequired) {
-        await _handleVerificationRequiredDownload(item, errorMsg);
+        await _handleVerificationRequiredDownload(item, errorMsg, item.service);
         return;
       }
       if (errorType == DownloadErrorType.rateLimit &&
