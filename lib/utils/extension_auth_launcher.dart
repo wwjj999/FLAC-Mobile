@@ -35,7 +35,7 @@ bool _containsHttpStatusCode(String message, String code) {
 
 Future<bool> openPendingExtensionVerification(
   String extensionId, {
-  String browserMode = 'external_first',
+  String browserMode = 'in_app_first',
   void Function(Uri authUri)? onAuthUri,
 }) async {
   final normalizedExtensionId = extensionId.trim();
@@ -79,7 +79,7 @@ Future<bool> openPendingExtensionVerification(
 Timer? scheduleExtensionVerificationHelpDialog(
   String extensionId,
   Uri? authUri, {
-  String browserMode = 'external_first',
+  String browserMode = 'in_app_first',
   Duration delay = const Duration(seconds: 20),
 }) {
   final normalizedExtensionId = extensionId.trim();
@@ -99,7 +99,7 @@ Timer? scheduleExtensionVerificationHelpDialog(
 Future<bool> showExtensionVerificationHelpDialog(
   String extensionId,
   Uri authUri, {
-  String browserMode = 'external_first',
+  String browserMode = 'in_app_first',
   bool immediateFailure = false,
 }) async {
   final context = AppNavigationService.rootNavigatorKey.currentContext;
@@ -119,6 +119,7 @@ Future<bool> showExtensionVerificationHelpDialog(
   await showDialog<void>(
     context: context,
     useRootNavigator: true,
+    barrierDismissible: false,
     builder: (dialogContext) {
       final dialogL10n = dialogContext.l10n;
       return AlertDialog(

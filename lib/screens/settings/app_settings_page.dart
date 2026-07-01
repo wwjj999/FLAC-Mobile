@@ -394,7 +394,9 @@ class _VerificationBrowserModeSelector extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final normalizedMode = currentMode == 'in_app_first'
         ? 'in_app_first'
-        : 'external_first';
+        : currentMode == 'external_first'
+        ? 'external_first'
+        : 'in_app_first';
 
     return Column(
       mainAxisSize: MainAxisSize.min,

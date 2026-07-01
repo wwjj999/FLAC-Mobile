@@ -129,7 +129,7 @@ class AppSettings {
     this.singleFilenameFormat = '{title} - {artist}',
     this.albumFolderStructure = 'artist_album',
     this.showExtensionStore = true,
-    this.extensionVerificationBrowserMode = 'external_first',
+    this.extensionVerificationBrowserMode = 'in_app_first',
     this.locale = 'system',
     this.lyricsMode = 'embed',
     this.tidalHighFormat = 'mp3_320',

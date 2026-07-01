@@ -283,7 +283,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     if (_extensionVerificationBrowserModeValues.contains(normalized)) {
       return normalized;
     }
-    return 'external_first';
+    return 'in_app_first';
   }
 
   String? _sanitizeRetiredBuiltInProviderId(String? providerId) {

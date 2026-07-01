@@ -49,7 +49,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
       json['albumFolderStructure'] as String? ?? 'artist_album',
   showExtensionStore: json['showExtensionStore'] as bool? ?? true,
   extensionVerificationBrowserMode:
-      json['extensionVerificationBrowserMode'] as String? ?? 'external_first',
+      json['extensionVerificationBrowserMode'] as String? ?? 'in_app_first',
   locale: json['locale'] as String? ?? 'system',
   lyricsMode: json['lyricsMode'] as String? ?? 'embed',
   tidalHighFormat: json['tidalHighFormat'] as String? ?? 'mp3_320',
