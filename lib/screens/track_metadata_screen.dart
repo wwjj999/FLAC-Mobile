@@ -3830,6 +3830,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -3913,327 +3914,352 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
               );
             }
 
-            return SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: colorScheme.onSurfaceVariant.withValues(
-                            alpha: 0.4,
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: DraggableScrollableSheet(
+                initialChildSize: 0.85,
+                minChildSize: 0.5,
+                maxChildSize: 0.95,
+                expand: false,
+                builder: (context, scrollController) => SafeArea(
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: colorScheme.onSurfaceVariant.withValues(
+                                alpha: 0.4,
+                              ),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
                           ),
-                          borderRadius: BorderRadius.circular(2),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      context.l10n.trackConvertTitle,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      currentFormat,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+                        const SizedBox(height: 18),
+                        Text(
+                          context.l10n.trackConvertTitle,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          currentFormat,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 20),
 
-                    card(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          sectionLabel(context.l10n.trackConvertTargetFormat),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: formats.map((format) {
-                              return choice(
-                                label: format,
-                                selected: format == selectedFormat,
-                                onTap: () {
-                                  setSheetState(() {
-                                    selectedFormat = format;
-                                    isLosslessTarget =
-                                        isLosslessConversionTarget(format);
-                                    if (!isLosslessTarget) {
-                                      selectedBitrate = defaultBitrateForFormat(
-                                        format,
+                        card(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              sectionLabel(
+                                context.l10n.trackConvertTargetFormat,
+                              ),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: formats.map((format) {
+                                  return choice(
+                                    label: format,
+                                    selected: format == selectedFormat,
+                                    onTap: () {
+                                      setSheetState(() {
+                                        selectedFormat = format;
+                                        isLosslessTarget =
+                                            isLosslessConversionTarget(format);
+                                        if (!isLosslessTarget) {
+                                          selectedBitrate =
+                                              defaultBitrateForFormat(format);
+                                        } else {
+                                          selectedMaxBitDepth = null;
+                                          selectedMaxSampleRate = null;
+                                          selectedDither = 'none';
+                                          selectedResampler = 'swr';
+                                        }
+                                      });
+                                    },
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        if (!isLosslessTarget)
+                          card(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                sectionLabel(context.l10n.trackConvertBitrate),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: bitrates.map((br) {
+                                    return choice(
+                                      label: br,
+                                      selected: br == selectedBitrate,
+                                      onTap: () => setSheetState(
+                                        () => selectedBitrate = br,
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        if (isLosslessTarget && bitDepthOptions.isNotEmpty)
+                          card(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                sectionLabel(
+                                  context.l10n.audioAnalysisBitDepth,
+                                ),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    choice(
+                                      label: losslessBitDepthLabel(
+                                        null,
+                                        originalLabel: labels.original,
+                                      ),
+                                      selected: selectedMaxBitDepth == null,
+                                      onTap: () => setSheetState(() {
+                                        selectedMaxBitDepth = null;
+                                        selectedDither = 'none';
+                                      }),
+                                    ),
+                                    ...bitDepthOptions.map((depth) {
+                                      return choice(
+                                        label: losslessBitDepthLabel(
+                                          depth,
+                                          originalLabel: labels.original,
+                                        ),
+                                        selected: depth == selectedMaxBitDepth,
+                                        onTap: () => setSheetState(
+                                          () => selectedMaxBitDepth = depth,
+                                        ),
                                       );
-                                    } else {
-                                      selectedMaxBitDepth = null;
-                                      selectedMaxSampleRate = null;
-                                      selectedDither = 'none';
-                                      selectedResampler = 'swr';
-                                    }
-                                  });
-                                },
-                              );
-                            }).toList(),
+                                    }),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
-                    ),
 
-                    if (!isLosslessTarget)
-                      card(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            sectionLabel(context.l10n.trackConvertBitrate),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: bitrates.map((br) {
-                                return choice(
-                                  label: br,
-                                  selected: br == selectedBitrate,
-                                  onTap: () =>
-                                      setSheetState(() => selectedBitrate = br),
-                                );
-                              }).toList(),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                    if (isLosslessTarget && bitDepthOptions.isNotEmpty)
-                      card(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            sectionLabel(context.l10n.audioAnalysisBitDepth),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
+                        if (isLosslessTarget && sampleRateOptions.isNotEmpty)
+                          card(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                choice(
-                                  label: losslessBitDepthLabel(
-                                    null,
-                                    originalLabel: labels.original,
-                                  ),
-                                  selected: selectedMaxBitDepth == null,
-                                  onTap: () => setSheetState(() {
-                                    selectedMaxBitDepth = null;
-                                    selectedDither = 'none';
-                                  }),
+                                sectionLabel(
+                                  context.l10n.audioAnalysisSampleRate,
                                 ),
-                                ...bitDepthOptions.map((depth) {
-                                  return choice(
-                                    label: losslessBitDepthLabel(
-                                      depth,
-                                      originalLabel: labels.original,
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    choice(
+                                      label: losslessSampleRateLabel(
+                                        null,
+                                        originalLabel: labels.original,
+                                      ),
+                                      selected: selectedMaxSampleRate == null,
+                                      onTap: () => setSheetState(() {
+                                        selectedMaxSampleRate = null;
+                                        selectedResampler = 'swr';
+                                      }),
                                     ),
-                                    selected: depth == selectedMaxBitDepth,
-                                    onTap: () => setSheetState(
-                                      () => selectedMaxBitDepth = depth,
-                                    ),
-                                  );
-                                }),
+                                    ...sampleRateOptions.map((rate) {
+                                      return choice(
+                                        label: losslessSampleRateLabel(
+                                          rate,
+                                          originalLabel: labels.original,
+                                        ),
+                                        selected: rate == selectedMaxSampleRate,
+                                        onTap: () => setSheetState(
+                                          () => selectedMaxSampleRate = rate,
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
 
-                    if (isLosslessTarget && sampleRateOptions.isNotEmpty)
-                      card(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            sectionLabel(context.l10n.audioAnalysisSampleRate),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
+                        if (isLosslessTarget && selectedMaxBitDepth != null)
+                          card(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                choice(
-                                  label: losslessSampleRateLabel(
-                                    null,
-                                    originalLabel: labels.original,
-                                  ),
-                                  selected: selectedMaxSampleRate == null,
-                                  onTap: () => setSheetState(() {
-                                    selectedMaxSampleRate = null;
-                                    selectedResampler = 'swr';
-                                  }),
+                                sectionLabel(
+                                  context.l10n.trackConvertDithering,
                                 ),
-                                ...sampleRateOptions.map((rate) {
-                                  return choice(
-                                    label: losslessSampleRateLabel(
-                                      rate,
-                                      originalLabel: labels.original,
-                                    ),
-                                    selected: rate == selectedMaxSampleRate,
-                                    onTap: () => setSheetState(
-                                      () => selectedMaxSampleRate = rate,
-                                    ),
-                                  );
-                                }),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: losslessDitherOptions.map((mode) {
+                                    return choice(
+                                      label: context.l10n
+                                          .losslessDitherOptionLabel(mode),
+                                      selected: mode == selectedDither,
+                                      onTap: () => setSheetState(
+                                        () => selectedDither = mode,
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
 
-                    if (isLosslessTarget && selectedMaxBitDepth != null)
-                      card(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            sectionLabel(context.l10n.trackConvertDithering),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: losslessDitherOptions.map((mode) {
-                                return choice(
-                                  label: context.l10n.losslessDitherOptionLabel(
+                        if (isLosslessTarget && selectedMaxSampleRate != null)
+                          card(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                sectionLabel(
+                                  context.l10n.trackConvertResampler,
+                                ),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: losslessResamplerOptions.map((
                                     mode,
-                                  ),
-                                  selected: mode == selectedDither,
-                                  onTap: () => setSheetState(
-                                    () => selectedDither = mode,
-                                  ),
-                                );
-                              }).toList(),
+                                  ) {
+                                    return choice(
+                                      label: context.l10n
+                                          .losslessResamplerOptionLabel(mode),
+                                      selected: mode == selectedResampler,
+                                      onTap: () => setSheetState(
+                                        () => selectedResampler = mode,
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-
-                    if (isLosslessTarget && selectedMaxSampleRate != null)
-                      card(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            sectionLabel(context.l10n.trackConvertResampler),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: losslessResamplerOptions.map((mode) {
-                                return choice(
-                                  label: context.l10n
-                                      .losslessResamplerOptionLabel(mode),
-                                  selected: mode == selectedResampler,
-                                  onTap: () => setSheetState(
-                                    () => selectedResampler = mode,
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                    if (isLosslessTarget && isLosslessSource)
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withValues(
-                            alpha: 0.4,
                           ),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.verified,
-                              size: 18,
-                              color: colorScheme.primary,
+
+                        if (isLosslessTarget && isLosslessSource)
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                selectedMaxBitDepth == null &&
-                                        selectedMaxSampleRate == null
-                                    ? context.l10n.trackConvertLosslessHint
-                                    : context.l10n
-                                          .trackConvertLosslessOutputWithCap(
-                                            losslessQualityLabel(
-                                              LosslessConversionQuality(
-                                                maxBitDepth:
-                                                    selectedMaxBitDepth,
-                                                maxSampleRate:
-                                                    selectedMaxSampleRate,
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer.withValues(
+                                alpha: 0.4,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.verified,
+                                  size: 18,
+                                  color: colorScheme.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    selectedMaxBitDepth == null &&
+                                            selectedMaxSampleRate == null
+                                        ? context.l10n.trackConvertLosslessHint
+                                        : context.l10n
+                                              .trackConvertLosslessOutputWithCap(
+                                                losslessQualityLabel(
+                                                  LosslessConversionQuality(
+                                                    maxBitDepth:
+                                                        selectedMaxBitDepth,
+                                                    maxSampleRate:
+                                                        selectedMaxSampleRate,
+                                                  ),
+                                                  originalLabel:
+                                                      labels.original,
+                                                  originalQualityLabel:
+                                                      labels.originalQuality,
+                                                ),
                                               ),
-                                              originalLabel: labels.original,
-                                              originalQualityLabel:
-                                                  labels.originalQuality,
-                                            ),
-                                          ),
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: colorScheme.primary),
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(color: colorScheme.primary),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _confirmAndConvert(
+                                context: this.context,
+                                sourceFormat: currentFormat,
+                                targetFormat: selectedFormat,
+                                bitrate: selectedBitrate,
+                                losslessQuality: LosslessConversionQuality(
+                                  maxBitDepth: selectedMaxBitDepth,
+                                  maxSampleRate: selectedMaxSampleRate,
+                                ),
+                                losslessProcessing:
+                                    LosslessConversionProcessing(
+                                      dither: selectedDither,
+                                      resampler: selectedResampler,
+                                    ),
+                              );
+                            },
+                            icon: const Icon(Icons.swap_horiz),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _confirmAndConvert(
-                            context: this.context,
-                            sourceFormat: currentFormat,
-                            targetFormat: selectedFormat,
-                            bitrate: selectedBitrate,
-                            losslessQuality: LosslessConversionQuality(
-                              maxBitDepth: selectedMaxBitDepth,
-                              maxSampleRate: selectedMaxSampleRate,
+                            label: Text(
+                              isLosslessTarget
+                                  ? context.l10n
+                                        .trackConvertActionLabelLossless(
+                                          currentFormat,
+                                          selectedFormat,
+                                          losslessQualityLabel(
+                                            LosslessConversionQuality(
+                                              maxBitDepth: selectedMaxBitDepth,
+                                              maxSampleRate:
+                                                  selectedMaxSampleRate,
+                                            ),
+                                            originalLabel: labels.original,
+                                            originalQualityLabel:
+                                                labels.originalQuality,
+                                          ),
+                                        )
+                                  : context.l10n.trackConvertActionLabelLossy(
+                                      currentFormat,
+                                      selectedFormat,
+                                      selectedBitrate,
+                                    ),
                             ),
-                            losslessProcessing: LosslessConversionProcessing(
-                              dither: selectedDither,
-                              resampler: selectedResampler,
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.swap_horiz),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        label: Text(
-                          isLosslessTarget
-                              ? context.l10n.trackConvertActionLabelLossless(
-                                  currentFormat,
-                                  selectedFormat,
-                                  losslessQualityLabel(
-                                    LosslessConversionQuality(
-                                      maxBitDepth: selectedMaxBitDepth,
-                                      maxSampleRate: selectedMaxSampleRate,
-                                    ),
-                                    originalLabel: labels.original,
-                                    originalQualityLabel:
-                                        labels.originalQuality,
-                                  ),
-                                )
-                              : context.l10n.trackConvertActionLabelLossy(
-                                  currentFormat,
-                                  selectedFormat,
-                                  selectedBitrate,
-                                ),
-                        ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             );
