@@ -6087,15 +6087,40 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         if (status == 'skipped') {
           updateItemStatus(itemId, DownloadStatus.skipped);
         } else {
-          final errorType = result is Map
-              ? _downloadErrorTypeFromBackend(
-                  Map<String, dynamic>.from(result)['error_type']?.toString(),
-                )
-              : DownloadErrorType.unknown;
+          final resultMap = result is Map
+              ? Map<String, dynamic>.from(result)
+              : null;
+          final errorMsg = (error == null || error.isEmpty)
+              ? (resultMap?['error']?.toString() ?? 'Download failed')
+              : error;
+          final backendErrorType = resultMap == null
+              ? DownloadErrorType.unknown
+              : _downloadErrorTypeFromBackend(
+                  resultMap['error_type']?.toString(),
+                );
+          final errorType = backendErrorType == DownloadErrorType.unknown
+              ? _downloadErrorTypeFromMessage(errorMsg)
+              : backendErrorType;
+          if (errorType == DownloadErrorType.verificationRequired) {
+            _log.i(
+              'Android native worker requires verification for ${current.track.name}; switching back to interactive queue',
+            );
+            try {
+              await PlatformBridge.cancelNativeDownloadWorker();
+            } catch (e) {
+              _log.w('Failed to cancel native worker before verification: $e');
+            }
+            await _handleVerificationRequiredDownload(
+              current,
+              errorMsg,
+              _nativeWorkerVerificationService(resultMap, context),
+            );
+            continue;
+          }
           updateItemStatus(
             itemId,
             DownloadStatus.failed,
-            error: error == null || error.isEmpty ? 'Download failed' : error,
+            error: errorMsg,
             errorType: errorType,
           );
           _failedInSession++;
@@ -6917,6 +6942,24 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       default:
         return DownloadErrorType.unknown;
     }
+  }
+
+  String _nativeWorkerVerificationService(
+    Map<String, dynamic>? result,
+    _NativeWorkerRequestContext context,
+  ) {
+    if (result != null) {
+      for (final key in const [
+        'service',
+        'verification_service',
+        'provider',
+        'source',
+      ]) {
+        final value = result[key]?.toString().trim() ?? '';
+        if (value.isNotEmpty) return value;
+      }
+    }
+    return context.item.service;
   }
 
   DownloadErrorType _downloadErrorTypeFromMessage(String errorMsg) {
