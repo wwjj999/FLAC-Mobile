@@ -48,6 +48,8 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   albumFolderStructure:
       json['albumFolderStructure'] as String? ?? 'artist_album',
   showExtensionStore: json['showExtensionStore'] as bool? ?? true,
+  extensionVerificationBrowserMode:
+      json['extensionVerificationBrowserMode'] as String? ?? 'external_first',
   locale: json['locale'] as String? ?? 'system',
   lyricsMode: json['lyricsMode'] as String? ?? 'embed',
   tidalHighFormat: json['tidalHighFormat'] as String? ?? 'mp3_320',
@@ -125,6 +127,7 @@ Map<String, dynamic> _$AppSettingsToJson(
   'singleFilenameFormat': instance.singleFilenameFormat,
   'albumFolderStructure': instance.albumFolderStructure,
   'showExtensionStore': instance.showExtensionStore,
+  'extensionVerificationBrowserMode': instance.extensionVerificationBrowserMode,
   'locale': instance.locale,
   'lyricsMode': instance.lyricsMode,
   'tidalHighFormat': instance.tidalHighFormat,

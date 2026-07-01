@@ -28,6 +28,10 @@ class SettingsNotifier extends Notifier<AppSettings> {
     'album',
     'playlist',
   };
+  static const Set<String> _extensionVerificationBrowserModeValues = {
+    'external_first',
+    'in_app_first',
+  };
 
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
@@ -79,6 +83,10 @@ class SettingsNotifier extends Notifier<AppSettings> {
           defaultSearchTab: sanitizedDefaultSearchTab,
           defaultService: loaded.defaultService,
           searchProvider: loaded.searchProvider,
+          extensionVerificationBrowserMode:
+              _normalizeExtensionVerificationBrowserMode(
+                loaded.extensionVerificationBrowserMode,
+              ),
         );
 
         await _runMigrations(prefs);
@@ -268,6 +276,14 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final normalized = value.trim().toLowerCase();
     if (_searchTabValues.contains(normalized)) return normalized;
     return 'all';
+  }
+
+  String _normalizeExtensionVerificationBrowserMode(String value) {
+    final normalized = value.trim().toLowerCase();
+    if (_extensionVerificationBrowserModeValues.contains(normalized)) {
+      return normalized;
+    }
+    return 'external_first';
   }
 
   String? _sanitizeRetiredBuiltInProviderId(String? providerId) {
@@ -554,6 +570,14 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
   void setShowExtensionStore(bool enabled) {
     state = state.copyWith(showExtensionStore: enabled);
+    _saveSettings();
+  }
+
+  void setExtensionVerificationBrowserMode(String mode) {
+    state = state.copyWith(
+      extensionVerificationBrowserMode:
+          _normalizeExtensionVerificationBrowserMode(mode),
+    );
     _saveSettings();
   }
 

@@ -27,7 +27,10 @@ bool _containsHttpStatusCode(String message, String code) {
       message.contains('$code;');
 }
 
-Future<bool> openPendingExtensionVerification(String extensionId) async {
+Future<bool> openPendingExtensionVerification(
+  String extensionId, {
+  String browserMode = 'external_first',
+}) async {
   final normalizedExtensionId = extensionId.trim();
   if (normalizedExtensionId.isEmpty) return false;
 
@@ -41,9 +44,17 @@ Future<bool> openPendingExtensionVerification(String extensionId) async {
     final uri = Uri.tryParse(authUrl);
     if (uri == null) return false;
 
-    var launched = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+    final preferInApp = browserMode.trim().toLowerCase() == 'in_app_first';
+    final firstMode = preferInApp
+        ? LaunchMode.inAppBrowserView
+        : LaunchMode.externalApplication;
+    final fallbackMode = preferInApp
+        ? LaunchMode.externalApplication
+        : LaunchMode.inAppBrowserView;
+
+    var launched = await launchUrl(uri, mode: firstMode);
     if (!launched) {
-      launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      launched = await launchUrl(uri, mode: fallbackMode);
     }
 
     if (launched) {

@@ -75,6 +75,12 @@ class AppSettingsPage extends ConsumerWidget {
                         .read(settingsProvider.notifier)
                         .setShowExtensionStore(v),
                   ),
+                  _VerificationBrowserModeSelector(
+                    currentMode: settings.extensionVerificationBrowserMode,
+                    onChanged: (mode) => ref
+                        .read(settingsProvider.notifier)
+                        .setExtensionVerificationBrowserMode(mode),
+                  ),
                   SettingsSwitchItem(
                     icon: Icons.system_update,
                     title: context.l10n.optionsCheckUpdates,
@@ -370,6 +376,90 @@ class _UpdateChannelSelector extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _VerificationBrowserModeSelector extends StatelessWidget {
+  final String currentMode;
+  final ValueChanged<String> onChanged;
+
+  const _VerificationBrowserModeSelector({
+    required this.currentMode,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final normalizedMode = currentMode == 'in_app_first'
+        ? 'in_app_first'
+        : 'external_first';
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.open_in_browser,
+                    color: colorScheme.onSurfaceVariant,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Verification browser',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          normalizedMode == 'external_first'
+                              ? 'Open challenges in the default browser first'
+                              : 'Open challenges in the in-app browser first',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  _ChannelChip(
+                    label: 'External',
+                    isSelected: normalizedMode == 'external_first',
+                    onTap: () => onChanged('external_first'),
+                  ),
+                  const SizedBox(width: 8),
+                  _ChannelChip(
+                    label: 'In-app',
+                    isSelected: normalizedMode == 'in_app_first',
+                    onTap: () => onChanged('in_app_first'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Divider(
+          height: 1,
+          thickness: 1,
+          indent: 56,
+          endIndent: 20,
+          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ],
     );
   }
 }

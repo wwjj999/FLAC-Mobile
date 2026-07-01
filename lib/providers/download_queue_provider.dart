@@ -2098,6 +2098,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
     final opened = await openPendingExtensionVerification(
       normalizedExtensionId,
+      browserMode: ref.read(settingsProvider).extensionVerificationBrowserMode,
     );
     if (!opened) return false;
 

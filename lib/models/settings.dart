@@ -43,14 +43,15 @@ class AppSettings {
   final String singleFilenameFormat;
   final String albumFolderStructure;
   final bool showExtensionStore;
+  final String
+  extensionVerificationBrowserMode; // 'external_first' or 'in_app_first'
   final String locale;
   final String lyricsMode;
   final String
   tidalHighFormat; // Legacy key for 320kbps lossy output format: 'mp3_320', 'aac_320', 'opus_256', or 'opus_128'
   final bool
   useAllFilesAccess; // Android 13+ only: enable MANAGE_EXTERNAL_STORAGE
-  final bool
-  autoExportFailedDownloads;
+  final bool autoExportFailedDownloads;
   final String
   downloadNetworkMode; // 'any' = WiFi + Mobile, 'wifi_only' = WiFi only
   final bool
@@ -66,16 +67,13 @@ class AppSettings {
   final String localLibraryPath;
   final String
   localLibraryBookmark; // Base64-encoded iOS security-scoped bookmark
-  final bool
-  localLibraryShowDuplicates;
+  final bool localLibraryShowDuplicates;
   final String
   localLibraryAutoScan; // Auto-scan mode: 'off', 'on_open', 'daily', 'weekly'
 
-  final bool
-  hasCompletedTutorial;
+  final bool hasCompletedTutorial;
 
-  final List<String>
-  lyricsProviders;
+  final List<String> lyricsProviders;
   final bool
   lyricsIncludeTranslationNetease; // Append translated lyrics (Netease)
   final bool
@@ -90,8 +88,7 @@ class AppSettings {
   final String
   lastSeenVersion; // Last app version the user has acknowledged (e.g. '3.7.0')
 
-  final bool
-  deduplicateDownloads;
+  final bool deduplicateDownloads;
   final bool saveDownloadHistory;
 
   final String playerMode;
@@ -132,6 +129,7 @@ class AppSettings {
     this.singleFilenameFormat = '{title} - {artist}',
     this.albumFolderStructure = 'artist_album',
     this.showExtensionStore = true,
+    this.extensionVerificationBrowserMode = 'external_first',
     this.locale = 'system',
     this.lyricsMode = 'embed',
     this.tidalHighFormat = 'mp3_320',
@@ -199,6 +197,7 @@ class AppSettings {
     String? singleFilenameFormat,
     String? albumFolderStructure,
     bool? showExtensionStore,
+    String? extensionVerificationBrowserMode,
     String? locale,
     String? lyricsMode,
     String? tidalHighFormat,
@@ -274,6 +273,9 @@ class AppSettings {
       singleFilenameFormat: singleFilenameFormat ?? this.singleFilenameFormat,
       albumFolderStructure: albumFolderStructure ?? this.albumFolderStructure,
       showExtensionStore: showExtensionStore ?? this.showExtensionStore,
+      extensionVerificationBrowserMode:
+          extensionVerificationBrowserMode ??
+          this.extensionVerificationBrowserMode,
       locale: locale ?? this.locale,
       lyricsMode: lyricsMode ?? this.lyricsMode,
       tidalHighFormat: tidalHighFormat ?? this.tidalHighFormat,

@@ -686,6 +686,9 @@ class TrackNotifier extends Notifier<TrackState> {
     try {
       final opened = await openPendingExtensionVerification(
         normalizedExtensionId,
+        browserMode: ref
+            .read(settingsProvider)
+            .extensionVerificationBrowserMode,
       );
       if (!opened) return false;
 
