@@ -3822,6 +3822,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     bool isLosslessTarget = isLosslessConversionTarget(selectedFormat);
     int? selectedMaxBitDepth;
     int? selectedMaxSampleRate;
+    String selectedDither = 'none';
+    String selectedResampler = 'swr';
     final bitDepthOptions = availableLosslessBitDepthOptions(bitDepth);
     final sampleRateOptions = availableLosslessSampleRateOptions(sampleRate);
 
@@ -3970,6 +3972,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                                     } else {
                                       selectedMaxBitDepth = null;
                                       selectedMaxSampleRate = null;
+                                      selectedDither = 'none';
+                                      selectedResampler = 'swr';
                                     }
                                   });
                                 },
@@ -4018,9 +4022,10 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                                     originalLabel: labels.original,
                                   ),
                                   selected: selectedMaxBitDepth == null,
-                                  onTap: () => setSheetState(
-                                    () => selectedMaxBitDepth = null,
-                                  ),
+                                  onTap: () => setSheetState(() {
+                                    selectedMaxBitDepth = null;
+                                    selectedDither = 'none';
+                                  }),
                                 ),
                                 ...bitDepthOptions.map((depth) {
                                   return choice(
@@ -4056,9 +4061,10 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                                     originalLabel: labels.original,
                                   ),
                                   selected: selectedMaxSampleRate == null,
-                                  onTap: () => setSheetState(
-                                    () => selectedMaxSampleRate = null,
-                                  ),
+                                  onTap: () => setSheetState(() {
+                                    selectedMaxSampleRate = null;
+                                    selectedResampler = 'swr';
+                                  }),
                                 ),
                                 ...sampleRateOptions.map((rate) {
                                   return choice(
@@ -4073,6 +4079,55 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                                   );
                                 }),
                               ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    if (isLosslessTarget && selectedMaxBitDepth != null)
+                      card(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            sectionLabel(context.l10n.trackConvertDithering),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: losslessDitherOptions.map((mode) {
+                                return choice(
+                                  label: context.l10n.losslessDitherOptionLabel(
+                                    mode,
+                                  ),
+                                  selected: mode == selectedDither,
+                                  onTap: () => setSheetState(
+                                    () => selectedDither = mode,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    if (isLosslessTarget && selectedMaxSampleRate != null)
+                      card(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            sectionLabel(context.l10n.trackConvertResampler),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: losslessResamplerOptions.map((mode) {
+                                return choice(
+                                  label: context.l10n
+                                      .losslessResamplerOptionLabel(mode),
+                                  selected: mode == selectedResampler,
+                                  onTap: () => setSheetState(
+                                    () => selectedResampler = mode,
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           ],
                         ),
@@ -4141,6 +4196,10 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                             losslessQuality: LosslessConversionQuality(
                               maxBitDepth: selectedMaxBitDepth,
                               maxSampleRate: selectedMaxSampleRate,
+                            ),
+                            losslessProcessing: LosslessConversionProcessing(
+                              dither: selectedDither,
+                              resampler: selectedResampler,
                             ),
                           );
                         },
@@ -4642,6 +4701,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     required String bitrate,
     LosslessConversionQuality losslessQuality =
         const LosslessConversionQuality(),
+    LosslessConversionProcessing losslessProcessing =
+        const LosslessConversionProcessing(),
   }) {
     final isLossless = isLosslessConversionTarget(targetFormat);
     showDialog<void>(
@@ -4687,6 +4748,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                   targetFormat: targetFormat,
                   bitrate: bitrate,
                   losslessQuality: losslessQuality,
+                  losslessProcessing: losslessProcessing,
                 );
               },
               child: Text(dialogContext.l10n.trackConvertFormat),
@@ -4702,6 +4764,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     required String bitrate,
     LosslessConversionQuality losslessQuality =
         const LosslessConversionQuality(),
+    LosslessConversionProcessing losslessProcessing =
+        const LosslessConversionProcessing(),
   }) async {
     if (_isConverting) return;
     setState(() => _isConverting = true);
@@ -4778,6 +4842,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         deleteOriginal: !isSaf,
         sourceBitDepth: bitDepth,
         losslessQuality: losslessQuality,
+        losslessProcessing: losslessProcessing,
       );
 
       if (coverPath != null) {

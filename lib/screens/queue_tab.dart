@@ -5569,7 +5569,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         confirmLabel: sheetConfirmLabel,
         sourceBitDepth: lowestKnownPositiveInt(sourceBitDepths),
         sourceSampleRate: lowestKnownPositiveInt(sourceSampleRates),
-        onConvert: (format, bitrate, losslessQuality) {
+        onConvert: (format, bitrate, losslessQuality, losslessProcessing) {
           didStartConversion = true;
           Navigator.pop(sheetContext);
           _performBatchConversion(
@@ -5577,6 +5577,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             targetFormat: format,
             bitrate: bitrate,
             losslessQuality: losslessQuality,
+            losslessProcessing: losslessProcessing,
           );
         },
       ),
@@ -5611,6 +5612,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     required String bitrate,
     LosslessConversionQuality losslessQuality =
         const LosslessConversionQuality(),
+    LosslessConversionProcessing losslessProcessing =
+        const LosslessConversionProcessing(),
   }) async {
     final itemsById = {for (final item in allItems) item.id: item};
     final selectedItems = <UnifiedLibraryItem>[];
@@ -5770,6 +5773,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           sourceBitDepth:
               item.historyItem?.bitDepth ?? item.localItem?.bitDepth,
           losslessQuality: losslessQuality,
+          losslessProcessing: losslessProcessing,
         );
 
         if (coverPath != null) {

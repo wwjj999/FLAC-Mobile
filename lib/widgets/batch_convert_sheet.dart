@@ -16,6 +16,7 @@ class BatchConvertSheet extends StatefulWidget {
     String format,
     String bitrate,
     LosslessConversionQuality losslessQuality,
+    LosslessConversionProcessing losslessProcessing,
   )
   onConvert;
 
@@ -42,6 +43,8 @@ class _BatchConvertSheetState extends State<BatchConvertSheet> {
   late String _selectedBitrate;
   int? _selectedMaxBitDepth;
   int? _selectedMaxSampleRate;
+  String _selectedDither = 'none';
+  String _selectedResampler = 'swr';
 
   String _defaultBitrateForFormat(String format) {
     if (format == 'Opus') return '128k';
@@ -132,6 +135,8 @@ class _BatchConvertSheetState extends State<BatchConvertSheet> {
                             } else {
                               _selectedMaxBitDepth = null;
                               _selectedMaxSampleRate = null;
+                              _selectedDither = 'none';
+                              _selectedResampler = 'swr';
                             }
                           });
                         },
@@ -183,8 +188,10 @@ class _BatchConvertSheetState extends State<BatchConvertSheet> {
                             originalLabel: labels.original,
                           ),
                           selected: _selectedMaxBitDepth == null,
-                          onTap: () =>
-                              setState(() => _selectedMaxBitDepth = null),
+                          onTap: () => setState(() {
+                            _selectedMaxBitDepth = null;
+                            _selectedDither = 'none';
+                          }),
                         ),
                         ...bitDepthOptions.map((depth) {
                           return _choice(
@@ -222,8 +229,10 @@ class _BatchConvertSheetState extends State<BatchConvertSheet> {
                             originalLabel: labels.original,
                           ),
                           selected: _selectedMaxSampleRate == null,
-                          onTap: () =>
-                              setState(() => _selectedMaxSampleRate = null),
+                          onTap: () => setState(() {
+                            _selectedMaxSampleRate = null;
+                            _selectedResampler = 'swr';
+                          }),
                         ),
                         ...sampleRateOptions.map((rate) {
                           return _choice(
@@ -238,6 +247,53 @@ class _BatchConvertSheetState extends State<BatchConvertSheet> {
                           );
                         }),
                       ],
+                    ),
+                  ],
+                ),
+              ),
+
+            if (_isLosslessTarget && _selectedMaxBitDepth != null)
+              _card(
+                cs,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _sectionLabel(cs, context.l10n.trackConvertDithering),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: losslessDitherOptions.map((mode) {
+                        return _choice(
+                          cs,
+                          label: context.l10n.losslessDitherOptionLabel(mode),
+                          selected: mode == _selectedDither,
+                          onTap: () => setState(() => _selectedDither = mode),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+
+            if (_isLosslessTarget && _selectedMaxSampleRate != null)
+              _card(
+                cs,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _sectionLabel(cs, context.l10n.trackConvertResampler),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: losslessResamplerOptions.map((mode) {
+                        return _choice(
+                          cs,
+                          label: context.l10n.losslessResamplerOptionLabel(mode),
+                          selected: mode == _selectedResampler,
+                          onTap: () =>
+                              setState(() => _selectedResampler = mode),
+                        );
+                      }).toList(),
                     ),
                   ],
                 ),
@@ -293,6 +349,10 @@ class _BatchConvertSheetState extends State<BatchConvertSheet> {
                   LosslessConversionQuality(
                     maxBitDepth: _selectedMaxBitDepth,
                     maxSampleRate: _selectedMaxSampleRate,
+                  ),
+                  LosslessConversionProcessing(
+                    dither: _selectedDither,
+                    resampler: _selectedResampler,
                   ),
                 ),
                 icon: const Icon(Icons.swap_horiz),

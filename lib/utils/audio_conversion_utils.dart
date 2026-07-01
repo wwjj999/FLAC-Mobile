@@ -19,6 +19,36 @@ const List<int> losslessConversionSampleRateOptions = [
 
 const List<int> losslessConversionBitDepthOptions = [16, 24];
 
+const List<String> losslessDitherOptions = [
+  'none',
+  'triangular',
+  'triangular_hp',
+];
+
+const List<String> losslessResamplerOptions = ['swr', 'soxr'];
+
+class LosslessConversionProcessing {
+  final String dither;
+  final String resampler;
+
+  const LosslessConversionProcessing({
+    this.dither = 'none',
+    this.resampler = 'swr',
+  });
+
+  String get normalizedDither {
+    final normalized = dither.trim().toLowerCase();
+    return losslessDitherOptions.contains(normalized) ? normalized : 'none';
+  }
+
+  String get normalizedResampler {
+    final normalized = resampler.trim().toLowerCase();
+    return losslessResamplerOptions.contains(normalized) ? normalized : 'swr';
+  }
+
+  bool get hasDither => normalizedDither != 'none';
+}
+
 List<int> availableLosslessBitDepthOptions(int? sourceBitDepth) {
   if (sourceBitDepth == null || sourceBitDepth <= 0) {
     return losslessConversionBitDepthOptions;
@@ -189,12 +219,29 @@ extension LosslessConversionLabelsL10n on AppLocalizations {
         originalQuality: trackConvertOriginalQuality,
         lossless: trackConvertLosslessSuffix,
       );
+
+  String losslessDitherOptionLabel(String dither) {
+    switch (dither.trim().toLowerCase()) {
+      case 'triangular':
+        return trackConvertDitherTriangular;
+      case 'triangular_hp':
+        return trackConvertDitherTriangularHp;
+      default:
+        return trackConvertDitherNone;
+    }
+  }
+
+  String losslessResamplerOptionLabel(String resampler) {
+    switch (resampler.trim().toLowerCase()) {
+      case 'soxr':
+        return trackConvertResamplerSoxr;
+      default:
+        return trackConvertResamplerSwr;
+    }
+  }
 }
 
-String losslessBitDepthLabel(
-  int? bitDepth, {
-  required String originalLabel,
-}) {
+String losslessBitDepthLabel(int? bitDepth, {required String originalLabel}) {
   return bitDepth == null ? originalLabel : '$bitDepth-bit';
 }
 
@@ -216,10 +263,7 @@ String losslessQualityLabel(
   final parts = <String>[];
   if (quality.maxBitDepth != null) {
     parts.add(
-      losslessBitDepthLabel(
-        quality.maxBitDepth,
-        originalLabel: originalLabel,
-      ),
+      losslessBitDepthLabel(quality.maxBitDepth, originalLabel: originalLabel),
     );
   }
   if (quality.maxSampleRate != null) {
@@ -250,11 +294,7 @@ String convertedAudioQualityLabel({
       return '$upper ${losslessBitDepthLabel(actualBitDepth, originalLabel: labels.original)}/${losslessSampleRateLabel(actualSampleRate, originalLabel: labels.original)}';
     }
     if (losslessQuality.hasCaps) {
-      return '$upper ${losslessQualityLabel(
-        losslessQuality,
-        originalLabel: labels.original,
-        originalQualityLabel: labels.originalQuality,
-      )}';
+      return '$upper ${losslessQualityLabel(losslessQuality, originalLabel: labels.original, originalQualityLabel: labels.originalQuality)}';
     }
     return '$upper ${labels.lossless}';
   }

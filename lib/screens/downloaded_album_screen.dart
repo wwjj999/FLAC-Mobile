@@ -1149,13 +1149,14 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
         confirmLabel: sheetConfirmLabel,
         sourceBitDepth: lowestKnownPositiveInt(sourceBitDepths),
         sourceSampleRate: lowestKnownPositiveInt(sourceSampleRates),
-        onConvert: (format, bitrate, losslessQuality) {
+        onConvert: (format, bitrate, losslessQuality, losslessProcessing) {
           Navigator.pop(sheetContext);
           _performBatchConversion(
             allTracks: allTracks,
             targetFormat: format,
             bitrate: bitrate,
             losslessQuality: losslessQuality,
+            losslessProcessing: losslessProcessing,
           );
         },
       ),
@@ -1168,6 +1169,8 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     required String bitrate,
     LosslessConversionQuality losslessQuality =
         const LosslessConversionQuality(),
+    LosslessConversionProcessing losslessProcessing =
+        const LosslessConversionProcessing(),
   }) async {
     final tracksById = {for (final t in allTracks) t.id: t};
     final selected = <DownloadHistoryItem>[];
@@ -1322,6 +1325,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
           deleteOriginal: !isSaf,
           sourceBitDepth: item.bitDepth,
           losslessQuality: losslessQuality,
+          losslessProcessing: losslessProcessing,
         );
 
         if (coverPath != null) {

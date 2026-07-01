@@ -393,12 +393,19 @@ class FFmpegService {
     required String codec,
     int? targetBitDepth,
     int? targetSampleRate,
+    LosslessConversionProcessing processing =
+        const LosslessConversionProcessing(),
   }) {
-    if (targetSampleRate != null && targetSampleRate > 0) {
-      arguments
-        ..add('-ar')
-        ..add(targetSampleRate.toString());
-    }
+    final sampleFmt = _losslessOutputSampleFormat(
+      codec: codec,
+      targetBitDepth: targetBitDepth,
+    );
+    _appendLosslessAresampleFilter(
+      arguments,
+      targetSampleRate: targetSampleRate,
+      outputSampleFormat: sampleFmt,
+      processing: processing,
+    );
     if (targetBitDepth == null || targetBitDepth <= 0) return;
 
     if (codec == 'flac') {
@@ -429,6 +436,48 @@ class FFmpegService {
           ..add('24');
       }
     }
+  }
+
+  static String? _losslessOutputSampleFormat({
+    required String codec,
+    int? targetBitDepth,
+  }) {
+    if (targetBitDepth == null || targetBitDepth <= 0) return null;
+
+    if (codec == 'flac') {
+      return targetBitDepth <= 16 ? 's16' : 's32';
+    }
+    if (codec == 'alac') {
+      return targetBitDepth <= 16 ? 's16p' : 's32p';
+    }
+    if (codec == 'pcm') {
+      return targetBitDepth <= 16 ? 's16' : 's32';
+    }
+    return null;
+  }
+
+  static void _appendLosslessAresampleFilter(
+    List<String> arguments, {
+    int? targetSampleRate,
+    String? outputSampleFormat,
+    LosslessConversionProcessing processing =
+        const LosslessConversionProcessing(),
+  }) {
+    final hasSampleRate = targetSampleRate != null && targetSampleRate > 0;
+    final hasSampleFormat =
+        outputSampleFormat != null && outputSampleFormat.trim().isNotEmpty;
+    if (!hasSampleRate && !hasSampleFormat && !processing.hasDither) return;
+
+    final options = <String>[
+      'resampler=${processing.normalizedResampler}',
+      if (hasSampleRate) 'osr=$targetSampleRate',
+      if (hasSampleFormat) 'osf=${outputSampleFormat.trim()}',
+      if (processing.hasDither) 'dither_method=${processing.normalizedDither}',
+    ];
+
+    arguments
+      ..add('-af')
+      ..add('aresample=${options.join(':')}');
   }
 
   static Future<String?> convertM4aToFlac(String inputPath) async {
@@ -2349,6 +2398,8 @@ class FFmpegService {
     int? sourceBitDepth,
     LosslessConversionQuality losslessQuality =
         const LosslessConversionQuality(),
+    LosslessConversionProcessing losslessProcessing =
+        const LosslessConversionProcessing(),
   }) async {
     final format = targetFormat.toLowerCase();
     if (!const {
@@ -2380,6 +2431,7 @@ class FFmpegService {
         coverPath: coverPath,
         targetBitDepth: resolvedLosslessQuality.targetBitDepth,
         targetSampleRate: resolvedLosslessQuality.targetSampleRate,
+        processing: losslessProcessing,
         deleteOriginal: deleteOriginal,
       );
     }
@@ -2391,6 +2443,7 @@ class FFmpegService {
         artistTagMode: artistTagMode,
         targetBitDepth: resolvedLosslessQuality.targetBitDepth,
         targetSampleRate: resolvedLosslessQuality.targetSampleRate,
+        processing: losslessProcessing,
         deleteOriginal: deleteOriginal,
       );
     }
@@ -2403,6 +2456,7 @@ class FFmpegService {
         sourceBitDepth: sourceBitDepth,
         targetBitDepth: resolvedLosslessQuality.targetBitDepth,
         targetSampleRate: resolvedLosslessQuality.targetSampleRate,
+        processing: losslessProcessing,
         deleteOriginal: deleteOriginal,
       );
     }
@@ -2500,6 +2554,8 @@ class FFmpegService {
     String? coverPath,
     int? targetBitDepth,
     int? targetSampleRate,
+    LosslessConversionProcessing processing =
+        const LosslessConversionProcessing(),
     bool deleteOriginal = true,
   }) async {
     final outputPath = _buildOutputPath(inputPath, '.m4a');
@@ -2539,6 +2595,7 @@ class FFmpegService {
       codec: 'alac',
       targetBitDepth: targetBitDepth,
       targetSampleRate: targetSampleRate,
+      processing: processing,
     );
     arguments
       ..add('-map_metadata')
@@ -2553,7 +2610,9 @@ class FFmpegService {
     _log.i(
       'Converting ${inputPath.split(Platform.pathSeparator).last} to ALAC'
       '${targetBitDepth != null ? ' $targetBitDepth-bit' : ''}'
-      '${targetSampleRate != null ? ' @ ${targetSampleRate}Hz' : ''}',
+      '${targetSampleRate != null ? ' @ ${targetSampleRate}Hz' : ''}'
+      '${processing.hasDither ? ' dither=${processing.normalizedDither}' : ''}'
+      '${processing.normalizedResampler != 'swr' ? ' resampler=${processing.normalizedResampler}' : ''}',
     );
     final result = await _executeWithArguments(arguments);
 
@@ -2583,6 +2642,8 @@ class FFmpegService {
     String artistTagMode = artistTagModeJoined,
     int? targetBitDepth,
     int? targetSampleRate,
+    LosslessConversionProcessing processing =
+        const LosslessConversionProcessing(),
     bool deleteOriginal = true,
   }) async {
     final outputPath = _buildOutputPath(inputPath, '.flac');
@@ -2624,6 +2685,7 @@ class FFmpegService {
       codec: 'flac',
       targetBitDepth: targetBitDepth,
       targetSampleRate: targetSampleRate,
+      processing: processing,
     );
     arguments
       ..add('-map_metadata')
@@ -2642,7 +2704,9 @@ class FFmpegService {
     _log.i(
       'Converting ${inputPath.split(Platform.pathSeparator).last} to FLAC'
       '${targetBitDepth != null ? ' $targetBitDepth-bit' : ''}'
-      '${targetSampleRate != null ? ' @ ${targetSampleRate}Hz' : ''}',
+      '${targetSampleRate != null ? ' @ ${targetSampleRate}Hz' : ''}'
+      '${processing.hasDither ? ' dither=${processing.normalizedDither}' : ''}'
+      '${processing.normalizedResampler != 'swr' ? ' resampler=${processing.normalizedResampler}' : ''}',
     );
     final result = await _executeWithArguments(arguments);
 
@@ -2676,6 +2740,8 @@ class FFmpegService {
     int? sourceBitDepth,
     int? targetBitDepth,
     int? targetSampleRate,
+    LosslessConversionProcessing processing =
+        const LosslessConversionProcessing(),
     bool deleteOriginal = true,
   }) async {
     final isAiff = container == 'aiff';
@@ -2697,22 +2763,24 @@ class FFmpegService {
       inputPath,
       '-map',
       '0:a',
-      '-c:a',
-      codec,
-      if (targetSampleRate != null && targetSampleRate > 0) ...[
-        '-ar',
-        targetSampleRate.toString(),
-      ],
-      '-map_metadata',
-      '-1',
-      outputPath,
-      '-y',
     ];
+    _appendLosslessAresampleFilter(
+      arguments,
+      targetSampleRate: targetSampleRate,
+      outputSampleFormat: _losslessOutputSampleFormat(
+        codec: 'pcm',
+        targetBitDepth: targetBitDepth,
+      ),
+      processing: processing,
+    );
+    arguments.addAll(['-c:a', codec, '-map_metadata', '-1', outputPath, '-y']);
 
     _log.i(
       'Converting ${inputPath.split(Platform.pathSeparator).last} to '
       '${container.toUpperCase()} (${use24 ? 24 : 16}-bit'
-      '${targetSampleRate != null ? ', ${targetSampleRate}Hz' : ''})',
+      '${targetSampleRate != null ? ', ${targetSampleRate}Hz' : ''}'
+      '${processing.hasDither ? ', dither=${processing.normalizedDither}' : ''}'
+      '${processing.normalizedResampler != 'swr' ? ', resampler=${processing.normalizedResampler}' : ''})',
     );
     final result = await _executeWithArguments(arguments);
     if (!result.success) {
