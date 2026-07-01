@@ -87,22 +87,26 @@ func findBoxBySignature(data []byte, start, end int64, typ string) (mp4Box, bool
 }
 
 // audioSampleEntryHeaderLen returns the byte length of the fixed audio sample
-// entry header (from the box body start) before child boxes begin.
-func audioSampleEntryHeaderLen(data []byte, entry mp4Box) int64 {
+// entry header (from the box body start) before child boxes begin. ok is false
+// for malformed/truncated entries whose declared header is not fully present.
+func audioSampleEntryHeaderLen(data []byte, entry mp4Box) (hdrLen int64, ok bool) {
 	// 6 bytes reserved + 2 bytes data_reference_index, then the audio fields.
 	base := entry.body()
 	if base+10 > entry.end() {
-		return 8 + 20
+		return 0, false
 	}
 	version := binary.BigEndian.Uint16(data[base+8 : base+10])
+	hdrLen = 8 + 20
 	switch version {
 	case 1:
-		return 8 + 20 + 16
+		hdrLen += 16
 	case 2:
-		return 8 + 20 + 36
-	default:
-		return 8 + 20
+		hdrLen += 36
 	}
+	if base+hdrLen > entry.end() {
+		return 0, false
+	}
+	return hdrLen, true
 }
 
 type ac4Location struct {
@@ -232,13 +236,16 @@ func normalizeQuickTimeAudioToMP4(data []byte) []byte {
 		return data // already v0 (or v2, left untouched)
 	}
 
-	binary.BigEndian.PutUint16(data[verPos:verPos+2], 0)
 	// The v1 QuickTime sound extension is the 16 bytes following the 20-byte v0
 	// audio fields (samplesPerPacket, bytesPerPacket, bytesPerFrame, bytesPerSample).
 	extStart := entry.body() + 8 + 20
 	extEnd := extStart + 16
+	if extEnd > entry.end() {
+		return data
+	}
 	delta := int64(-16)
 
+	binary.BigEndian.PutUint16(data[verPos:verPos+2], 0)
 	shiftChunkOffsets(data, loc.chain[0], extStart, delta)
 	for _, b := range loc.chain {
 		growBoxSize(data, b, delta)
@@ -273,7 +280,10 @@ func EnsureAC4ConfigBox(decryptedPath, sourcePath string) error {
 		return nil
 	}
 
-	hdrLen := audioSampleEntryHeaderLen(dst, loc.entry)
+	hdrLen, ok := audioSampleEntryHeaderLen(dst, loc.entry)
+	if !ok {
+		return fmt.Errorf("malformed ac-4 sample entry")
+	}
 	childStart := loc.entry.body() + hdrLen
 	if _, has := findChildMP4(dst, childStart, loc.entry.end(), "dac4"); has {
 		// Already has dac4; still persist any normalization changes.
